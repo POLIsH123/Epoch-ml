@@ -15,15 +15,32 @@ export default function Navbar() {
     // Check if user is logged in
     const token = localStorage.getItem('token');
     if (token) {
-      // In a real app, you would decode the token or make an API call to get user info
-      // For this example, we'll just set a dummy user
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        setUser({ username: 'User', credits: 100 }); // Placeholder user data
-      } catch (e) {
-        // If token is invalid, remove it
+      // Verify token by fetching user profile
+      fetch('/api/auth/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      .then(res => {
+        if (res.status === 401) {
+          // Token is invalid, remove it
+          localStorage.removeItem('token');
+          setUser(null);
+          return;
+        }
+        return res.json();
+      })
+      .then(data => {
+        if (data) {
+          setUser(data);
+        }
+      })
+      .catch(err => {
+        console.error('Error fetching user profile:', err);
+        // If there's an error, remove the token
         localStorage.removeItem('token');
-      }
+        setUser(null);
+      });
     }
   }, []);
   

@@ -21,22 +21,32 @@ export default function TrainingHistory() {
       return;
     }
     
-    // Get user profile
+    // Verify token and get user profile
     fetch('/api/auth/profile', {
       headers: {
         'Authorization': `Bearer ${token}`
       }
     })
-    .then(res => res.json())
+    .then(res => {
+      if (res.status === 401) {
+        // Token is invalid, redirect to login
+        localStorage.removeItem('token');
+        router.push('/login');
+        return;
+      }
+      return res.json();
+    })
     .then(userData => {
-      setUser(userData);
-      
-      // Get training history
-      return fetch('/api/training', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      if (userData) {
+        setUser(userData);
+        
+        // Get training history
+        return fetch('/api/training', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+      }
     })
     .then(res => res.json())
     .then(data => {
@@ -44,7 +54,7 @@ export default function TrainingHistory() {
       setLoading(false);
     })
     .catch(err => {
-      console.error(err);
+      console.error('Error fetching data:', err);
       localStorage.removeItem('token');
       router.push('/login');
     });

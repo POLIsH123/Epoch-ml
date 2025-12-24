@@ -21,21 +21,33 @@ export default function Dashboard() {
       return;
     }
     
-    // Decode token to get user info (simplified approach)
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      // For this demo, we'll use placeholder user data
-      setUser({ 
-        username: 'User', 
-        credits: 100,
-        id: payload.userId || 'demo-user-id'
-      });
-      setLoading(false);
-    } catch (err) {
-      console.error('Error decoding token:', err);
+    // Verify token is valid by making a simple API call
+    fetch('/api/auth/profile', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+    .then(res => {
+      if (res.status === 401) {
+        // Token is invalid, redirect to login
+        localStorage.removeItem('token');
+        router.push('/login');
+        return;
+      }
+      return res.json();
+    })
+    .then(data => {
+      if (data) {
+        setUser(data);
+        setLoading(false);
+      }
+    })
+    .catch(err => {
+      console.error('Error fetching user data:', err);
+      setError('Failed to load user data. Please try logging in again.');
       localStorage.removeItem('token');
       router.push('/login');
-    }
+    });
   }, [router]);
   
   if (loading) {
