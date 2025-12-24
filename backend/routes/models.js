@@ -60,6 +60,63 @@ let models = [
     isActive: true,
     createdAt: new Date(),
     updatedAt: new Date()
+  },
+  {
+    _id: '4',
+    name: 'BERT Transformer',
+    type: 'Transformer',
+    description: 'Bidirectional Encoder Representations from Transformers for NLP tasks',
+    architecture: 'BERT',
+    parameters: {
+      inputSize: 512,
+      hiddenSize: 768,
+      outputSize: 30522,
+      layers: 12,
+      learningRate: 0.00002,
+      epochs: 3,
+      batchSize: 16
+    },
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  {
+    _id: '5',
+    name: 'Deep Q-Network',
+    type: 'Reinforcement Learning',
+    description: 'Deep Q-Learning network for decision making tasks',
+    architecture: 'DQN',
+    parameters: {
+      inputSize: 4,
+      hiddenSize: 64,
+      outputSize: 2,
+      layers: 2,
+      learningRate: 0.001,
+      epochs: 1000,
+      batchSize: 32
+    },
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  {
+    _id: '6',
+    name: 'Random Forest Ensemble',
+    type: 'Ensemble',
+    description: 'Ensemble method combining multiple decision trees',
+    architecture: 'RandomForest',
+    parameters: {
+      inputSize: 10,
+      hiddenSize: 100,
+      outputSize: 1,
+      layers: 1,
+      learningRate: 0.01,
+      epochs: 1,
+      batchSize: 32
+    },
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date()
   }
 ];
 

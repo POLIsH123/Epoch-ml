@@ -1,11 +1,14 @@
-import { Box, Heading, Text, Button, VStack, Container, Grid, GridItem, Stat, StatLabel, StatNumber, StatHelpText, StatArrow, StatGroup } from '@chakra-ui/react';
+import { Box, Heading, Text, Button, VStack, Container, Grid, GridItem, Stat, StatLabel, StatNumber, StatHelpText, StatArrow, StatGroup, Card, CardHeader, CardBody, Flex, Icon, useColorModeValue } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import { FiCpu, FiBarChart2, FiZap, FiDollarSign, FiDatabase, FiUsers } from 'react-icons/fi';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  
+  const bg = useColorModeValue('gray.50', 'gray.900');
   
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -37,49 +40,94 @@ export default function Dashboard() {
   }
   
   return (
-    <Container maxW="container.xl" py={8}>
-      <VStack spacing={8} align="stretch">
-        <Heading as="h1" size="lg">Dashboard</Heading>
-        
-        <StatGroup>
-          <Stat>
-            <StatLabel>Welcome</StatLabel>
-            <StatNumber>{user?.username}</StatNumber>
-            <StatHelpText>Your account</StatHelpText>
-          </Stat>
+    <Box minH="100vh" bg={bg} py={8}>
+      <Container maxW="container.xl">
+        <VStack spacing={8} align="stretch">
+          <Flex justify="space-between" align="center">
+            <Heading as="h1" size="lg">Dashboard</Heading>
+            <Text>Welcome, {user?.username}!</Text>
+          </Flex>
           
-          <Stat>
-            <StatLabel>Credits</StatLabel>
-            <StatNumber>{user?.credits}</StatNumber>
-            <StatHelpText>Available for training</StatHelpText>
-          </Stat>
-        </StatGroup>
-        
-        <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6}>
-          <GridItem p={6} shadow="md" borderWidth="1px" borderRadius="md">
-            <Heading as="h3" size="md" mb={4}>Train New Model</Heading>
-            <Text mb={4}>Select a model architecture and configure parameters for training</Text>
-            <Button 
-              colorScheme="teal" 
-              onClick={() => router.push('/train')}
-            >
-              Start Training
-            </Button>
-          </GridItem>
+          <StatGroup>
+            <Stat>
+              <StatLabel>Account</StatLabel>
+              <StatNumber>{user?.username}</StatNumber>
+              <StatHelpText>Your account</StatHelpText>
+            </Stat>
+            
+            <Stat>
+              <StatLabel>Credits</StatLabel>
+              <StatNumber>{user?.credits || 100}</StatNumber>
+              <StatHelpText>Available for training</StatHelpText>
+            </Stat>
+            
+            <Stat>
+              <StatLabel>Models</StatLabel>
+              <StatNumber>12</StatNumber>
+              <StatHelpText>Available for training</StatHelpText>
+            </Stat>
+            
+            <Stat>
+              <StatLabel>Trained</StatLabel>
+              <StatNumber>5</StatNumber>
+              <StatHelpText>This month</StatHelpText>
+            </Stat>
+          </StatGroup>
           
-          <GridItem p={6} shadow="md" borderWidth="1px" borderRadius="md">
-            <Heading as="h3" size="md" mb={4}>View Models</Heading>
-            <Text mb={4}>Browse available model architectures</Text>
-            <Button 
-              variant="outline" 
-              colorScheme="teal" 
-              onClick={() => router.push('/models')}
-            >
-              Browse Models
-            </Button>
-          </GridItem>
-        </Grid>
-      </VStack>
-    </Container>
+          <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6}>
+            <Card>
+              <CardHeader>
+                <Flex align="center">
+                  <Icon as={FiZap} w={6} h={6} color="teal.500" mr={3} />
+                  <Heading as="h3" size="md">Train New Model</Heading>
+                </Flex>
+              </CardHeader>
+              <CardBody>
+                <Text mb={4}>Select a model architecture and configure parameters for training</Text>
+                <Button 
+                  colorScheme="teal" 
+                  onClick={() => router.push('/train')}
+                  leftIcon={<FiCpu />}
+                >
+                  Start Training
+                </Button>
+              </CardBody>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <Flex align="center">
+                  <Icon as={FiDatabase} w={6} h={6} color="blue.500" mr={3} />
+                  <Heading as="h3" size="md">View Models</Heading>
+                </Flex>
+              </CardHeader>
+              <CardBody>
+                <Text mb={4}>Browse available model architectures</Text>
+                <Button 
+                  variant="outline" 
+                  colorScheme="teal" 
+                  onClick={() => router.push('/models')}
+                  leftIcon={<FiBarChart2 />}
+                >
+                  Browse Models
+                </Button>
+              </CardBody>
+            </Card>
+          </Grid>
+          
+          <Card>
+            <CardHeader>
+              <Flex align="center">
+                <Icon as={FiUsers} w={6} h={6} color="purple.500" mr={3} />
+                <Heading as="h3" size="md">Recent Activity</Heading>
+              </Flex>
+            </CardHeader>
+            <CardBody>
+              <Text>No recent activity yet. Start training your first model!</Text>
+            </CardBody>
+          </Card>
+        </VStack>
+      </Container>
+    </Box>
   );
 }
