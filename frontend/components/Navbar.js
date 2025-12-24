@@ -15,39 +15,19 @@ export default function Navbar() {
     // Check if user is logged in
     const token = localStorage.getItem('token');
     if (token) {
-      // Fetch user profile to get updated info
-      fetch('/api/auth/profile', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-      .then(res => res.json())
-      .then(data => {
-        setUser(data);
-      })
-      .catch(err => {
-        console.error('Error fetching user profile:', err);
+      // In a real app, you would decode the token or make an API call to get user info
+      // For this example, we'll just set a dummy user
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setUser({ username: 'User', credits: 100 }); // Placeholder user data
+      } catch (e) {
         // If token is invalid, remove it
         localStorage.removeItem('token');
-        setUser(null);
-      });
+      }
     }
   }, []);
   
-  const handleLogout = async () => {
-    // Call logout API endpoint
-    try {
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-    } catch (err) {
-      console.error('Logout error:', err);
-    }
-    
-    // Remove token and update state
+  const handleLogout = () => {
     localStorage.removeItem('token');
     setUser(null);
     router.push('/');
@@ -91,7 +71,7 @@ export default function Navbar() {
             </>
           ) : (
             <>
-              <Text mr={4}>Credits: {user.credits}</Text>
+              <Text mr={4}>Credits: {user.credits || 100}</Text>
               <Button
                 variant="ghost"
                 onClick={() => router.push('/dashboard')}

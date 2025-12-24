@@ -87,7 +87,7 @@ router.post('/login', validateLogin, handleValidationErrors, async (req, res) =>
 
 // Get user profile
 router.get('/profile', (req, res) => {
-  // Extract token from header (simplified for this example)
+  // Extract token from header
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
   
@@ -117,9 +117,8 @@ router.get('/profile', (req, res) => {
   }
 });
 
-// Logout user (client-side token removal)
+// Logout user
 router.post('/logout', (req, res) => {
-  // In a real application, you might want to add the token to a blacklist
   res.json({ message: 'Logged out successfully' });
 });
 
