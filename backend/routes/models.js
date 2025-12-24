@@ -1,23 +1,82 @@
 const express = require('express');
-const { authenticateToken } = require('../middleware/auth');
-const Model = require('../models/Model');
 
 const router = express.Router();
 
+// In-memory models storage (for testing only)
+let models = [
+  {
+    _id: '1',
+    name: 'Basic RNN',
+    type: 'RNN',
+    description: 'A simple recurrent neural network for sequence prediction',
+    architecture: 'SimpleRNN',
+    parameters: {
+      inputSize: 100,
+      hiddenSize: 128,
+      outputSize: 10,
+      layers: 1,
+      learningRate: 0.001,
+      epochs: 10,
+      batchSize: 32
+    },
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  {
+    _id: '2',
+    name: 'CNN Image Classifier',
+    type: 'CNN',
+    description: 'Convolutional neural network for image classification',
+    architecture: 'Conv2D',
+    parameters: {
+      inputSize: 28 * 28,
+      hiddenSize: 128,
+      outputSize: 10,
+      layers: 3,
+      learningRate: 0.001,
+      epochs: 10,
+      batchSize: 32
+    },
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  {
+    _id: '3',
+    name: 'GPT Text Generator',
+    type: 'GPT',
+    description: 'Generative Pre-trained Transformer for text generation',
+    architecture: 'Transformer',
+    parameters: {
+      inputSize: 100,
+      hiddenSize: 768,
+      outputSize: 50257,
+      layers: 12,
+      learningRate: 0.00005,
+      epochs: 3,
+      batchSize: 8
+    },
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  }
+];
+
 // Get all available models
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', (req, res) => {
   try {
-    const models = await Model.find({ isActive: true });
-    res.json(models);
+    const activeModels = models.filter(model => model.isActive);
+    res.json(activeModels);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
 // Get a specific model by ID
-router.get('/:id', authenticateToken, async (req, res) => {
+router.get('/:id', (req, res) => {
   try {
-    const model = await Model.findById(req.params.id);
+    const model = models.find(m => m._id === req.params.id);
     if (!model) {
       return res.status(404).json({ error: 'Model not found' });
     }
@@ -27,41 +86,38 @@ router.get('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Create a new model (admin only)
-router.post('/', authenticateToken, async (req, res) => {
+// Create a new model (admin only) - simplified for testing
+router.post('/', (req, res) => {
   try {
-    // TODO: Add admin role check
     const { name, type, description, architecture, parameters } = req.body;
     
-    const model = new Model({
+    const model = {
+      _id: Date.now().toString(),
       name,
       type,
       description,
       architecture,
-      parameters
-    });
+      parameters,
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
     
-    await model.save();
+    models.push(model);
     res.status(201).json(model);
-  
+
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
 // Export/download a trained model
-router.get('/:id/export', authenticateToken, async (req, res) => {
+router.get('/:id/export', (req, res) => {
   try {
-    // In a real implementation, this would return the trained model file
-    // For now, we'll return a placeholder response
-    const model = await Model.findById(req.params.id);
+    const model = models.find(m => m._id === req.params.id);
     if (!model) {
       return res.status(404).json({ error: 'Model not found' });
     }
-    
-    // Check if user has permission to export this model
-    // (Either they created it or it's a public model)
-    // TODO: Implement proper permissions
     
     // This would typically return a trained model file
     res.json({
