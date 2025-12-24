@@ -16,7 +16,7 @@ export default function Navbar() {
     const token = localStorage.getItem('token');
     if (token) {
       // Verify token by fetching user profile
-      fetch('/api/auth/profile', {
+      fetch('http://localhost:5002/api/auth/profile', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
