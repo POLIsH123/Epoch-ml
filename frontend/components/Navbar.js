@@ -1,5 +1,6 @@
 import { Box, Flex, Text, Button, Spacer, useColorModeValue } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
+import { useState, useEffect } from 'react';
 
 export default function Navbar() {
   const router = useRouter();
@@ -9,7 +10,11 @@ export default function Navbar() {
     router.push('/');
   };
   
-  const isAuthenticated = !!localStorage.getItem('token');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  
+  useEffect(() => {
+    setIsAuthenticated(!!localStorage.getItem('token'));
+  }, []);
   
   return (
     <Box bg={useColorModeValue('gray.100', 'gray.900')} px={4}>
