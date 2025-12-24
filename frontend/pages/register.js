@@ -1,6 +1,7 @@
-import { Box, Heading, FormControl, FormLabel, Input, Button, VStack, Container, Text, Link } from '@chakra-ui/react';
+import { Box, Heading, FormControl, FormLabel, Input, Button, VStack, Container, Text, Link, useColorModeValue } from '@chakra-ui/react';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
+import { FiUser, FiMail, FiLock, FiUserPlus } from 'react-icons/fi';
 
 export default function Register() {
   const [username, setUsername] = useState('');
@@ -8,6 +9,9 @@ export default function Register() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
+  
+  const bg = useColorModeValue('gray.50', 'gray.900');
+  const cardBg = useColorModeValue('white', 'gray.800');
   
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -36,23 +40,31 @@ export default function Register() {
   };
   
   return (
-    <Container maxW="container.sm" py={12}>
-      <Box p={8} shadow="md" borderWidth="1px" borderRadius="md">
-        <VStack spacing={6} align="stretch">
-          <Heading as="h1" size="lg">Create an Account</Heading>
-          
-          {error && (
-            <Text color="red.500" textAlign="center">{error}</Text>
-          )}
+    <Box minH="100vh" bg={bg} display="flex" alignItems="center" justifyContent="center" py={12}>
+      <Container maxW="container.sm" py={12}>
+        <Box p={8} shadow="xl" borderWidth="1px" borderRadius="lg" bg={cardBg}>
+          <VStack spacing={8} align="center" mb={6}>
+            <Box p={4} bg="teal.500" borderRadius="full">
+              <FiUserPlus color="white" size={30} />
+            </Box>
+            <Heading as="h1" size="lg">Create Account</Heading>
+            <Text color="gray.500">Join our machine learning platform</Text>
+          </VStack>
           
           <form onSubmit={handleSubmit}>
-            <VStack spacing={4}>
+            <VStack spacing={6}>
+              {error && (
+                <Text color="red.500" textAlign="center">{error}</Text>
+              )}
+              
               <FormControl id="username" isRequired>
                 <FormLabel>Username</FormLabel>
                 <Input 
                   type="text" 
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
+                  leftIcon={<FiUser />}
+                  placeholder="john_doe"
                 />
               </FormControl>
               
@@ -62,6 +74,8 @@ export default function Register() {
                   type="email" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  leftIcon={<FiMail />}
+                  placeholder="your@email.com"
                 />
               </FormControl>
               
@@ -71,6 +85,8 @@ export default function Register() {
                   type="password" 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  leftIcon={<FiLock />}
+                  placeholder="••••••••"
                 />
               </FormControl>
               
@@ -78,20 +94,22 @@ export default function Register() {
                 type="submit" 
                 colorScheme="teal" 
                 width="full"
+                size="lg"
+                rightIcon={<FiUserPlus />}
               >
-                Register
+                Create Account
               </Button>
             </VStack>
           </form>
           
-          <Text textAlign="center">
+          <Text textAlign="center" mt={6}>
             Already have an account?{' '}
-            <Link color="teal.500" href="/login">
-              Login here
+            <Link color="teal.500" href="/login" fontWeight="bold">
+              Sign in here
             </Link>
           </Text>
-        </VStack>
-      </Box>
-    </Container>
+        </Box>
+      </Container>
+    </Box>
   );
 }

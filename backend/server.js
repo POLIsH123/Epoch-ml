@@ -10,8 +10,13 @@ const PORT = process.env.PORT || 5000;
 // Security middleware
 app.use(securityMiddleware);
 
+// CORS configuration - allow requests from frontend
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' ? false : 'http://localhost:3000',
+  credentials: true
+}));
+
 // Other middleware
-app.use(cors());
 app.use(express.json());
 
 // Database connection
