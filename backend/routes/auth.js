@@ -1,11 +1,12 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
-const { authenticateToken } = require('../middleware/auth');
 const { validateRegistration, validateLogin, handleValidationErrors } = require('../middleware/validation');
 
 const router = express.Router();
+
+// In-memory user storage (for testing only)
+let users = [];
 
 // Register a new user
 router.post('/register', validateRegistration, handleValidationErrors, async (req, res) => {
@@ -13,7 +14,7 @@ router.post('/register', validateRegistration, handleValidationErrors, async (re
     const { username, email, password } = req.body;
     
     // Check if user already exists
-    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+    const existingUser = users.find(u => u.email === email || u.username === username);
     if (existingUser) {
       return res.status(400).json({ error: 'User already exists' });
     }
@@ -23,23 +24,27 @@ router.post('/register', validateRegistration, handleValidationErrors, async (re
     const hashedPassword = await bcrypt.hash(password, salt);
     
     // Create new user
-    const user = new User({
+    const user = {
+      id: Date.now().toString(),
       username,
       email,
-      password: hashedPassword
-    });
+      password: hashedPassword,
+      credits: 100, // Starting credits
+      role: 'user',
+      createdAt: new Date()
+    };
     
-    await user.save();
+    users.push(user);
     
     // Generate JWT token
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '24h' });
+    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '24h' });
     
     res.status(201).json({
       message: 'User created successfully',
       token,
-      user: { id: user._id, username: user.username, email: user.email }
+      user: { id: user.id, username: user.username, email: user.email }
     });
-  
+
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -51,7 +56,7 @@ router.post('/login', validateLogin, handleValidationErrors, async (req, res) =>
     const { email, password } = req.body;
     
     // Find user by email
-    const user = await User.findOne({ email });
+    const user = users.find(u => u.email === email);
     if (!user) {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
@@ -63,33 +68,41 @@ router.post('/login', validateLogin, handleValidationErrors, async (req, res) =>
     }
     
     // Generate JWT token
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '24h' });
+    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '24h' });
     
     res.json({
       message: 'Login successful',
       token,
-      user: { id: user._id, username: user.username, email: user.email }
+      user: { id: user.id, username: user.username, email: user.email }
     });
-  
+
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
 // Get user profile
-router.get('/profile', authenticateToken, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.userId).select('-password');
-    res.json(user);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+router.get('/profile', (req, res) => {
+  // Extract token from header (simplified for this example)
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+  
+  if (!token) {
+    return res.status(401).json({ error: 'Access token required' });
   }
-});
-
-// Logout user (client-side token removal)
-router.post('/logout', authenticateToken, async (req, res) => {
-  // In a real application, you might want to add the token to a blacklist
-  res.json({ message: 'Logged out successfully' });
+  
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+    const user = users.find(u => u.id === decoded.userId);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    res.json({ id: user.id, username: user.username, email: user.email, credits: user.credits });
+  } catch (error) {
+    res.status(403).json({ error: 'Invalid or expired token' });
+  }
 });
 
 module.exports = router;
