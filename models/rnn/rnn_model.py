@@ -1,113 +1,127 @@
+import sys
+import json
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import SimpleRNN, Dense, Embedding
-from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.layers import SimpleRNN, Dense, LSTM, GRU
 import numpy as np
-import json
 import os
 
-class RNNModel:
-    def __init__(self, config):
-        self.config = config
-        self.model = None
-        self.history = None
-        
-    def build_model(self):
-        """Build the RNN model based on configuration"""
-        model = Sequential()
-        
-        # Add embedding layer if vocab_size is provided
-        if 'vocab_size' in self.config and self.config.get('use_embedding', True):
-            model.add(Embedding(
-                input_dim=self.config['vocab_size'],
-                output_dim=self.config.get('embedding_dim', 100),
-                input_length=self.config.get('input_length', 100)
-            ))
-        
-        # Add RNN layer(s)
-        model.add(SimpleRNN(
-            units=self.config.get('hidden_size', 128),
-            return_sequences=self.config.get('return_sequences', False),
-            dropout=self.config.get('dropout', 0.2),
-            recurrent_dropout=self.config.get('recurrent_dropout', 0.2)
-        ))
-        
-        # Add output layer
-        model.add(Dense(
-            units=self.config.get('output_size', 1),
-            activation=self.config.get('output_activation', 'sigmoid')
-        ))
-        
-        # Compile model
-        model.compile(
-            optimizer=Adam(learning_rate=self.config.get('learning_rate', 0.001)),
-            loss=self.config.get('loss', 'binary_crossentropy'),
-            metrics=self.config.get('metrics', ['accuracy'])
-        )
-        
-        self.model = model
-        return model
+def create_rnn_model(input_size, hidden_size, output_size, layers, model_type='SimpleRNN'):
+    """
+    Create an RNN model based on the specified parameters
+    """
+    model = Sequential()
     
-    def train(self, X_train, y_train, X_val=None, y_val=None, epochs=10, batch_size=32):
-        """Train the RNN model"""
-        if self.model is None:
-            self.build_model()
+    # Add the first RNN layer
+    if model_type == 'LSTM':
+        model.add(LSTM(hidden_size, input_shape=(input_size, 1), return_sequences=layers > 1))
+    elif model_type == 'GRU':
+        model.add(GRU(hidden_size, input_shape=(input_size, 1), return_sequences=layers > 1))
+    else:  # SimpleRNN
+        model.add(SimpleRNN(hidden_size, input_shape=(input_size, 1), return_sequences=layers > 1))
+    
+    # Add additional layers if needed
+    for i in range(layers - 1):
+        if i == layers - 2:  # Last layer, don't return sequences
+            if model_type == 'LSTM':
+                model.add(LSTM(hidden_size, return_sequences=False))
+            elif model_type == 'GRU':
+                model.add(GRU(hidden_size, return_sequences=False))
+            else:
+                model.add(SimpleRNN(hidden_size, return_sequences=False))
+        else:  # Hidden layers, return sequences
+            if model_type == 'LSTM':
+                model.add(LSTM(hidden_size, return_sequences=True))
+            elif model_type == 'GRU':
+                model.add(GRU(hidden_size, return_sequences=True))
+            else:
+                model.add(SimpleRNN(hidden_size, return_sequences=True))
+    
+    # Output layer
+    model.add(Dense(output_size))
+    
+    return model
+
+def train_model(parameters):
+    """
+    Train the RNN model with the given parameters
+    """
+    # Extract parameters
+    input_size = parameters.get('inputSize', 100)
+    hidden_size = parameters.get('hiddenSize', 128)
+    output_size = parameters.get('outputSize', 10)
+    layers = parameters.get('layers', 1)
+    learning_rate = parameters.get('learningRate', 0.001)
+    epochs = parameters.get('epochs', 10)
+    batch_size = parameters.get('batchSize', 32)
+    model_type = parameters.get('architecture', 'SimpleRNN')
+    
+    print(f"Creating {model_type} model with parameters: input_size={input_size}, hidden_size={hidden_size}, output_size={output_size}, layers={layers}")
+    
+    # Create the model
+    model = create_rnn_model(input_size, hidden_size, output_size, layers, model_type)
+    
+    # Compile the model
+    optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+    model.compile(optimizer=optimizer, loss='mse', metrics=['mae'])
+    
+    print("Model created successfully")
+    print(model.summary())
+    
+    # Generate dummy data for training
+    # In a real scenario, you would load actual data
+    X_train = np.random.random((1000, input_size, 1))
+    y_train = np.random.random((1000, output_size))
+    
+    X_val = np.random.random((200, input_size, 1))
+    y_val = np.random.random((200, output_size))
+    
+    print("Starting training...")
+    
+    # Training with progress reporting
+    for epoch in range(epochs):
+        # Report progress (0-100%)
+        progress = int((epoch / epochs) * 100)
+        print(f"PROGRESS:{progress}")
+        sys.stdout.flush()
         
-        # Prepare validation data
-        validation_data = None
-        if X_val is not None and y_val is not None:
-            validation_data = (X_val, y_val)
+        # Train for one epoch
+        history = model.fit(
+            X_train, y_train,
+            batch_size=batch_size,
+            epochs=1,
+            validation_data=(X_val, y_val),
+            verbose=0
+        )
+    
+    # Report final progress
+    print("PROGRESS:100")
+    sys.stdout.flush()
+    
+    print("Training completed successfully")
+    
+    # Save the model
+    model.save('trained_model.h5')
+    print("Model saved as 'trained_model.h5'")
+
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        # Get parameters from command line argument
+        params_str = sys.argv[1]
+        parameters = json.loads(params_str)
         
         # Train the model
-        self.history = self.model.fit(
-            X_train, y_train,
-            epochs=epochs,
-            batch_size=batch_size,
-            validation_data=validation_data,
-            verbose=1
-        )
-        
-        return self.history
-    
-    def predict(self, X):
-        """Make predictions with the trained model"""
-        if self.model is None:
-            raise ValueError("Model not built yet. Call build_model() first.")
-        return self.model.predict(X)
-    
-    def save_model(self, filepath):
-        """Save the trained model"""
-        if self.model is None:
-            raise ValueError("Model not built yet. Call build_model() first.")
-        self.model.save(filepath)
-    
-    def load_model(self, filepath):
-        """Load a pre-trained model"""
-        self.model = tf.keras.models.load_model(filepath)
-    
-    def get_training_history(self):
-        """Return training history"""
-        return self.history.history if self.history else None
-
-# Example usage
-if __name__ == "__main__":
-    # Example configuration
-    config = {
-        "vocab_size": 10000,
-        "embedding_dim": 100,
-        "hidden_size": 128,
-        "output_size": 1,
-        "learning_rate": 0.001,
-        "loss": "binary_crossentropy",
-        "metrics": ["accuracy"],
-        "epochs": 10,
-        "batch_size": 32
-    }
-    
-    # Create model instance
-    rnn_model = RNNModel(config)
-    
-    # Build the model
-    model = rnn_model.build_model()
-    print("Model built successfully!")
-    print(model.summary())
+        train_model(parameters)
+    else:
+        print("No parameters provided. Using default values.")
+        default_params = {
+            'inputSize': 100,
+            'hiddenSize': 128,
+            'outputSize': 10,
+            'layers': 1,
+            'learningRate': 0.001,
+            'epochs': 10,
+            'batchSize': 32,
+            'architecture': 'SimpleRNN'
+        }
+        train_model(default_params)

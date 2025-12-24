@@ -1,5 +1,5 @@
 import { Box, Flex, Text, Button, Spacer, useColorMode, useColorModeValue, IconButton } from '@chakra-ui/react';
-import { FiSun, FiMoon, FiHome, FiLogIn, FiUserPlus, FiBarChart2 } from 'react-icons/fi';
+import { FiSun, FiMoon, FiHome, FiLogIn, FiUserPlus, FiBarChart2, FiLogOut } from 'react-icons/fi';
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 
@@ -15,13 +15,39 @@ export default function Navbar() {
     // Check if user is logged in
     const token = localStorage.getItem('token');
     if (token) {
-      // In a real app, you would decode the token or make an API call to get user info
-      // For this example, we'll just set a dummy user
-      setUser({ username: 'Demo User' });
+      // Fetch user profile to get updated info
+      fetch('/api/auth/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        setUser(data);
+      })
+      .catch(err => {
+        console.error('Error fetching user profile:', err);
+        // If token is invalid, remove it
+        localStorage.removeItem('token');
+        setUser(null);
+      });
     }
   }, []);
   
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Call logout API endpoint
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
+    
+    // Remove token and update state
     localStorage.removeItem('token');
     setUser(null);
     router.push('/');
@@ -65,14 +91,16 @@ export default function Navbar() {
             </>
           ) : (
             <>
+              <Text mr={4}>Credits: {user.credits}</Text>
               <Button
                 variant="ghost"
                 onClick={() => router.push('/dashboard')}
               >
-                Dashboard
+                {user.username}
               </Button>
               <Button
                 variant="ghost"
+                leftIcon={<FiLogOut />}
                 onClick={handleLogout}
               >
                 Logout

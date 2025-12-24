@@ -1,4 +1,4 @@
-import { Box, Heading, FormControl, FormLabel, Input, Button, VStack, Container, Text, Link, useColorModeValue } from '@chakra-ui/react';
+import { Box, Heading, FormControl, FormLabel, Input, Button, VStack, Container, Text, Link, useColorModeValue, useToast } from '@chakra-ui/react';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { FiUser, FiLock, FiLogIn } from 'react-icons/fi';
@@ -7,13 +7,17 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const toast = useToast();
   
   const bg = useColorModeValue('gray.50', 'gray.900');
   const cardBg = useColorModeValue('white', 'gray.800');
   
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError('');
     
     try {
       const response = await fetch('/api/auth/login', {
@@ -29,12 +33,35 @@ export default function Login() {
       if (response.ok) {
         // Store token in localStorage
         localStorage.setItem('token', data.token);
+        toast({
+          title: 'Login successful',
+          description: `Welcome back, ${data.user.username}!`,
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
         router.push('/dashboard');
       } else {
         setError(data.error);
+        toast({
+          title: 'Login failed',
+          description: data.error,
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
       }
     } catch (err) {
       setError('An error occurred. Please try again.');
+      toast({
+        title: 'Network error',
+        description: 'Please check your connection and try again.',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setLoading(false);
     }
   };
   
@@ -64,6 +91,7 @@ export default function Login() {
                   onChange={(e) => setEmail(e.target.value)}
                   leftIcon={<FiUser />}
                   placeholder="your@email.com"
+                  isDisabled={loading}
                 />
               </FormControl>
               
@@ -75,6 +103,7 @@ export default function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                   leftIcon={<FiLock />}
                   placeholder="••••••••"
+                  isDisabled={loading}
                 />
               </FormControl>
               
@@ -84,6 +113,7 @@ export default function Login() {
                 width="full"
                 size="lg"
                 rightIcon={<FiLogIn />}
+                isLoading={loading}
               >
                 Sign In
               </Button>

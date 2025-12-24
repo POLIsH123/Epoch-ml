@@ -1,129 +1,120 @@
+import sys
+import json
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
-from tensorflow.keras.optimizers import Adam
 import numpy as np
-import json
-import os
 
-class CNNModel:
-    def __init__(self, config):
-        self.config = config
-        self.model = None
-        self.history = None
-        
-    def build_model(self):
-        """Build the CNN model based on configuration"""
-        model = Sequential()
-        
-        # Add convolutional layers
-        for i, (filters, kernel_size) in enumerate(zip(
-            self.config.get('filters_list', [32, 64, 128]), 
-            self.config.get('kernel_sizes', [3, 3, 3]))):
-            
-            model.add(Conv2D(
-                filters=filters,
-                kernel_size=(kernel_size, kernel_size),
-                activation=self.config.get('activation', 'relu'),
-                input_shape=self.config.get('input_shape') if i == 0 else None
-            ))
-            
-            if self.config.get('use_maxpooling', True):
-                model.add(MaxPooling2D(pool_size=(2, 2)))
-            
-            if self.config.get('use_dropout', True):
-                model.add(Dropout(self.config.get('dropout_rate', 0.25)))
-        
-        # Add flatten layer
-        model.add(Flatten())
-        
-        # Add dense layers
-        for units in self.config.get('dense_units', [128, 64]):
-            model.add(Dense(
-                units=units,
-                activation=self.config.get('activation', 'relu')
-            ))
-            
-            if self.config.get('use_dropout', True):
-                model.add(Dropout(self.config.get('dropout_rate', 0.5)))
-        
-        # Add output layer
-        model.add(Dense(
-            units=self.config.get('output_size', 10),
-            activation=self.config.get('output_activation', 'softmax')
-        ))
-        
-        # Compile model
-        model.compile(
-            optimizer=Adam(learning_rate=self.config.get('learning_rate', 0.001)),
-            loss=self.config.get('loss', 'categorical_crossentropy'),
-            metrics=self.config.get('metrics', ['accuracy'])
-        )
-        
-        self.model = model
-        return model
+def create_cnn_model(input_size, hidden_size, output_size, layers, learning_rate):
+    """
+    Create a CNN model based on the specified parameters
+    """
+    model = Sequential()
     
-    def train(self, X_train, y_train, X_val=None, y_val=None, epochs=10, batch_size=32):
-        """Train the CNN model"""
-        if self.model is None:
-            self.build_model()
+    # Calculate dimensions for 2D input
+    # Assuming input_size is the flattened version of a square image
+    img_size = int(input_size ** 0.5)
+    
+    # First convolutional layer
+    model.add(Conv2D(hidden_size // 4, (3, 3), activation='relu', input_shape=(img_size, img_size, 1)))
+    model.add(MaxPooling2D(2, 2))
+    
+    # Additional layers based on the 'layers' parameter
+    for i in range(1, layers):
+        # Increase filters with each layer, but cap it
+        filters = min(hidden_size // 4 * (i + 1), hidden_size)
+        model.add(Conv2D(filters, (3, 3), activation='relu'))
+        model.add(MaxPooling2D(2, 2))
+    
+    # Flatten and dense layers
+    model.add(Flatten())
+    model.add(Dense(hidden_size, activation='relu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(output_size, activation='softmax'))
+    
+    return model
+
+def train_model(parameters):
+    """
+    Train the CNN model with the given parameters
+    """
+    # Extract parameters
+    input_size = parameters.get('inputSize', 784)  # Default to 28x28 image
+    hidden_size = parameters.get('hiddenSize', 128)
+    output_size = parameters.get('outputSize', 10)
+    layers = parameters.get('layers', 3)
+    learning_rate = parameters.get('learningRate', 0.001)
+    epochs = parameters.get('epochs', 10)
+    batch_size = parameters.get('batchSize', 32)
+    architecture = parameters.get('architecture', 'Conv2D')
+    
+    print(f"Creating CNN model with parameters: input_size={input_size}, hidden_size={hidden_size}, output_size={output_size}, layers={layers}")
+    
+    # Create the model
+    model = create_cnn_model(input_size, hidden_size, output_size, layers, learning_rate)
+    
+    # Compile the model
+    optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+    model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+    
+    print("Model created successfully")
+    print(model.summary())
+    
+    # Generate dummy data for training
+    # In a real scenario, you would load actual data
+    img_size = int(input_size ** 0.5)
+    X_train = np.random.random((1000, img_size, img_size, 1))
+    y_train = tf.keras.utils.to_categorical(np.random.randint(output_size, size=(1000, 1)), output_size)
+    
+    X_val = np.random.random((200, img_size, img_size, 1))
+    y_val = tf.keras.utils.to_categorical(np.random.randint(output_size, size=(200, 1)), output_size)
+    
+    print("Starting training...")
+    
+    # Training with progress reporting
+    for epoch in range(epochs):
+        # Report progress (0-100%)
+        progress = int((epoch / epochs) * 100)
+        print(f"PROGRESS:{progress}")
+        sys.stdout.flush()
         
-        # Prepare validation data
-        validation_data = None
-        if X_val is not None and y_val is not None:
-            validation_data = (X_val, y_val)
+        # Train for one epoch
+        history = model.fit(
+            X_train, y_train,
+            batch_size=batch_size,
+            epochs=1,
+            validation_data=(X_val, y_val),
+            verbose=0
+        )
+    
+    # Report final progress
+    print("PROGRESS:100")
+    sys.stdout.flush()
+    
+    print("Training completed successfully")
+    
+    # Save the model
+    model.save('trained_cnn_model.h5')
+    print("Model saved as 'trained_cnn_model.h5'")
+
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        # Get parameters from command line argument
+        params_str = sys.argv[1]
+        parameters = json.loads(params_str)
         
         # Train the model
-        self.history = self.model.fit(
-            X_train, y_train,
-            epochs=epochs,
-            batch_size=batch_size,
-            validation_data=validation_data,
-            verbose=1
-        )
-        
-        return self.history
-    
-    def predict(self, X):
-        """Make predictions with the trained model"""
-        if self.model is None:
-            raise ValueError("Model not built yet. Call build_model() first.")
-        return self.model.predict(X)
-    
-    def save_model(self, filepath):
-        """Save the trained model"""
-        if self.model is None:
-            raise ValueError("Model not built yet. Call build_model() first.")
-        self.model.save(filepath)
-    
-    def load_model(self, filepath):
-        """Load a pre-trained model"""
-        self.model = tf.keras.models.load_model(filepath)
-    
-    def get_training_history(self):
-        """Return training history"""
-        return self.history.history if self.history else None
-
-# Example usage
-if __name__ == "__main__":
-    # Example configuration
-    config = {
-        "input_shape": (28, 28, 1),  # For MNIST-like data
-        "filters_list": [32, 64, 128],
-        "kernel_sizes": [3, 3, 3],
-        "dense_units": [128, 64],
-        "output_size": 10,
-        "learning_rate": 0.001,
-        "loss": "categorical_crossentropy",
-        "metrics": ["accuracy"],
-        "epochs": 10,
-        "batch_size": 32
-    }
-    
-    # Create model instance
-    cnn_model = CNNModel(config)
-    
-    # Build the model
-    model = cnn_model.build_model()
-    print("Model built successfully!")
-    print(model.summary())
+        train_model(parameters)
+    else:
+        print("No parameters provided. Using default values.")
+        default_params = {
+            'inputSize': 784,  # 28x28 image
+            'hiddenSize': 128,
+            'outputSize': 10,
+            'layers': 3,
+            'learningRate': 0.001,
+            'epochs': 10,
+            'batchSize': 32,
+            'architecture': 'Conv2D'
+        }
+        train_model(default_params)

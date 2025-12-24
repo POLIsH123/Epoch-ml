@@ -82,7 +82,7 @@ let models = [
   },
   {
     _id: '5',
-    name: 'Deep Q-Network',
+    name: 'Deep Q-Network (DQN)',
     type: 'Reinforcement Learning',
     description: 'Deep Q-Learning network for decision making tasks',
     architecture: 'DQN',
@@ -90,10 +90,10 @@ let models = [
       inputSize: 4,
       hiddenSize: 64,
       outputSize: 2,
-      layers: 2,
       learningRate: 0.001,
-      epochs: 1000,
-      batchSize: 32
+      timesteps: 10000,
+      batchSize: 32,
+      environment: 'CartPole-v1'
     },
     isActive: true,
     createdAt: new Date(),
@@ -101,6 +101,82 @@ let models = [
   },
   {
     _id: '6',
+    name: 'Proximal Policy Optimization (PPO)',
+    type: 'Reinforcement Learning',
+    description: 'Policy gradient method for reinforcement learning',
+    architecture: 'PPO',
+    parameters: {
+      inputSize: 4,
+      hiddenSize: 64,
+      outputSize: 2,
+      learningRate: 0.0003,
+      timesteps: 10000,
+      batchSize: 64,
+      environment: 'CartPole-v1'
+    },
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  {
+    _id: '7',
+    name: 'Advantage Actor-Critic (A2C)',
+    type: 'Reinforcement Learning',
+    description: 'Synchronous implementation of Advantage Actor-Critic',
+    architecture: 'A2C',
+    parameters: {
+      inputSize: 4,
+      hiddenSize: 64,
+      outputSize: 2,
+      learningRate: 0.0007,
+      timesteps: 10000,
+      batchSize: 64,
+      environment: 'CartPole-v1'
+    },
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  {
+    _id: '8',
+    name: 'Soft Actor-Critic (SAC)',
+    type: 'Reinforcement Learning',
+    description: 'Off-policy maximum entropy deep reinforcement learning',
+    architecture: 'SAC',
+    parameters: {
+      inputSize: 4,
+      hiddenSize: 64,
+      outputSize: 2,
+      learningRate: 0.0003,
+      timesteps: 10000,
+      batchSize: 256,
+      environment: 'Pendulum-v1'
+    },
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  {
+    _id: '9',
+    name: 'Twin Delayed DDPG (TD3)',
+    type: 'Reinforcement Learning',
+    description: 'Actor-critic algorithm with twin critics',
+    architecture: 'TD3',
+    parameters: {
+      inputSize: 3,
+      hiddenSize: 256,
+      outputSize: 1,
+      learningRate: 0.001,
+      timesteps: 10000,
+      batchSize: 100,
+      environment: 'Pendulum-v1'
+    },
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  {
+    _id: '10',
     name: 'Random Forest Ensemble',
     type: 'Ensemble',
     description: 'Ensemble method combining multiple decision trees',
@@ -109,7 +185,6 @@ let models = [
       inputSize: 10,
       hiddenSize: 100,
       outputSize: 1,
-      layers: 1,
       learningRate: 0.01,
       epochs: 1,
       batchSize: 32

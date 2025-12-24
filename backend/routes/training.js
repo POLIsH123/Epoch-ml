@@ -1,11 +1,12 @@
 const express = require('express');
 const { validateTraining, handleValidationErrors } = require('../middleware/validation');
+const { spawn } = require('child_process');
+const path = require('path');
 
 const router = express.Router();
 
 // In-memory training sessions storage (for testing only)
 let trainingSessions = [];
-let users = []; // Reference to users from auth
 
 // Start a new training session
 router.post('/start', validateTraining, handleValidationErrors, (req, res) => {
@@ -30,8 +31,8 @@ router.post('/start', validateTraining, handleValidationErrors, (req, res) => {
     
     trainingSessions.push(trainingSession);
     
-    // Simulate training process
-    simulateTraining(trainingSession._id);
+    // Execute Python training script based on model type
+    executePythonTraining(trainingSession._id, modelId, parameters);
     
     res.status(201).json(trainingSession);
 
@@ -67,36 +68,75 @@ router.get('/', (req, res) => {
   }
 });
 
-// Simulate training process
-const simulateTraining = async (sessionId) => {
+// Execute Python training script
+const executePythonTraining = async (sessionId, modelId, parameters) => {
   try {
-    // Find the session and update its status
+    // Find the training session
+    const session = trainingSessions.find(s => s._id === sessionId);
+    if (!session) {
+      console.error('Session not found for ID:', sessionId);
+      return;
+    }
+
+    // Determine the Python script to run based on model type
+    let pythonScript;
+    if (modelId.includes('RNN') || modelId.includes('1')) {
+      pythonScript = path.join(__dirname, '../../models/rnn/rnn_model.py');
+    } else if (modelId.includes('CNN') || modelId.includes('2')) {
+      pythonScript = path.join(__dirname, '../../models/cnn/cnn_model.py');
+    } else if (modelId.includes('GPT') || modelId.includes('3')) {
+      pythonScript = path.join(__dirname, '../../models/gpt/gpt_model.py');
+    } else if (modelId.includes('Transformer') || modelId.includes('4')) {
+      pythonScript = path.join(__dirname, '../../models/gpt/gpt_model.py'); // Using GPT as transformer base
+    } else if (modelId.includes('Reinforcement') || modelId.includes('RL') || modelId.includes('5') || 
+               modelId.includes('6') || modelId.includes('7') || modelId.includes('8') || modelId.includes('9')) {
+      pythonScript = path.join(__dirname, '../../models/rnn/rl_model.py'); // Use the new RL model for all RL algorithms
+    } else if (modelId.includes('Ensemble') || modelId.includes('10')) {
+      // For ensemble models, we would need a specific ensemble script
+      pythonScript = path.join(__dirname, '../../models/base_model.py'); // Placeholder - would need specific ensemble model
+    } else {
+      // Default to base model if type is not recognized
+      pythonScript = path.join(__dirname, '../../models/base_model.py');
+    }
+
+    // Update session status to running
+    session.status = 'running';
+
+    // Spawn Python process
+    const pythonProcess = spawn('python', [pythonScript, JSON.stringify(parameters)]);
+
+    pythonProcess.stdout.on('data', (data) => {
+      console.log(`Python output: ${data}`);
+      // Parse progress updates from Python script
+      const output = data.toString();
+      if (output.includes('PROGRESS:')) {
+        const progressMatch = output.match(/PROGRESS:(\d+)/);
+        if (progressMatch) {
+          const progress = parseInt(progressMatch[1]);
+          session.progress = progress;
+        }
+      }
+    });
+
+    pythonProcess.stderr.on('data', (data) => {
+      console.error(`Python error: ${data}`);
+    });
+
+    pythonProcess.on('close', (code) => {
+      console.log(`Python process exited with code ${code}`);
+      if (code === 0) {
+        session.status = 'completed';
+      } else {
+        session.status = 'failed';
+      }
+      session.completedAt = new Date();
+    });
+
+  } catch (error) {
+    console.error('Error executing Python training:', error);
     const session = trainingSessions.find(s => s._id === sessionId);
     if (session) {
-      session.status = 'running';
-    }
-    
-    // Simulate training progress
-    for (let progress = 10; progress <= 100; progress += 10) {
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
-      const progressSession = trainingSessions.find(s => s._id === sessionId);
-      if (progressSession) {
-        progressSession.progress = progress;
-      }
-    }
-    
-    // Mark as completed
-    const completedSession = trainingSessions.find(s => s._id === sessionId);
-    if (completedSession) {
-      completedSession.status = 'completed';
-      completedSession.completedAt = new Date();
-    }
-    
-  } catch (error) {
-    console.error('Training simulation error:', error);
-    const errorSession = trainingSessions.find(s => s._id === sessionId);
-    if (errorSession) {
-      errorSession.status = 'failed';
+      session.status = 'failed';
     }
   }
 };

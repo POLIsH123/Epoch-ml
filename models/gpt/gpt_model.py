@@ -1,184 +1,133 @@
+import sys
+import json
 import tensorflow as tf
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, Dense, Embedding, MultiHeadAttention, LayerNormalization, Dropout
-from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.layers import Input, Dense, MultiHeadAttention, LayerNormalization, Dropout, Embedding, GlobalAveragePooling1D
 import numpy as np
-import json
-import os
 
-class GPTModel:
-    def __init__(self, config):
-        self.config = config
-        self.model = None
-        self.history = None
+def create_transformer_block(embed_dim, num_heads, ff_dim, rate=0.1):
+    """
+    Create a transformer block with multi-head attention and feed-forward layers
+    """
+    inputs = Input(shape=(None,))
+    
+    # Multi-head attention
+    attention_output = MultiHeadAttention(num_heads=num_heads, key_dim=embed_dim)(inputs, inputs)
+    attention_output = Dropout(rate)(attention_output)
+    out1 = LayerNormalization(epsilon=1e-6)(inputs + attention_output)
+    
+    # Feed-forward network
+    ffn_output = Dense(ff_dim, activation="relu")(out1)
+    ffn_output = Dropout(rate)(ffn_output)
+    out2 = LayerNormalization(epsilon=1e-6)(out1 + ffn_output)
+    
+    return Model(inputs, out2)
+
+def create_gpt_model(input_size, hidden_size, output_size, layers, num_heads=8):
+    """
+    Create a GPT model based on the specified parameters
+    """
+    inputs = Input(shape=(input_size,))
+    
+    # Embedding layer
+    embedding = Embedding(input_size, hidden_size)(inputs)
+    
+    # Transformer blocks
+    x = embedding
+    for _ in range(layers):
+        transformer_block = create_transformer_block(hidden_size, num_heads, hidden_size * 4)
+        x = transformer_block(x)
+    
+    # Global average pooling to reduce dimensions
+    x = GlobalAveragePooling1D()(x)
+    
+    # Output layer
+    outputs = Dense(output_size, activation='softmax')(x)
+    
+    model = Model(inputs, outputs)
+    return model
+
+def train_model(parameters):
+    """
+    Train the GPT model with the given parameters
+    """
+    # Extract parameters
+    input_size = parameters.get('inputSize', 512)
+    hidden_size = parameters.get('hiddenSize', 768)
+    output_size = parameters.get('outputSize', 30522)  # Size of vocab for BERT-like models
+    layers = parameters.get('layers', 12)
+    num_heads = min(12, hidden_size // 64)  # Calculate appropriate number of heads
+    learning_rate = parameters.get('learningRate', 0.00002)
+    epochs = parameters.get('epochs', 3)
+    batch_size = parameters.get('batchSize', 16)
+    architecture = parameters.get('architecture', 'Transformer')
+    
+    print(f"Creating GPT model with parameters: input_size={input_size}, hidden_size={hidden_size}, output_size={output_size}, layers={layers}")
+    
+    # Create the model
+    model = create_gpt_model(input_size, hidden_size, output_size, layers, num_heads)
+    
+    # Compile the model
+    optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+    model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+    
+    print("Model created successfully")
+    print(model.summary())
+    
+    # Generate dummy data for training
+    # In a real scenario, you would load actual text data
+    X_train = np.random.randint(0, input_size, size=(100, input_size))
+    y_train = np.random.randint(0, output_size, size=(100,))
+    
+    X_val = np.random.randint(0, input_size, size=(20, input_size))
+    y_val = np.random.randint(0, output_size, size=(20,))
+    
+    print("Starting training...")
+    
+    # Training with progress reporting
+    for epoch in range(epochs):
+        # Report progress (0-100%)
+        progress = int((epoch / epochs) * 100)
+        print(f"PROGRESS:{progress}")
+        sys.stdout.flush()
         
-    def build_model(self):
-        """Build the GPT model based on configuration"""
-        # Input layer
-        input_ids = Input(shape=(self.config.get('max_length', 128),), name='input_ids')
-        
-        # Embedding layer
-        embedding_layer = Embedding(
-            input_dim=self.config.get('vocab_size', 50257),
-            output_dim=self.config.get('embedding_dim', 768),
-            name='token_embedding'
+        # Train for one epoch
+        history = model.fit(
+            X_train, y_train,
+            batch_size=batch_size,
+            epochs=1,
+            validation_data=(X_val, y_val),
+            verbose=0
         )
-        embeddings = embedding_layer(input_ids)
-        
-        # Add positional encoding
-        position_encoding = self._add_positional_encoding(embeddings)
-        x = position_encoding
-        
-        # Add transformer blocks
-        for i in range(self.config.get('num_layers', 12)):
-            x = self._transformer_block(
-                x, 
-                self.config.get('num_heads', 12), 
-                self.config.get('embedding_dim', 768),
-                self.config.get('ff_dim', 3072),
-                name=f'transformer_block_{i}'
-            )
-        
-        # Add final layer normalization
-        x = LayerNormalization()(x)
-        
-        # Output layer
-        outputs = Dense(
-            self.config.get('vocab_size', 50257),
-            activation='softmax',
-            name='output'
-        )(x)
-        
-        # Create model
-        model = Model(inputs=input_ids, outputs=outputs, name='GPTModel')
-        
-        # Compile model
-        model.compile(
-            optimizer=Adam(learning_rate=self.config.get('learning_rate', 5e-5)),
-            loss=self.config.get('loss', 'sparse_categorical_crossentropy'),
-            metrics=self.config.get('metrics', ['accuracy'])
-        )
-        
-        self.model = model
-        return model
     
-    def _add_positional_encoding(self, embeddings):
-        """Add positional encoding to embeddings"""
-        seq_length = tf.shape(embeddings)[1]
-        embedding_dim = tf.shape(embeddings)[2]
-        
-        # Create position indices
-        positions = tf.range(start=0, limit=seq_length, delta=1)
-        positions = tf.cast(positions, tf.float32)
-        
-        # Create positional encoding
-        pos_encoding = tf.zeros((seq_length, embedding_dim))
-        
-        # Apply positional encoding
-        position_indices = tf.expand_dims(positions, axis=1)  # (seq_length, 1)
-        embedding_indices = tf.range(start=0, limit=embedding_dim, delta=1, dtype=tf.float32)
-        embedding_indices = tf.expand_dims(embedding_indices, axis=0)  # (1, embedding_dim)
-        
-        # Calculate angle rates
-        angle_rates = 1 / tf.pow(10000.0, (2 * (embedding_indices // 2)) / tf.cast(embedding_dim, tf.float32))
-        
-        # Calculate angles
-        angles = position_indices * angle_rates
-        
-        # Apply sin to even indices and cos to odd indices
-        angles = tf.where(tf.math.floormod(tf.cast(tf.range(embedding_dim), tf.int32), 2) == 0, 
-                          tf.math.sin(angles), tf.math.cos(angles))
-        
-        # Add positional encoding to embeddings
-        pos_encoding = tf.expand_dims(angles, axis=0)  # (1, seq_length, embedding_dim)
-        pos_encoding = tf.cast(pos_encoding, embeddings.dtype)
-        
-        return embeddings + pos_encoding
+    # Report final progress
+    print("PROGRESS:100")
+    sys.stdout.flush()
     
-    def _transformer_block(self, inputs, num_heads, embedding_dim, ff_dim, name):
-        """Create a transformer block"""
-        # Multi-head attention
-        attention_output = MultiHeadAttention(
-            num_heads=num_heads,
-            key_dim=embedding_dim // num_heads,
-            dropout=self.config.get('dropout_rate', 0.1)
-        )(inputs, inputs)
-        
-        # Add & Norm
-        attention_output = LayerNormalization()(inputs + attention_output)
-        
-        # Feed forward
-        ffn_output = Dense(ff_dim, activation='relu')(attention_output)
-        ffn_output = Dropout(self.config.get('dropout_rate', 0.1))(ffn_output)
-        ffn_output = Dense(embedding_dim)(ffn_output)
-        
-        # Add & Norm
-        output = LayerNormalization()(attention_output + ffn_output)
-        
-        return output
+    print("Training completed successfully")
     
-    def train(self, X_train, y_train, X_val=None, y_val=None, epochs=10, batch_size=32):
-        """Train the GPT model"""
-        if self.model is None:
-            self.build_model()
-        
-        # Prepare validation data
-        validation_data = None
-        if X_val is not None and y_val is not None:
-            validation_data = (X_val, y_val)
+    # Save the model
+    model.save('trained_gpt_model.h5')
+    print("Model saved as 'trained_gpt_model.h5'")
+
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        # Get parameters from command line argument
+        params_str = sys.argv[1]
+        parameters = json.loads(params_str)
         
         # Train the model
-        self.history = self.model.fit(
-            X_train, y_train,
-            epochs=epochs,
-            batch_size=batch_size,
-            validation_data=validation_data,
-            verbose=1
-        )
-        
-        return self.history
-    
-    def predict(self, X):
-        """Make predictions with the trained model"""
-        if self.model is None:
-            raise ValueError("Model not built yet. Call build_model() first.")
-        return self.model.predict(X)
-    
-    def save_model(self, filepath):
-        """Save the trained model"""
-        if self.model is None:
-            raise ValueError("Model not built yet. Call build_model() first.")
-        self.model.save(filepath)
-    
-    def load_model(self, filepath):
-        """Load a pre-trained model"""
-        self.model = tf.keras.models.load_model(filepath)
-    
-    def get_training_history(self):
-        """Return training history"""
-        return self.history.history if self.history else None
-
-# Example usage
-if __name__ == "__main__":
-    # Example configuration
-    config = {
-        "vocab_size": 50257,
-        "max_length": 128,
-        "embedding_dim": 768,
-        "num_layers": 12,
-        "num_heads": 12,
-        "ff_dim": 3072,
-        "learning_rate": 5e-5,
-        "loss": "sparse_categorical_crossentropy",
-        "metrics": ["accuracy"],
-        "epochs": 3,
-        "batch_size": 8
-    }
-    
-    # Create model instance
-    gpt_model = GPTModel(config)
-    
-    # Build the model
-    model = gpt_model.build_model()
-    print("Model built successfully!")
-    print(model.summary())
+        train_model(parameters)
+    else:
+        print("No parameters provided. Using default values.")
+        default_params = {
+            'inputSize': 512,
+            'hiddenSize': 768,
+            'outputSize': 30522,
+            'layers': 12,
+            'learningRate': 0.00002,
+            'epochs': 3,
+            'batchSize': 16,
+            'architecture': 'Transformer'
+        }
+        train_model(default_params)

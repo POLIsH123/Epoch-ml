@@ -1,4 +1,4 @@
-import { Box, Heading, FormControl, FormLabel, Input, Button, VStack, Container, Text, Link, useColorModeValue } from '@chakra-ui/react';
+import { Box, Heading, FormControl, FormLabel, Input, Button, VStack, Container, Text, Link, useColorModeValue, useToast } from '@chakra-ui/react';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { FiUser, FiMail, FiLock, FiUserPlus } from 'react-icons/fi';
@@ -8,13 +8,17 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const toast = useToast();
   
   const bg = useColorModeValue('gray.50', 'gray.900');
   const cardBg = useColorModeValue('white', 'gray.800');
   
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError('');
     
     try {
       const response = await fetch('/api/auth/register', {
@@ -30,12 +34,35 @@ export default function Register() {
       if (response.ok) {
         // Store token in localStorage
         localStorage.setItem('token', data.token);
+        toast({
+          title: 'Registration successful',
+          description: `Welcome to Epoch-ml, ${data.user.username}!`,
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
         router.push('/dashboard');
       } else {
         setError(data.error);
+        toast({
+          title: 'Registration failed',
+          description: data.error,
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
       }
     } catch (err) {
       setError('An error occurred. Please try again.');
+      toast({
+        title: 'Network error',
+        description: 'Please check your connection and try again.',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setLoading(false);
     }
   };
   
@@ -65,6 +92,7 @@ export default function Register() {
                   onChange={(e) => setUsername(e.target.value)}
                   leftIcon={<FiUser />}
                   placeholder="john_doe"
+                  isDisabled={loading}
                 />
               </FormControl>
               
@@ -76,6 +104,7 @@ export default function Register() {
                   onChange={(e) => setEmail(e.target.value)}
                   leftIcon={<FiMail />}
                   placeholder="your@email.com"
+                  isDisabled={loading}
                 />
               </FormControl>
               
@@ -87,6 +116,7 @@ export default function Register() {
                   onChange={(e) => setPassword(e.target.value)}
                   leftIcon={<FiLock />}
                   placeholder="••••••••"
+                  isDisabled={loading}
                 />
               </FormControl>
               
@@ -96,6 +126,7 @@ export default function Register() {
                 width="full"
                 size="lg"
                 rightIcon={<FiUserPlus />}
+                isLoading={loading}
               >
                 Create Account
               </Button>

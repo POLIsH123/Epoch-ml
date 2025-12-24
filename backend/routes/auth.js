@@ -31,7 +31,8 @@ router.post('/register', validateRegistration, handleValidationErrors, async (re
       password: hashedPassword,
       credits: 100, // Starting credits
       role: 'user',
-      createdAt: new Date()
+      createdAt: new Date(),
+      lastLogin: null
     };
     
     users.push(user);
@@ -42,7 +43,7 @@ router.post('/register', validateRegistration, handleValidationErrors, async (re
     res.status(201).json({
       message: 'User created successfully',
       token,
-      user: { id: user.id, username: user.username, email: user.email }
+      user: { id: user.id, username: user.username, email: user.email, credits: user.credits }
     });
 
   } catch (error) {
@@ -67,13 +68,16 @@ router.post('/login', validateLogin, handleValidationErrors, async (req, res) =>
       return res.status(400).json({ error: 'Invalid credentials' });
     }
     
+    // Update last login time
+    user.lastLogin = new Date();
+    
     // Generate JWT token
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '24h' });
     
     res.json({
       message: 'Login successful',
       token,
-      user: { id: user.id, username: user.username, email: user.email }
+      user: { id: user.id, username: user.username, email: user.email, credits: user.credits }
     });
 
   } catch (error) {
@@ -99,10 +103,24 @@ router.get('/profile', (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
     
-    res.json({ id: user.id, username: user.username, email: user.email, credits: user.credits });
+    res.json({ 
+      id: user.id, 
+      username: user.username, 
+      email: user.email, 
+      credits: user.credits,
+      role: user.role,
+      createdAt: user.createdAt,
+      lastLogin: user.lastLogin
+    });
   } catch (error) {
     res.status(403).json({ error: 'Invalid or expired token' });
   }
+});
+
+// Logout user (client-side token removal)
+router.post('/logout', (req, res) => {
+  // In a real application, you might want to add the token to a blacklist
+  res.json({ message: 'Logged out successfully' });
 });
 
 module.exports = router;

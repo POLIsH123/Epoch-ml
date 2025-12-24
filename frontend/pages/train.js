@@ -1,26 +1,26 @@
-import { Box, Heading, Text, Button, VStack, Container, FormControl, FormLabel, Input, Select, NumberInput, NumberInputField, NumberInputStepper, NumberInputIncrementStepper, NumberInputDecrementStepper, Alert, AlertIcon, AlertTitle, AlertDescription, Progress, useToast } from '@chakra-ui/react';
+import { Box, Heading, Text, Button, VStack, Container, Select, FormControl, FormLabel, Input, Card, CardHeader, CardBody, Flex, Icon, useColorModeValue, useToast, Grid, GridItem, NumberInput, NumberInputField, NumberInputStepper, NumberIncrementStepper, NumberDecrementStepper } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import ModelExporter from '../components/ModelExporter';
+import { FiCpu, FiBarChart2, FiZap, FiDollarSign, FiDatabase, FiSliders } from 'react-icons/fi';
+import { motion } from 'framer-motion';
 
-export default function Train() {
-  const [modelId, setModelId] = useState('');
-  const [modelName, setModelName] = useState('');
-  const [modelType, setModelType] = useState('');
+export default function TrainModel() {
+  const [user, setUser] = useState(null);
+  const [models, setModels] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [trainingParams, setTrainingParams] = useState({
-    epochs: 10,
+  const [selectedModel, setSelectedModel] = useState('');
+  const [parameters, setParameters] = useState({
     learningRate: 0.001,
+    epochs: 10,
     batchSize: 32,
-    inputSize: 100,
-    hiddenSize: 128,
-    outputSize: 10
+    timesteps: 10000, // For RL models
+    environment: 'CartPole-v1' // For RL models
   });
-  const [trainingStatus, setTrainingStatus] = useState(null);
-  const [progress, setProgress] = useState(0);
-  const [isTraining, setIsTraining] = useState(false);
   const router = useRouter();
   const toast = useToast();
+  
+  const bg = useColorModeValue('gray.50', 'gray.900');
+  const cardBg = useColorModeValue('white', 'gray.800');
   
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -29,260 +29,300 @@ export default function Train() {
       return;
     }
     
-    // Get model details if modelId is provided in URL
-    if (router.query.modelId) {
-      setModelId(router.query.modelId);
+    // Get user profile
+    fetch('/api/auth/profile', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+    .then(res => res.json())
+    .then(userData => {
+      setUser(userData);
       
-      fetch(`/api/models/${router.query.modelId}`, {
+      // Get available models
+      return fetch('/api/models', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
-      })
-      .then(res => res.json())
-      .then(data => {
-        setModelName(data.name);
-        setModelType(data.type);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        toast({
-          title: 'Error',
-          description: 'Failed to load model details',
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
-        router.push('/models');
       });
-    } else {
+    })
+    .then(res => res.json())
+    .then(data => {
+      setModels(data);
       setLoading(false);
-    }
-  }, [router, toast]);
+    })
+    .catch(err => {
+      console.error(err);
+      localStorage.removeItem('token');
+      router.push('/login');
+    });
+  }, [router]);
   
-  const handleParamChange = (param, value) => {
-    setTrainingParams(prev => ({
+  const handleParameterChange = (paramName, value) => {
+    setParameters(prev => ({
       ...prev,
-      [param]: value
+      [paramName]: value
     }));
   };
   
-  const handleStartTraining = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      router.push('/login');
-      return;
-    }
-    
-    setIsTraining(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     
     try {
       const response = await fetch('/api/training/start', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
-          modelId,
-          parameters: trainingParams
+          modelId: selectedModel,
+          parameters
         })
       });
       
       const data = await response.json();
       
       if (response.ok) {
-        setTrainingStatus(data);
         toast({
-          title: 'Training Started',
-          description: 'Your model training has started successfully',
+          title: 'Training started successfully',
+          description: 'Your model is now training in the background',
           status: 'success',
           duration: 5000,
           isClosable: true,
         });
-        
-        // Simulate progress updates
-        simulateProgress();
+        router.push('/training-history');
       } else {
         toast({
-          title: 'Error',
-          description: data.error || 'Failed to start training',
+          title: 'Training failed',
+          description: data.error,
           status: 'error',
           duration: 5000,
           isClosable: true,
         });
-        setIsTraining(false);
       }
     } catch (err) {
-      console.error(err);
       toast({
-        title: 'Error',
-        description: 'Failed to start training',
+        title: 'Network error',
+        description: 'Please check your connection and try again',
         status: 'error',
         duration: 5000,
         isClosable: true,
       });
-      setIsTraining(false);
     }
   };
   
-  const simulateProgress = () => {
-    let currentProgress = 0;
-    const interval = setInterval(() => {
-      currentProgress += 10;
-      setProgress(currentProgress);
-      
-      if (currentProgress >= 100) {
-        clearInterval(interval);
-        setIsTraining(false);
-        toast({
-          title: 'Training Completed',
-          description: 'Your model training has completed successfully',
-          status: 'success',
-          duration: 5000,
-          isClosable: true,
-        });
-      }
-    }, 2000);
-  };
-  
   if (loading) {
-    return <Text>Loading...</Text>;
+    return (
+      <Flex minH="100vh" align="center" justify="center" bg={bg}>
+        <Text>Loading...</Text>
+      </Flex>
+    );
   }
   
   return (
-    <Container maxW="container.lg" py={8}>
-      <VStack spacing={8} align="stretch">
-        <Heading as="h1" size="lg">Train Model</Heading>
-        
-        {modelId && (
-          <Alert status="info">
-            <AlertIcon />
-            <AlertTitle mr={2}>Model Selected:</AlertTitle>
-            <AlertDescription>{modelName} ({modelType})</AlertDescription>
-          </Alert>
-        )}
-        
-        <Box p={6} shadow="md" borderWidth="1px" borderRadius="md">
-          <VStack spacing={6} align="stretch">
-            <Heading as="h3" size="md">Training Parameters</Heading>
-            
-            <FormControl id="epochs">
-              <FormLabel>Epochs (1-1000)</FormLabel>
-              <NumberInput 
-                min={1} 
-                max={1000}
-                value={trainingParams.epochs}
-                onChange={(value) => handleParamChange('epochs', parseInt(value))}
-              >
-                <NumberInputField />
-                <NumberInputStepper>
-                  <NumberInputIncrementStepper />
-                  <NumberInputDecrementStepper />
-                </NumberInputStepper>
-              </NumberInput>
-            </FormControl>
-            
-            <FormControl id="learningRate">
-              <FormLabel>Learning Rate</FormLabel>
-              <Input 
-                type="number" 
-                step="0.001"
-                value={trainingParams.learningRate}
-                onChange={(e) => handleParamChange('learningRate', parseFloat(e.target.value))}
-              />
-            </FormControl>
-            
-            <FormControl id="batchSize">
-              <FormLabel>Batch Size</FormLabel>
-              <NumberInput 
-                min={1}
-                value={trainingParams.batchSize}
-                onChange={(value) => handleParamChange('batchSize', parseInt(value))}
-              >
-                <NumberInputField />
-                <NumberInputStepper>
-                  <NumberInputIncrementStepper />
-                  <NumberInputDecrementStepper />
-                </NumberInputStepper>
-              </NumberInput>
-            </FormControl>
-            
-            <FormControl id="inputSize">
-              <FormLabel>Input Size</FormLabel>
-              <NumberInput 
-                min={1}
-                value={trainingParams.inputSize}
-                onChange={(value) => handleParamChange('inputSize', parseInt(value))}
-              >
-                <NumberInputField />
-                <NumberInputStepper>
-                  <NumberInputIncrementStepper />
-                  <NumberInputDecrementStepper />
-                </NumberInputStepper>
-              </NumberInput>
-            </FormControl>
-            
-            <FormControl id="hiddenSize">
-              <FormLabel>Hidden Size</FormLabel>
-              <NumberInput 
-                min={1}
-                value={trainingParams.hiddenSize}
-                onChange={(value) => handleParamChange('hiddenSize', parseInt(value))}
-              >
-                <NumberInputField />
-                <NumberInputStepper>
-                  <NumberInputIncrementStepper />
-                  <NumberInputDecrementStepper />
-                </NumberInputStepper>
-              </NumberInput>
-            </FormControl>
-            
-            <FormControl id="outputSize">
-              <FormLabel>Output Size</FormLabel>
-              <NumberInput 
-                min={1}
-                value={trainingParams.outputSize}
-                onChange={(value) => handleParamChange('outputSize', parseInt(value))}
-              >
-                <NumberInputField />
-                <NumberInputStepper>
-                  <NumberInputIncrementStepper />
-                  <NumberInputDecrementStepper />
-                </NumberInputStepper>
-              </NumberInput>
-            </FormControl>
-            
-            <Button 
-              colorScheme="teal" 
-              size="lg" 
-              onClick={handleStartTraining}
-              isLoading={isTraining}
-              loadingText="Starting Training..."
+    <Box minH="100vh" bg={bg} py={8}>
+      <Container maxW="container.xl">
+        <VStack spacing={8} align="stretch">
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Flex justify="space-between" align="center">
+              <VStack align="start" spacing={2}>
+                <Heading as="h1" size="lg">Train New Model</Heading>
+                <Text color="gray.500">Configure and start training your machine learning model</Text>
+              </VStack>
+              <Flex align="center" gap={4}>
+                <Box p={3} bg="teal.100" borderRadius="md">
+                  <Flex align="center" gap={2}>
+                    <Icon as={FiDollarSign} color="teal.500" />
+                    <Text fontWeight="bold">{user?.credits || 100} credits</Text>
+                  </Flex>
+                </Box>
+              </Flex>
+            </Flex>
+          </motion.div>
+          
+          {/* Training Form */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            <Card bg={cardBg}>
+              <CardHeader>
+                <Flex align="center">
+                  <Icon as={FiCpu} w={6} h={6} color="teal.500" mr={3} />
+                  <Heading as="h3" size="md">Model Configuration</Heading>
+                </Flex>
+              </CardHeader>
+              <CardBody>
+                <form onSubmit={handleSubmit}>
+                  <VStack spacing={6} align="stretch">
+                    <FormControl id="model" isRequired>
+                      <FormLabel>Model Type</FormLabel>
+                      <Select 
+                        value={selectedModel} 
+                        onChange={(e) => setSelectedModel(e.target.value)}
+                        placeholder="Select a model"
+                      >
+                        {models.map(model => (
+                          <option key={model._id} value={model._id}>
+                            {model.name} ({model.type})
+                          </option>
+                        ))}
+                      </Select>
+                    </FormControl>
+                    
+                    {/* Dynamic Parameter Controls */}
+                    {selectedModel && (
+                      <VStack spacing={4} align="stretch">
+                        <Heading as="h4" size="sm">Training Parameters</Heading>
+                        
+                        {/* Learning Rate */}
+                        <FormControl id="learningRate">
+                          <FormLabel>Learning Rate</FormLabel>
+                          <NumberInput 
+                            value={parameters.learningRate} 
+                            onChange={(value) => handleParameterChange('learningRate', parseFloat(value))}
+                            min={0.00001}
+                            max={1}
+                            step={0.0001}
+                          >
+                            <NumberInputField />
+                            <NumberInputStepper>
+                              <NumberIncrementStepper />
+                              <NumberDecrementStepper />
+                            </NumberInputStepper>
+                          </NumberInput>
+                        </FormControl>
+                        
+                        {/* For non-RL models */}
+                        {!(selectedModel.includes('5') || selectedModel.includes('6') || selectedModel.includes('7') || 
+                           selectedModel.includes('8') || selectedModel.includes('9')) && (
+                          <>
+                            <FormControl id="epochs">
+                              <FormLabel>Epochs</FormLabel>
+                              <NumberInput 
+                                value={parameters.epochs} 
+                                onChange={(value) => handleParameterChange('epochs', parseInt(value))}
+                                min={1}
+                                max={1000}
+                              >
+                                <NumberInputField />
+                                <NumberInputStepper>
+                                  <NumberIncrementStepper />
+                                  <NumberDecrementStepper />
+                                </NumberInputStepper>
+                              </NumberInput>
+                            </FormControl>
+                            
+                            <FormControl id="batchSize">
+                              <FormLabel>Batch Size</FormLabel>
+                              <NumberInput 
+                                value={parameters.batchSize} 
+                                onChange={(value) => handleParameterChange('batchSize', parseInt(value))}
+                                min={1}
+                                max={512}
+                              >
+                                <NumberInputField />
+                                <NumberInputStepper>
+                                  <NumberIncrementStepper />
+                                  <NumberDecrementStepper />
+                                </NumberInputStepper>
+                              </NumberInput>
+                            </FormControl>
+                          </>
+                        )}
+                        
+                        {/* For RL models */}
+                        {(selectedModel.includes('5') || selectedModel.includes('6') || selectedModel.includes('7') || 
+                          selectedModel.includes('8') || selectedModel.includes('9')) && (
+                          <>
+                            <FormControl id="timesteps">
+                              <FormLabel>Timesteps</FormLabel>
+                              <NumberInput 
+                                value={parameters.timesteps} 
+                                onChange={(value) => handleParameterChange('timesteps', parseInt(value))}
+                                min={100}
+                                max={100000}
+                              >
+                                <NumberInputField />
+                                <NumberInputStepper>
+                                  <NumberIncrementStepper />
+                                  <NumberDecrementStepper />
+                                </NumberInputStepper>
+                              </NumberInput>
+                            </FormControl>
+                            
+                            <FormControl id="environment">
+                              <FormLabel>Environment</FormLabel>
+                              <Select 
+                                value={parameters.environment} 
+                                onChange={(e) => handleParameterChange('environment', e.target.value)}
+                              >
+                                <option value="CartPole-v1">CartPole-v1 (Simple)</option>
+                                <option value="Pendulum-v1">Pendulum-v1 (Continuous)</option>
+                                <option value="LunarLander-v2">LunarLander-v2 (Complex)</option>
+                              </Select>
+                            </FormControl>
+                          </>
+                        )}
+                      </VStack>
+                    )}
+                    
+                    <Button 
+                      type="submit" 
+                      colorScheme="teal" 
+                      size="lg"
+                      leftIcon={<FiZap />}
+                      isDisabled={!selectedModel}
+                    >
+                      Start Training
+                    </Button>
+                  </VStack>
+                </form>
+              </CardBody>
+            </Card>
+          </motion.div>
+          
+          {/* Model Info */}
+          {selectedModel && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
             >
-              Start Training
-            </Button>
-          </VStack>
-        </Box>
-        
-        {isTraining && (
-          <Box>
-            <Text mb={2}>Training Progress: {progress}%</Text>
-            <Progress value={progress} size="md" colorScheme="teal" />
-          </Box>
-        )}
-        
-        {!isTraining && trainingStatus && (
-          <Box>
-            <Heading as="h3" size="md" mb={4}>Training Completed</Heading>
-            <Text mb={4}>Your model has been successfully trained. You can now export it for use.</Text>
-            <ModelExporter 
-              modelId={trainingStatus.modelId} 
-              modelName={modelName} 
-            />
-          </Box>
-        )}
-      </VStack>
-    </Container>
+              <Card bg={cardBg}>
+                <CardHeader>
+                  <Flex align="center">
+                    <Icon as={FiBarChart2} w={6} h={6} color="blue.500" mr={3} />
+                    <Heading as="h3" size="md">Model Information</Heading>
+                  </Flex>
+                </CardHeader>
+                <CardBody>
+                  {(() => {
+                    const model = models.find(m => m._id === selectedModel);
+                    if (!model) return null;
+                    
+                    return (
+                      <VStack align="start" spacing={3}>
+                        <Text><strong>Name:</strong> {model.name}</Text>
+                        <Text><strong>Type:</strong> {model.type}</Text>
+                        <Text><strong>Architecture:</strong> {model.architecture}</Text>
+                        <Text><strong>Description:</strong> {model.description}</Text>
+                      </VStack>
+                    );
+                  })()}
+                </CardBody>
+              </Card>
+            </motion.div>
+          )}
+        </VStack>
+      </Container>
+    </Box>
   );
 }
