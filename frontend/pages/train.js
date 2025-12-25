@@ -1,7 +1,7 @@
 import { Box, Heading, Text, Button, VStack, Container, Select, FormControl, FormLabel, Input, Card, CardHeader, CardBody, Flex, Icon, useColorModeValue, useToast, Grid, GridItem, NumberInput, NumberInputField, NumberInputStepper, NumberIncrementStepper, NumberDecrementStepper } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { FiCpu, FiBarChart2, FiZap, FiDollarSign, FiDatabase, FiSliders, FiUpload, FiTarget } from 'react-icons/fi';
+import { FiCpu, FiBarChart2, FiZap, FiDollarSign, FiDatabase, FiSliders, FiUpload, FiTarget, FiPlus } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import Sidebar from '../components/Sidebar';
 
@@ -13,6 +13,11 @@ export default function TrainModel() {
   const [selectedModel, setSelectedModel] = useState('');
   const [selectedDataset, setSelectedDataset] = useState('');
   const [targetColumn, setTargetColumn] = useState('');
+  const [newModel, setNewModel] = useState({
+    name: '',
+    type: '',
+    description: ''
+  });
   const [parameters, setParameters] = useState({
     learningRate: 0.001,
     epochs: 10,
@@ -89,7 +94,65 @@ export default function TrainModel() {
     }));
   };
   
-  const handleSubmit = async (e) => {
+  const handleCreateModel = async () => {
+    if (!newModel.name || !newModel.type) {
+      toast({
+        title: 'Model name and type required',
+        description: 'Please enter a name and select a type for your model',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5001/api/models', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(newModel)
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        // Add the new model to the list
+        setModels(prev => [...prev, data]);
+        setSelectedModel(data._id);
+        setNewModel({ name: '', type: '', description: '' });
+        
+        toast({
+          title: 'Model created',
+          description: `Model "${newModel.name}" has been created successfully`,
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+      } else {
+        toast({
+          title: 'Error creating model',
+          description: data.error || 'Could not create model',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    } catch (err) {
+      toast({
+        title: 'Network error',
+        description: 'Please check your connection and try again',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+  
+  const handleTrainModel = async (e) => {
     e.preventDefault();
     
     if (!selectedModel) {
@@ -199,8 +262,8 @@ export default function TrainModel() {
           >
             <Flex justify="space-between" align="center">
               <VStack align="start" spacing={2}>
-                <Heading as="h1" size="lg">Train New Model</Heading>
-                <Text color="gray.500">Configure and start training your machine learning model</Text>
+                <Heading as="h1" size="lg">Train Model</Heading>
+                <Text color="gray.500">Create and train your machine learning model</Text>
               </VStack>
               <Flex align="center" gap={4}>
                 <Box p={3} bg="teal.100" borderRadius="md">
@@ -213,7 +276,7 @@ export default function TrainModel() {
             </Flex>
           </motion.div>
           
-          {/* Training Form */}
+          {/* Create New Model */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -222,16 +285,69 @@ export default function TrainModel() {
             <Card bg={cardBg}>
               <CardHeader>
                 <Flex align="center">
-                  <Icon as={FiCpu} w={6} h={6} color="teal.500" mr={3} />
-                  <Heading as="h3" size="md">Model Configuration</Heading>
+                  <Icon as={FiPlus} w={6} h={6} color="teal.500" mr={3} />
+                  <Heading as="h3" size="md">Create New Model</Heading>
                 </Flex>
               </CardHeader>
               <CardBody>
-                <form onSubmit={handleSubmit}>
+                <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }} gap={6}>
+                  <FormControl id="modelName" isRequired>
+                    <FormLabel>Model Name</FormLabel>
+                    <Input 
+                      value={newModel.name}
+                      onChange={(e) => setNewModel(prev => ({...prev, name: e.target.value}))}
+                      placeholder="Enter model name"
+                    />
+                  </FormControl>
+                  
+                  <FormControl id="modelType" isRequired>
+                    <FormLabel>Model Type</FormLabel>
+                    <Select
+                      value={newModel.type}
+                      onChange={(e) => setNewModel(prev => ({...prev, type: e.target.value}))}
+                      placeholder="Select type"
+                    >
+                      <option value="RNN">RNN</option>
+                      <option value="CNN">CNN</option>
+                      <option value="GPT">GPT</option>
+                      <option value="Reinforcement Learning">Reinforcement Learning</option>
+                    </Select>
+                  </FormControl>
+                  
+                  <Flex align="end">
+                    <Button 
+                      colorScheme="teal" 
+                      leftIcon={<FiPlus />}
+                      onClick={handleCreateModel}
+                      width="full"
+                    >
+                      Create Model
+                    </Button>
+                  </Flex>
+                </Grid>
+              </CardBody>
+            </Card>
+          </motion.div>
+          
+          {/* Training Form */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <Card bg={cardBg}>
+              <CardHeader>
+                <Flex align="center">
+                  <Icon as={FiCpu} w={6} h={6} color="teal.500" mr={3} />
+                  <Heading as="h3" size="md">Train Model</Heading>
+                </Flex>
+              </CardHeader>
+              <CardBody>
+                <form onSubmit={handleTrainModel}>
                   <VStack spacing={6} align="stretch">
                     <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6}>
                       <FormControl id="model" isRequired>
-                        <FormLabel>Model Type</FormLabel>
+                        <FormLabel>Model</FormLabel>
                         <Select 
                           value={selectedModel} 
                           onChange={(e) => setSelectedModel(e.target.value)}
@@ -448,7 +564,7 @@ export default function TrainModel() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
             >
               <Card bg={cardBg}>
                 <CardHeader>

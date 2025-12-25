@@ -68,10 +68,11 @@ export default function Data() {
     })
     .then(res => res.json())
     .then(data => {
-      setDatasets(data);
+      setDatasets(Array.isArray(data) ? data : []);
     })
     .catch(err => {
       console.error('Error loading datasets:', err);
+      setDatasets([]); // Ensure it's always an array
       toast({
         title: 'Error loading datasets',
         description: 'Could not load your datasets. Please try again.',
@@ -115,7 +116,7 @@ export default function Data() {
       
       if (response.ok) {
         // Add the new dataset to the list
-        setDatasets(prev => [...prev, data]);
+        setDatasets(prev => Array.isArray(prev) ? [...prev, data] : [data]);
         setNewDataset({ name: '', description: '', type: 'csv', size: 0 });
         
         toast({
@@ -207,17 +208,17 @@ export default function Data() {
               
               <Stat>
                 <StatLabel>Storage Used</StatLabel>
-                <StatNumber>{datasets.reduce((total, dataset) => {
+                <StatNumber>{Array.isArray(datasets) ? datasets.reduce((total, dataset) => {
                   // Convert size to MB for calculation (simplified)
                   const sizeValue = parseFloat(dataset.size);
                   return total + (isNaN(sizeValue) ? 0 : sizeValue);
-                }, 0)} MB</StatNumber>
+                }, 0) : 0} MB</StatNumber>
                 <StatHelpText>Of 10 GB available</StatHelpText>
               </Stat>
               
               <Stat>
                 <StatLabel>Ready to Use</StatLabel>
-                <StatNumber>{datasets.filter(d => d.status === 'ready').length}</StatNumber>
+                <StatNumber>{Array.isArray(datasets) ? datasets.filter(d => d.status === 'ready').length : 0}</StatNumber>
                 <StatHelpText>Datasets ready for training</StatHelpText>
               </Stat>
             </StatGroup>
@@ -309,7 +310,7 @@ export default function Data() {
                 </Flex>
               </CardHeader>
               <CardBody>
-                {datasets.length > 0 ? (
+                {Array.isArray(datasets) && datasets.length > 0 ? (
                   <Grid templateColumns={{ base: '1fr' }} gap={4}>
                     {datasets.map(dataset => (
                       <Card key={dataset.id} bg={useColorModeValue('gray.50', 'gray.700')}>
