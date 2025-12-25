@@ -13,6 +13,7 @@ export default function TrainModel() {
   const [selectedModel, setSelectedModel] = useState('');
   const [selectedDataset, setSelectedDataset] = useState('');
   const [targetColumn, setTargetColumn] = useState('');
+  const [showCreateModel, setShowCreateModel] = useState(false);
   const [newModel, setNewModel] = useState({
     name: '',
     type: '',
@@ -82,17 +83,20 @@ export default function TrainModel() {
     })
     .catch(err => {
       console.error('Error fetching data:', err);
-      localStorage.removeItem('token');
-      router.push('/login');
+      // Set empty arrays as fallback
+      setModels([]);
+      setDatasets([]);
+      setLoading(false);
+      toast({
+        title: 'Error loading data',
+        description: 'Could not load models or datasets. Please try again.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+      // Don't redirect to login here, just continue with empty data
     });
   }, [router]);
-  
-  const handleParameterChange = (paramName, value) => {
-    setParameters(prev => ({
-      ...prev,
-      [paramName]: value
-    }));
-  };
   
   const handleCreateModel = async () => {
     if (!newModel.name || !newModel.type) {
@@ -124,6 +128,7 @@ export default function TrainModel() {
         setModels(prev => [...prev, data]);
         setSelectedModel(data._id);
         setNewModel({ name: '', type: '', description: '' });
+        setShowCreateModel(false);
         
         toast({
           title: 'Model created',
@@ -152,7 +157,14 @@ export default function TrainModel() {
     }
   };
   
-  const handleTrainModel = async (e) => {
+  const handleParameterChange = (paramName, value) => {
+    setParameters(prev => ({
+      ...prev,
+      [paramName]: value
+    }));
+  };
+  
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!selectedModel) {
@@ -262,8 +274,8 @@ export default function TrainModel() {
           >
             <Flex justify="space-between" align="center">
               <VStack align="start" spacing={2}>
-                <Heading as="h1" size="lg">Train Model</Heading>
-                <Text color="gray.500">Create and train your machine learning model</Text>
+                <Heading as="h1" size="lg">Train New Model</Heading>
+                <Text color="gray.500">Configure and start training your machine learning model</Text>
               </VStack>
               <Flex align="center" gap={4}>
                 <Box p={3} bg="teal.100" borderRadius="md">
@@ -276,7 +288,7 @@ export default function TrainModel() {
             </Flex>
           </motion.div>
           
-          {/* Create New Model */}
+          {/* Create New Model Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -284,48 +296,59 @@ export default function TrainModel() {
           >
             <Card bg={cardBg}>
               <CardHeader>
-                <Flex align="center">
-                  <Icon as={FiPlus} w={6} h={6} color="teal.500" mr={3} />
-                  <Heading as="h3" size="md">Create New Model</Heading>
+                <Flex align="center" justify="space-between">
+                  <Flex align="center">
+                    <Icon as={FiPlus} w={6} h={6} color="teal.500" mr={3} />
+                    <Heading as="h3" size="md">Create New Model</Heading>
+                  </Flex>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setShowCreateModel(!showCreateModel)}
+                  >
+                    {showCreateModel ? 'Cancel' : 'Create Model'}
+                  </Button>
                 </Flex>
               </CardHeader>
-              <CardBody>
-                <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }} gap={6}>
-                  <FormControl id="modelName" isRequired>
-                    <FormLabel>Model Name</FormLabel>
-                    <Input 
-                      value={newModel.name}
-                      onChange={(e) => setNewModel(prev => ({...prev, name: e.target.value}))}
-                      placeholder="Enter model name"
-                    />
-                  </FormControl>
-                  
-                  <FormControl id="modelType" isRequired>
-                    <FormLabel>Model Type</FormLabel>
-                    <Select
-                      value={newModel.type}
-                      onChange={(e) => setNewModel(prev => ({...prev, type: e.target.value}))}
-                      placeholder="Select type"
-                    >
-                      <option value="RNN">RNN</option>
-                      <option value="CNN">CNN</option>
-                      <option value="GPT">GPT</option>
-                      <option value="Reinforcement Learning">Reinforcement Learning</option>
-                    </Select>
-                  </FormControl>
-                  
-                  <Flex align="end">
-                    <Button 
-                      colorScheme="teal" 
-                      leftIcon={<FiPlus />}
-                      onClick={handleCreateModel}
-                      width="full"
-                    >
-                      Create Model
-                    </Button>
-                  </Flex>
-                </Grid>
-              </CardBody>
+              {showCreateModel && (
+                <CardBody>
+                  <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }} gap={6}>
+                    <FormControl id="modelName" isRequired>
+                      <FormLabel>Model Name</FormLabel>
+                      <Input 
+                        value={newModel.name}
+                        onChange={(e) => setNewModel(prev => ({...prev, name: e.target.value}))}
+                        placeholder="Enter model name"
+                      />
+                    </FormControl>
+                    
+                    <FormControl id="modelType" isRequired>
+                      <FormLabel>Model Type</FormLabel>
+                      <Select
+                        value={newModel.type}
+                        onChange={(e) => setNewModel(prev => ({...prev, type: e.target.value}))}
+                        placeholder="Select type"
+                      >
+                        <option value="RNN">RNN</option>
+                        <option value="CNN">CNN</option>
+                        <option value="GPT">GPT</option>
+                        <option value="Reinforcement Learning">Reinforcement Learning</option>
+                      </Select>
+                    </FormControl>
+                    
+                    <Flex align="end">
+                      <Button 
+                        colorScheme="teal" 
+                        leftIcon={<FiPlus />}
+                        onClick={handleCreateModel}
+                        width="full"
+                      >
+                        Create Model
+                      </Button>
+                    </Flex>
+                  </Grid>
+                </CardBody>
+              )}
             </Card>
           </motion.div>
           
@@ -339,19 +362,20 @@ export default function TrainModel() {
               <CardHeader>
                 <Flex align="center">
                   <Icon as={FiCpu} w={6} h={6} color="teal.500" mr={3} />
-                  <Heading as="h3" size="md">Train Model</Heading>
+                  <Heading as="h3" size="md">Model Configuration</Heading>
                 </Flex>
               </CardHeader>
               <CardBody>
-                <form onSubmit={handleTrainModel}>
+                <form onSubmit={handleSubmit}>
                   <VStack spacing={6} align="stretch">
                     <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6}>
                       <FormControl id="model" isRequired>
-                        <FormLabel>Model</FormLabel>
+                        <FormLabel>Model Type</FormLabel>
                         <Select 
                           value={selectedModel} 
                           onChange={(e) => setSelectedModel(e.target.value)}
-                          placeholder="Select a model"
+                          placeholder={models.length > 0 ? "Select a model" : "No models available"}
+                          isDisabled={models.length === 0}
                         >
                           {models.map(model => (
                             <option key={model._id} value={model._id}>
@@ -359,6 +383,11 @@ export default function TrainModel() {
                             </option>
                           ))}
                         </Select>
+                        {models.length === 0 && (
+                          <Text mt={2} fontSize="sm" color="orange.500">
+                            No models available. Please create a model first or click "Create Model" above.
+                          </Text>
+                        )}
                       </FormControl>
                       
                       <FormControl id="dataset" isRequired>
@@ -370,7 +399,8 @@ export default function TrainModel() {
                             // Reset target column when dataset changes
                             setTargetColumn('');
                           }}
-                          placeholder="Select a dataset"
+                          placeholder={datasets.length > 0 ? "Select a dataset" : "No datasets available"}
+                          isDisabled={datasets.length === 0}
                         >
                           {Array.isArray(datasets) && datasets.map(dataset => (
                             <option key={dataset.id} value={dataset.id}>
@@ -378,6 +408,11 @@ export default function TrainModel() {
                             </option>
                           ))}
                         </Select>
+                        {datasets.length === 0 && (
+                          <Text mt={2} fontSize="sm" color="orange.500">
+                            No datasets available. Please upload a dataset first.
+                          </Text>
+                        )}
                       </FormControl>
                     </Grid>
                     
