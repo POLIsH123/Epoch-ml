@@ -1,144 +1,125 @@
 const express = require('express');
-const { validateTraining, handleValidationErrors } = require('../middleware/validation');
-const { spawn } = require('child_process');
-const path = require('path');
-
 const router = express.Router();
-
-// In-memory training sessions storage (for testing only)
-let trainingSessions = [];
+const User = require('../models/User');
+const TrainingSession = require('../models/TrainingSession');
 
 // Start a new training session
-router.post('/start', validateTraining, handleValidationErrors, (req, res) => {
+router.post('/start', async (req, res) => {
   try {
-    const { modelId, parameters } = req.body;
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
     
-    // In a real implementation, we would validate the user token
-    // For this test version, we'll just create a session
+    const user = await User.findOne({ token });
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
     
-    // Create training session
-    const trainingSession = {
-      _id: Date.now().toString(),
-      userId: 'test-user-id', // Would come from token in real implementation
+    const { modelId, datasetId, targetColumn, parameters } = req.body;
+    
+    if (!modelId || !datasetId) {
+      return res.status(400).json({ error: 'Model ID and Dataset ID are required' });
+    }
+    
+    // Check if user has enough credits (simplified for this example)
+    // In a real app, you would calculate cost based on model type and parameters
+    const modelTrainingCost = 10; // Fixed cost for this example
+    if (user.credits < modelTrainingCost) {
+      return res.status(400).json({ error: 'Insufficient credits' });
+    }
+    
+    // Create a new training session
+    const trainingSession = new TrainingSession({
+      userId: user._id,
       modelId,
+      datasetId,
+      targetColumn,
       parameters,
-      status: 'pending',
-      progress: 0,
-      cost: 10, // Base cost
-      startedAt: new Date(),
-      createdAt: new Date()
-    };
+      status: 'queued',
+      startTime: new Date()
+    });
     
-    trainingSessions.push(trainingSession);
+    await trainingSession.save();
     
-    // Execute Python training script based on model type
-    executePythonTraining(trainingSession._id, modelId, parameters);
+    // Deduct credits from user account
+    user.credits -= modelTrainingCost;
+    await user.save();
     
-    res.status(201).json(trainingSession);
-
+    res.status(201).json({
+      message: 'Training started successfully',
+      sessionId: trainingSession._id,
+      creditsRemaining: user.credits
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Get training session by ID
-router.get('/:id', (req, res) => {
+// Get user's training history
+router.get('/', async (req, res) => {
   try {
-    const session = trainingSessions.find(s => s._id === req.params.id);
-    
-    if (!session) {
-      return res.status(404).json({ error: 'Training session not found' });
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
     }
     
-    // In a real implementation, we would check if the user owns this session
-    res.json(session);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Get all training sessions for user
-router.get('/', (req, res) => {
-  try {
-    // In a real implementation, we would filter by user ID from token
-    // For testing, return all sessions
-    res.json(trainingSessions);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Execute Python training script
-const executePythonTraining = async (sessionId, modelId, parameters) => {
-  try {
-    // Find the training session
-    const session = trainingSessions.find(s => s._id === sessionId);
-    if (!session) {
-      console.error('Session not found for ID:', sessionId);
-      return;
+    const user = await User.findOne({ token });
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid token' });
     }
-
-    // Determine the Python script to run based on model type
-    let pythonScript;
-    if (modelId.includes('RNN') || modelId.includes('1')) {
-      pythonScript = path.join(__dirname, '../../models/rnn/rnn_model.py');
-    } else if (modelId.includes('CNN') || modelId.includes('2')) {
-      pythonScript = path.join(__dirname, '../../models/cnn/cnn_model.py');
-    } else if (modelId.includes('GPT') || modelId.includes('3')) {
-      pythonScript = path.join(__dirname, '../../models/gpt/gpt_model.py');
-    } else if (modelId.includes('Transformer') || modelId.includes('4')) {
-      pythonScript = path.join(__dirname, '../../models/gpt/gpt_model.py'); // Using GPT as transformer base
-    } else if (modelId.includes('Reinforcement') || modelId.includes('RL') || modelId.includes('5') || 
-               modelId.includes('6') || modelId.includes('7') || modelId.includes('8') || modelId.includes('9')) {
-      pythonScript = path.join(__dirname, '../../models/rnn/rl_model.py'); // Use the new RL model for all RL algorithms
-    } else if (modelId.includes('Ensemble') || modelId.includes('10')) {
-      // For ensemble models, we would need a specific ensemble script
-      pythonScript = path.join(__dirname, '../../models/base_model.py'); // Placeholder - would need specific ensemble model
-    } else {
-      // Default to base model if type is not recognized
-      pythonScript = path.join(__dirname, '../../models/base_model.py');
-    }
-
-    // Update session status to running
-    session.status = 'running';
-
-    // Spawn Python process
-    const pythonProcess = spawn('python', [pythonScript, JSON.stringify(parameters)]);
-
-    pythonProcess.stdout.on('data', (data) => {
-      console.log(`Python output: ${data}`);
-      // Parse progress updates from Python script
-      const output = data.toString();
-      if (output.includes('PROGRESS:')) {
-        const progressMatch = output.match(/PROGRESS:(\d+)/);
-        if (progressMatch) {
-          const progress = parseInt(progressMatch[1]);
-          session.progress = progress;
-        }
+    
+    // In a real app, this would fetch from the TrainingSession model
+    // For now, returning mock data
+    const mockSessions = [
+      {
+        id: '1',
+        modelId: 'model-1',
+        modelName: 'Sentiment Analysis RNN',
+        modelType: 'RNN',
+        datasetId: 'dataset-1',
+        datasetName: 'IMDB Reviews',
+        status: 'completed',
+        startTime: new Date(Date.now() - 3600000),
+        endTime: new Date(Date.now() - 1800000),
+        accuracy: 0.87,
+        loss: 0.32,
+        targetColumn: 'sentiment'
+      },
+      {
+        id: '2',
+        modelId: 'model-2',
+        modelName: 'Image Classifier CNN',
+        modelType: 'CNN',
+        datasetId: 'dataset-2',
+        datasetName: 'MNIST Digits',
+        status: 'completed',
+        startTime: new Date(Date.now() - 86400000),
+        endTime: new Date(Date.now() - 72000000),
+        accuracy: 0.94,
+        loss: 0.18,
+        targetColumn: 'label'
+      },
+      {
+        id: '3',
+        modelId: 'model-3',
+        modelName: 'Text Generator GPT',
+        modelType: 'GPT',
+        datasetId: 'dataset-3',
+        datasetName: 'Custom Text',
+        status: 'running',
+        startTime: new Date(),
+        endTime: null,
+        accuracy: 0.0,
+        loss: 1.2,
+        targetColumn: null
       }
-    });
-
-    pythonProcess.stderr.on('data', (data) => {
-      console.error(`Python error: ${data}`);
-    });
-
-    pythonProcess.on('close', (code) => {
-      console.log(`Python process exited with code ${code}`);
-      if (code === 0) {
-        session.status = 'completed';
-      } else {
-        session.status = 'failed';
-      }
-      session.completedAt = new Date();
-    });
-
+    ];
+    
+    res.json(mockSessions);
   } catch (error) {
-    console.error('Error executing Python training:', error);
-    const session = trainingSessions.find(s => s._id === sessionId);
-    if (session) {
-      session.status = 'failed';
-    }
+    res.status(500).json({ error: error.message });
   }
-};
+});
 
 module.exports = router;

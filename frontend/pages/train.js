@@ -1,7 +1,7 @@
 import { Box, Heading, Text, Button, VStack, Container, Select, FormControl, FormLabel, Input, Card, CardHeader, CardBody, Flex, Icon, useColorModeValue, useToast, Grid, GridItem, NumberInput, NumberInputField, NumberInputStepper, NumberIncrementStepper, NumberDecrementStepper } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { FiCpu, FiBarChart2, FiZap, FiDollarSign, FiDatabase, FiSliders, FiUpload } from 'react-icons/fi';
+import { FiCpu, FiBarChart2, FiZap, FiDollarSign, FiDatabase, FiSliders, FiUpload, FiTarget } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import Sidebar from '../components/Sidebar';
 
@@ -12,6 +12,7 @@ export default function TrainModel() {
   const [loading, setLoading] = useState(true);
   const [selectedModel, setSelectedModel] = useState('');
   const [selectedDataset, setSelectedDataset] = useState('');
+  const [targetColumn, setTargetColumn] = useState('');
   const [parameters, setParameters] = useState({
     learningRate: 0.001,
     epochs: 10,
@@ -102,6 +103,32 @@ export default function TrainModel() {
       return;
     }
     
+    if (!selectedDataset) {
+      toast({
+        title: 'Dataset not selected',
+        description: 'Please select a dataset to train on',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+    
+    // For non-RL models, target column is required
+    if (!(selectedModel.includes('5') || selectedModel.includes('6') || selectedModel.includes('7') || 
+          selectedModel.includes('8') || selectedModel.includes('9'))) {
+      if (!targetColumn) {
+        toast({
+          title: 'Target column not specified',
+          description: 'Please specify the target column for supervised learning',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
+        return;
+      }
+    }
+    
     try {
       const response = await fetch('http://localhost:5001/api/training/start', {
         method: 'POST',
@@ -112,6 +139,7 @@ export default function TrainModel() {
         body: JSON.stringify({
           modelId: selectedModel,
           datasetId: selectedDataset,
+          targetColumn: targetColumn,
           parameters
         })
       });
@@ -146,6 +174,9 @@ export default function TrainModel() {
       });
     }
   };
+  
+  // Get the selected dataset object to show its columns
+  const currentDataset = datasets.find(ds => ds.id === selectedDataset);
   
   if (loading) {
     return (
@@ -214,11 +245,15 @@ export default function TrainModel() {
                         </Select>
                       </FormControl>
                       
-                      <FormControl id="dataset">
-                        <FormLabel>Dataset (Optional)</FormLabel>
+                      <FormControl id="dataset" isRequired>
+                        <FormLabel>Dataset</FormLabel>
                         <Select 
                           value={selectedDataset} 
-                          onChange={(e) => setSelectedDataset(e.target.value)}
+                          onChange={(e) => {
+                            setSelectedDataset(e.target.value);
+                            // Reset target column when dataset changes
+                            setTargetColumn('');
+                          }}
                           placeholder="Select a dataset"
                         >
                           {Array.isArray(datasets) && datasets.map(dataset => (
@@ -229,6 +264,60 @@ export default function TrainModel() {
                         </Select>
                       </FormControl>
                     </Grid>
+                    
+                    {/* Target Column for Supervised Learning */}
+                    {selectedDataset && !(selectedModel.includes('5') || selectedModel.includes('6') || selectedModel.includes('7') || 
+                                          selectedModel.includes('8') || selectedModel.includes('9')) && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6}>
+                          <FormControl id="targetColumn" isRequired>
+                            <FormLabel>Target Column</FormLabel>
+                            <Select
+                              value={targetColumn}
+                              onChange={(e) => setTargetColumn(e.target.value)}
+                              placeholder="Select target column"
+                            >
+                              {/* Mock columns based on dataset type */}
+                              {currentDataset?.type === 'csv' && (
+                                <>
+                                  <option value="label">label</option>
+                                  <option value="target">target</option>
+                                  <option value="class">class</option>
+                                  <option value="output">output</option>
+                                </>
+                              )}
+                              {currentDataset?.type === 'image' && (
+                                <>
+                                  <option value="label">label</option>
+                                  <option value="category">category</option>
+                                  <option value="class">class</option>
+                                </>
+                              )}
+                              {currentDataset?.type === 'text' && (
+                                <>
+                                  <option value="sentiment">sentiment</option>
+                                  <option value="label">label</option>
+                                  <option value="category">category</option>
+                                </>
+                              )}
+                            </Select>
+                          </FormControl>
+                          
+                          <FormControl id="columnsInfo">
+                            <FormLabel>Dataset Info</FormLabel>
+                            <Input 
+                              value={`${currentDataset?.type.toUpperCase()} - ${currentDataset?.size} - ${currentDataset?.name}`}
+                              isDisabled
+                              placeholder="Select a dataset first"
+                            />
+                          </FormControl>
+                        </Grid>
+                      </motion.div>
+                    )}
                     
                     {/* Dynamic Parameter Controls */}
                     {selectedModel && (
@@ -343,7 +432,7 @@ export default function TrainModel() {
                         colorScheme="teal" 
                         size="lg"
                         leftIcon={<FiZap />}
-                        isDisabled={!selectedModel}
+                        isDisabled={!selectedModel || !selectedDataset}
                       >
                         Start Training
                       </Button>
