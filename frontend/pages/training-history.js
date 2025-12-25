@@ -41,7 +41,7 @@ export default function TrainingHistory() {
         setUser(userData);
         
         // Get training history
-        return fetch('http://localhost:3005/api/training', {
+        return fetch('http://localhost:9000/api/training', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -186,7 +186,7 @@ export default function TrainingHistory() {
                               onClick={() => {
                                 // Refresh the session data
                                 const token = localStorage.getItem('token');
-                                fetch(`http://localhost:3005/api/training/${session._id}`, {
+                                fetch(`http://localhost:9000/api/training/${session._id}`, {
                                   headers: {
                                     'Authorization': `Bearer ${token}`
                                   }
