@@ -1,7 +1,7 @@
-import { Box, Heading, FormControl, FormLabel, Input, Button, VStack, Container, Text, Link, useColorModeValue, useToast } from '@chakra-ui/react';
+import { Box, Heading, FormControl, FormLabel, Input, Button, VStack, Container, Text, Link, useColorModeValue, useToast, Flex } from '@chakra-ui/react';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
-import { FiUser, FiMail, FiLock, FiUserPlus } from 'react-icons/fi';
+import { FiUser, FiMail, FiLock, FiUserPlus, FiBarChart2 } from 'react-icons/fi';
 
 export default function Register() {
   const [username, setUsername] = useState('');
@@ -67,17 +67,17 @@ export default function Register() {
   };
   
   return (
-    <Box minH="100vh" bg={bg} display="flex" alignItems="center" justifyContent="center" py={12}>
-      <Container maxW="container.sm" py={12}>
+    <Flex minH="100vh" bg={bg} align="center" justify="center">
+      <Box w="full" maxW="container.md" p={8}>
+        <Flex direction="column" align="center" mb={8}>
+          <Box p={4} bg="teal.500" borderRadius="full" mb={4}>
+            <FiBarChart2 color="white" size={30} />
+          </Box>
+          <Heading as="h1" size="xl">Join Epoch-ml</Heading>
+          <Text color="gray.500" mt={2}>Create your account to get started</Text>
+        </Flex>
+        
         <Box p={8} shadow="xl" borderWidth="1px" borderRadius="lg" bg={cardBg}>
-          <VStack spacing={8} align="center" mb={6}>
-            <Box p={4} bg="teal.500" borderRadius="full">
-              <FiUserPlus color="white" size={30} />
-            </Box>
-            <Heading as="h1" size="lg">Create Account</Heading>
-            <Text color="gray.500">Join our machine learning platform</Text>
-          </VStack>
-          
           <form onSubmit={handleSubmit}>
             <VStack spacing={6}>
               {error && (
@@ -140,7 +140,7 @@ export default function Register() {
             </Link>
           </Text>
         </Box>
-      </Container>
-    </Box>
+      </Box>
+    </Flex>
   );
 }

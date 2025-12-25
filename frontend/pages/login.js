@@ -1,7 +1,7 @@
-import { Box, Heading, FormControl, FormLabel, Input, Button, VStack, Container, Text, Link, useColorModeValue, useToast } from '@chakra-ui/react';
+import { Box, Heading, FormControl, FormLabel, Input, Button, VStack, Container, Text, Link, useColorModeValue, useToast, Flex } from '@chakra-ui/react';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
-import { FiUser, FiLock, FiLogIn } from 'react-icons/fi';
+import { FiUser, FiLock, FiLogIn, FiBarChart2 } from 'react-icons/fi';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -66,17 +66,17 @@ export default function Login() {
   };
   
   return (
-    <Box minH="100vh" bg={bg} display="flex" alignItems="center" justifyContent="center" py={12}>
-      <Container maxW="container.sm" py={12}>
+    <Flex minH="100vh" bg={bg} align="center" justify="center">
+      <Box w="full" maxW="container.md" p={8}>
+        <Flex direction="column" align="center" mb={8}>
+          <Box p={4} bg="teal.500" borderRadius="full" mb={4}>
+            <FiBarChart2 color="white" size={30} />
+          </Box>
+          <Heading as="h1" size="xl">Welcome to Epoch-ml</Heading>
+          <Text color="gray.500" mt={2}>Sign in to your account</Text>
+        </Flex>
+        
         <Box p={8} shadow="xl" borderWidth="1px" borderRadius="lg" bg={cardBg}>
-          <VStack spacing={8} align="center" mb={6}>
-            <Box p={4} bg="teal.500" borderRadius="full">
-              <FiLogIn color="white" size={30} />
-            </Box>
-            <Heading as="h1" size="lg">Welcome Back</Heading>
-            <Text color="gray.500">Sign in to your account</Text>
-          </VStack>
-          
           <form onSubmit={handleSubmit}>
             <VStack spacing={6}>
               {error && (
@@ -127,7 +127,7 @@ export default function Login() {
             </Link>
           </Text>
         </Box>
-      </Container>
-    </Box>
+      </Box>
+    </Flex>
   );
 }

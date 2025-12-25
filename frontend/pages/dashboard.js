@@ -1,13 +1,15 @@
-import { Box, Heading, Text, Button, VStack, Container, Grid, SimpleGrid, Stat, StatLabel, StatNumber, StatHelpText, StatGroup, Card, CardHeader, CardBody, Flex, Icon, useColorModeValue, Spinner, Alert, AlertIcon, useToast } from '@chakra-ui/react';
+import { Box, Heading, Text, Button, VStack, Container, Grid, SimpleGrid, Stat, StatLabel, StatNumber, StatHelpText, StatGroup, Card, CardHeader, CardBody, Flex, Icon, useColorModeValue, Spinner, Alert, useToast } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { FiCpu, FiBarChart2, FiZap, FiDollarSign, FiDatabase, FiUsers, FiActivity, FiTrendingUp, FiClock, FiCheckCircle } from 'react-icons/fi';
 import { motion } from 'framer-motion';
+import Sidebar from '../components/Sidebar';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [recentActivity, setRecentActivity] = useState([]);
   const router = useRouter();
   const toast = useToast();
   
@@ -39,6 +41,8 @@ export default function Dashboard() {
     .then(data => {
       if (data) {
         setUser(data);
+        // Set initial recent activity based on user's data
+        setRecentActivity([]);
         setLoading(false);
       }
     })
@@ -62,7 +66,6 @@ export default function Dashboard() {
     return (
       <Box minH="100vh" display="flex" alignItems="center" justifyContent="center" bg={bg}>
         <Alert status="error" maxW="container.md">
-          <AlertIcon />
           {error}
         </Alert>
       </Box>
@@ -70,8 +73,9 @@ export default function Dashboard() {
   }
   
   return (
-    <Box minH="100vh" bg={bg} py={8}>
-      <Container maxW="container.xl">
+    <Box minH="100vh" bg={bg}>
+      <Sidebar user={user} />
+      <Box ml="250px" p={6}>
         <VStack spacing={8} align="stretch">
           {/* Welcome Section */}
           <motion.div
@@ -122,14 +126,14 @@ export default function Dashboard() {
               
               <Stat>
                 <StatLabel>Models</StatLabel>
-                <StatNumber>12</StatNumber>
-                <StatHelpText>Available for training</StatHelpText>
+                <StatNumber>0</StatNumber>
+                <StatHelpText>Created so far</StatHelpText>
               </Stat>
               
               <Stat>
                 <StatLabel>Trained</StatLabel>
-                <StatNumber>5</StatNumber>
-                <StatHelpText>This month</StatHelpText>
+                <StatNumber>0</StatNumber>
+                <StatHelpText>Training sessions</StatHelpText>
               </Stat>
             </StatGroup>
           </motion.div>
@@ -231,24 +235,24 @@ export default function Dashboard() {
               </CardHeader>
               <CardBody>
                 <VStack align="stretch" spacing={4}>
-                  <Flex justify="space-between" p={3} bg="gray.100" borderRadius="md">
-                    <Text>Completed GPT model training</Text>
-                    <Text color="gray.500" fontSize="sm">2 hours ago</Text>
-                  </Flex>
-                  <Flex justify="space-between" p={3} bg="gray.100" borderRadius="md">
-                    <Text>Started CNN model training</Text>
-                    <Text color="gray.500" fontSize="sm">5 hours ago</Text>
-                  </Flex>
-                  <Flex justify="space-between" p={3} bg="gray.100" borderRadius="md">
-                    <Text>Created new RNN model</Text>
-                    <Text color="gray.500" fontSize="sm">1 day ago</Text>
-                  </Flex>
+                  {recentActivity.length > 0 ? (
+                    recentActivity.map((activity, index) => (
+                      <Flex key={index} justify="space-between" p={3} bg="gray.100" borderRadius="md">
+                        <Text>{activity.action}</Text>
+                        <Text color="gray.500" fontSize="sm">{activity.time}</Text>
+                      </Flex>
+                    ))
+                  ) : (
+                    <Flex justify="center" p={6} color="gray.500">
+                      <Text>No recent activity yet. Start training your first model!</Text>
+                    </Flex>
+                  )}
                 </VStack>
               </CardBody>
             </Card>
           </motion.div>
         </VStack>
-      </Container>
+      </Box>
     </Box>
   );
 }

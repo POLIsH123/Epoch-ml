@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { FiCpu, FiBarChart2, FiZap, FiDollarSign, FiDatabase, FiSliders } from 'react-icons/fi';
 import { motion } from 'framer-motion';
+import Sidebar from '../components/Sidebar';
 
 export default function TrainModel() {
   const [user, setUser] = useState(null);
@@ -131,8 +132,9 @@ export default function TrainModel() {
   }
   
   return (
-    <Box minH="100vh" bg={bg} py={8}>
-      <Container maxW="container.xl">
+    <Box minH="100vh" bg={bg}>
+      <Sidebar user={user} />
+      <Box ml="250px" p={6}>
         <VStack spacing={8} align="stretch">
           {/* Header */}
           <motion.div
@@ -332,7 +334,7 @@ export default function TrainModel() {
             </motion.div>
           )}
         </VStack>
-      </Container>
+      </Box>
     </Box>
   );
 }
