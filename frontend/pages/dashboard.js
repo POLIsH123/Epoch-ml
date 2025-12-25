@@ -22,7 +22,7 @@ export default function Dashboard() {
     }
     
     // Verify token is valid by making a simple API call
-    fetch('http://localhost:3005/api/auth/profile', {
+    fetch('http://localhost:9000/api/auth/profile', {
       headers: {
         'Authorization': `Bearer ${token}`
       }
