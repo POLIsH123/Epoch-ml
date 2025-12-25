@@ -70,8 +70,8 @@ export default function TrainModel() {
       return Promise.all([modelsRes.json(), datasetsRes.json()]);
     })
     .then(([modelsData, datasetsData]) => {
-      setModels(modelsData);
-      setDatasets(datasetsData);
+      setModels(Array.isArray(modelsData) ? modelsData : []);
+      setDatasets(Array.isArray(datasetsData) ? datasetsData : []);
       setLoading(false);
     })
     .catch(err => {
@@ -221,7 +221,7 @@ export default function TrainModel() {
                           onChange={(e) => setSelectedDataset(e.target.value)}
                           placeholder="Select a dataset"
                         >
-                          {datasets.map(dataset => (
+                          {Array.isArray(datasets) && datasets.map(dataset => (
                             <option key={dataset.id} value={dataset.id}>
                               {dataset.name} ({dataset.type})
                             </option>

@@ -44,7 +44,8 @@ router.get('/datasets', async (req, res) => {
     
     // In a real app, this would fetch from a dataset collection
     // For now, returning mock data
-    res.json([
+    // In a real implementation, we would query a Dataset model
+    const datasets = [
       {
         id: '1',
         name: 'MNIST Handwritten Digits',
@@ -63,7 +64,9 @@ router.get('/datasets', async (req, res) => {
         createdAt: new Date(),
         status: 'ready'
       }
-    ]);
+    ];
+    
+    res.json(datasets);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -90,7 +93,7 @@ router.post('/datasets', async (req, res) => {
     
     // In a real app, this would save to a dataset collection
     // For now, returning mock data
-    res.status(201).json({
+    const newDataset = {
       id: Date.now().toString(),
       name,
       description,
@@ -98,7 +101,9 @@ router.post('/datasets', async (req, res) => {
       size: '0MB',
       createdAt: new Date(),
       status: 'processing'
-    });
+    };
+    
+    res.status(201).json(newDataset);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
