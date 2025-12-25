@@ -30,7 +30,7 @@ export default function TrainModel() {
     }
     
     // Verify token and get user profile
-    fetch('http://localhost:5000/api/auth/profile', {
+    fetch('http://localhost:5001/api/auth/profile', {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -49,7 +49,7 @@ export default function TrainModel() {
         setUser(userData);
         
         // Get available models
-        return fetch('http://localhost:5000/api/models', {
+        return fetch('http://localhost:5001/api/models', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -79,7 +79,7 @@ export default function TrainModel() {
     e.preventDefault();
     
     try {
-      const response = await fetch('http://localhost:5000/api/training/start', {
+      const response = await fetch('http://localhost:5001/api/training/start', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
