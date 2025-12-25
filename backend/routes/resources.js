@@ -1,52 +1,107 @@
 const express = require('express');
-
 const router = express.Router();
+const User = require('../models/User');
 
-// In-memory user data (for testing only)
-let users = [{ id: 'test-user-id', credits: 100 }];
-
-// Get user's current credits
-router.get('/credits', (req, res) => {
-  // In a real implementation, we would get user ID from token
-  // For testing, return dummy credits
-  res.json({ credits: 100 });
-});
-
-// Add credits to user account (simulated payment)
-router.post('/add-credits', (req, res) => {
-  const { amount } = req.body;
-  
-  if (!amount || amount <= 0) {
-    return res.status(400).json({ error: 'Invalid amount' });
-  }
-  
-  // In a real system, this would process a payment
-  // For simulation, we'll just return a success response
-  const updatedUser = { id: 'test-user-id', credits: 100 + amount };
-  
-  res.json({ message: `${amount} credits added successfully`, user: updatedUser });
-});
-
-// Get pricing information
-router.get('/pricing', (req, res) => {
-  // Define pricing tiers
-  const pricing = {
-    tiers: [
-      { name: 'Basic', cost: 10, credits: 100 },
-      { name: 'Standard', cost: 25, credits: 250 },
-      { name: 'Premium', cost: 50, credits: 550 },
-      { name: 'Enterprise', cost: 100, credits: 1200 }
-    ],
-    // Cost per training session based on model type
-    trainingCosts: {
-      RNN: 5,
-      CNN: 10,
-      GPT: 15,
-      RL: 20
+// Get user profile data
+router.get('/profile', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
     }
-  };
-  
-  res.json(pricing);
+    
+    // In a real app, you would verify the JWT token here
+    // For this mock implementation, we'll use a simple approach
+    const user = await User.findOne({ token });
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+    
+    res.json({
+      username: user.username,
+      email: user.email,
+      credits: user.credits,
+      role: user.role || 'user',
+      createdAt: user.createdAt
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get user datasets
+router.get('/datasets', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+    
+    const user = await User.findOne({ token });
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+    
+    // In a real app, this would fetch from a dataset collection
+    // For now, returning mock data
+    res.json([
+      {
+        id: '1',
+        name: 'MNIST Handwritten Digits',
+        description: 'Dataset of handwritten digits for image classification',
+        type: 'image',
+        size: '10MB',
+        createdAt: new Date(),
+        status: 'ready'
+      },
+      {
+        id: '2',
+        name: 'IMDB Movie Reviews',
+        description: 'Dataset of movie reviews for sentiment analysis',
+        type: 'text',
+        size: '85MB',
+        createdAt: new Date(),
+        status: 'ready'
+      }
+    ]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create a new dataset
+router.post('/datasets', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+    
+    const user = await User.findOne({ token });
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+    
+    const { name, description, type } = req.body;
+    
+    if (!name) {
+      return res.status(400).json({ error: 'Dataset name is required' });
+    }
+    
+    // In a real app, this would save to a dataset collection
+    // For now, returning mock data
+    res.status(201).json({
+      id: Date.now().toString(),
+      name,
+      description,
+      type,
+      size: '0MB',
+      createdAt: new Date(),
+      status: 'processing'
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 module.exports = router;

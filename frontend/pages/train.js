@@ -1,15 +1,17 @@
 import { Box, Heading, Text, Button, VStack, Container, Select, FormControl, FormLabel, Input, Card, CardHeader, CardBody, Flex, Icon, useColorModeValue, useToast, Grid, GridItem, NumberInput, NumberInputField, NumberInputStepper, NumberIncrementStepper, NumberDecrementStepper } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { FiCpu, FiBarChart2, FiZap, FiDollarSign, FiDatabase, FiSliders } from 'react-icons/fi';
+import { FiCpu, FiBarChart2, FiZap, FiDollarSign, FiDatabase, FiSliders, FiUpload } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import Sidebar from '../components/Sidebar';
 
 export default function TrainModel() {
   const [user, setUser] = useState(null);
   const [models, setModels] = useState([]);
+  const [datasets, setDatasets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedModel, setSelectedModel] = useState('');
+  const [selectedDataset, setSelectedDataset] = useState('');
   const [parameters, setParameters] = useState({
     learningRate: 0.001,
     epochs: 10,
@@ -49,17 +51,27 @@ export default function TrainModel() {
       if (userData) {
         setUser(userData);
         
-        // Get available models
-        return fetch('http://localhost:5001/api/models', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+        // Get available models and datasets
+        return Promise.all([
+          fetch('http://localhost:5001/api/models', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          }),
+          fetch('http://localhost:5001/api/resources/datasets', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+        ]);
       }
     })
-    .then(res => res.json())
-    .then(data => {
-      setModels(data);
+    .then(([modelsRes, datasetsRes]) => {
+      return Promise.all([modelsRes.json(), datasetsRes.json()]);
+    })
+    .then(([modelsData, datasetsData]) => {
+      setModels(modelsData);
+      setDatasets(datasetsData);
       setLoading(false);
     })
     .catch(err => {
@@ -79,6 +91,17 @@ export default function TrainModel() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    if (!selectedModel) {
+      toast({
+        title: 'Model not selected',
+        description: 'Please select a model to train',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+    
     try {
       const response = await fetch('http://localhost:5001/api/training/start', {
         method: 'POST',
@@ -88,6 +111,7 @@ export default function TrainModel() {
         },
         body: JSON.stringify({
           modelId: selectedModel,
+          datasetId: selectedDataset,
           parameters
         })
       });
@@ -174,20 +198,37 @@ export default function TrainModel() {
               <CardBody>
                 <form onSubmit={handleSubmit}>
                   <VStack spacing={6} align="stretch">
-                    <FormControl id="model" isRequired>
-                      <FormLabel>Model Type</FormLabel>
-                      <Select 
-                        value={selectedModel} 
-                        onChange={(e) => setSelectedModel(e.target.value)}
-                        placeholder="Select a model"
-                      >
-                        {models.map(model => (
-                          <option key={model._id} value={model._id}>
-                            {model.name} ({model.type})
-                          </option>
-                        ))}
-                      </Select>
-                    </FormControl>
+                    <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6}>
+                      <FormControl id="model" isRequired>
+                        <FormLabel>Model Type</FormLabel>
+                        <Select 
+                          value={selectedModel} 
+                          onChange={(e) => setSelectedModel(e.target.value)}
+                          placeholder="Select a model"
+                        >
+                          {models.map(model => (
+                            <option key={model._id} value={model._id}>
+                              {model.name} ({model.type})
+                            </option>
+                          ))}
+                        </Select>
+                      </FormControl>
+                      
+                      <FormControl id="dataset">
+                        <FormLabel>Dataset (Optional)</FormLabel>
+                        <Select 
+                          value={selectedDataset} 
+                          onChange={(e) => setSelectedDataset(e.target.value)}
+                          placeholder="Select a dataset"
+                        >
+                          {datasets.map(dataset => (
+                            <option key={dataset.id} value={dataset.id}>
+                              {dataset.name} ({dataset.type})
+                            </option>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
                     
                     {/* Dynamic Parameter Controls */}
                     {selectedModel && (
@@ -195,106 +236,118 @@ export default function TrainModel() {
                         <Heading as="h4" size="sm">Training Parameters</Heading>
                         
                         {/* Learning Rate */}
-                        <FormControl id="learningRate">
-                          <FormLabel>Learning Rate</FormLabel>
-                          <NumberInput 
-                            value={parameters.learningRate} 
-                            onChange={(value) => handleParameterChange('learningRate', parseFloat(value))}
-                            min={0.00001}
-                            max={1}
-                            step={0.0001}
-                          >
-                            <NumberInputField />
-                            <NumberInputStepper>
-                              <NumberIncrementStepper />
-                              <NumberDecrementStepper />
-                            </NumberInputStepper>
-                          </NumberInput>
-                        </FormControl>
-                        
-                        {/* For non-RL models */}
-                        {!(selectedModel.includes('5') || selectedModel.includes('6') || selectedModel.includes('7') || 
-                           selectedModel.includes('8') || selectedModel.includes('9')) && (
-                          <>
-                            <FormControl id="epochs">
-                              <FormLabel>Epochs</FormLabel>
-                              <NumberInput 
-                                value={parameters.epochs} 
-                                onChange={(value) => handleParameterChange('epochs', parseInt(value))}
-                                min={1}
-                                max={1000}
-                              >
-                                <NumberInputField />
-                                <NumberInputStepper>
-                                  <NumberIncrementStepper />
-                                  <NumberDecrementStepper />
-                                </NumberInputStepper>
-                              </NumberInput>
-                            </FormControl>
-                            
-                            <FormControl id="batchSize">
-                              <FormLabel>Batch Size</FormLabel>
-                              <NumberInput 
-                                value={parameters.batchSize} 
-                                onChange={(value) => handleParameterChange('batchSize', parseInt(value))}
-                                min={1}
-                                max={512}
-                              >
-                                <NumberInputField />
-                                <NumberInputStepper>
-                                  <NumberIncrementStepper />
-                                  <NumberDecrementStepper />
-                                </NumberInputStepper>
-                              </NumberInput>
-                            </FormControl>
-                          </>
-                        )}
-                        
-                        {/* For RL models */}
-                        {(selectedModel.includes('5') || selectedModel.includes('6') || selectedModel.includes('7') || 
-                          selectedModel.includes('8') || selectedModel.includes('9')) && (
-                          <>
-                            <FormControl id="timesteps">
-                              <FormLabel>Timesteps</FormLabel>
-                              <NumberInput 
-                                value={parameters.timesteps} 
-                                onChange={(value) => handleParameterChange('timesteps', parseInt(value))}
-                                min={100}
-                                max={100000}
-                              >
-                                <NumberInputField />
-                                <NumberInputStepper>
-                                  <NumberIncrementStepper />
-                                  <NumberDecrementStepper />
-                                </NumberInputStepper>
-                              </NumberInput>
-                            </FormControl>
-                            
-                            <FormControl id="environment">
-                              <FormLabel>Environment</FormLabel>
-                              <Select 
-                                value={parameters.environment} 
-                                onChange={(e) => handleParameterChange('environment', e.target.value)}
-                              >
-                                <option value="CartPole-v1">CartPole-v1 (Simple)</option>
-                                <option value="Pendulum-v1">Pendulum-v1 (Continuous)</option>
-                                <option value="LunarLander-v2">LunarLander-v2 (Complex)</option>
-                              </Select>
-                            </FormControl>
-                          </>
-                        )}
+                        <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6}>
+                          <FormControl id="learningRate">
+                            <FormLabel>Learning Rate</FormLabel>
+                            <NumberInput 
+                              value={parameters.learningRate} 
+                              onChange={(value) => handleParameterChange('learningRate', parseFloat(value))}
+                              min={0.00001}
+                              max={1}
+                              step={0.0001}
+                            >
+                              <NumberInputField />
+                              <NumberInputStepper>
+                                <NumberIncrementStepper />
+                                <NumberDecrementStepper />
+                              </NumberInputStepper>
+                            </NumberInput>
+                          </FormControl>
+                          
+                          {/* For non-RL models */}
+                          {!(selectedModel.includes('5') || selectedModel.includes('6') || selectedModel.includes('7') || 
+                             selectedModel.includes('8') || selectedModel.includes('9')) && (
+                            <>
+                              <FormControl id="epochs">
+                                <FormLabel>Epochs</FormLabel>
+                                <NumberInput 
+                                  value={parameters.epochs} 
+                                  onChange={(value) => handleParameterChange('epochs', parseInt(value))}
+                                  min={1}
+                                  max={1000}
+                                >
+                                  <NumberInputField />
+                                  <NumberInputStepper>
+                                    <NumberIncrementStepper />
+                                    <NumberDecrementStepper />
+                                  </NumberInputStepper>
+                                </NumberInput>
+                              </FormControl>
+                              
+                              <FormControl id="batchSize">
+                                <FormLabel>Batch Size</FormLabel>
+                                <NumberInput 
+                                  value={parameters.batchSize} 
+                                  onChange={(value) => handleParameterChange('batchSize', parseInt(value))}
+                                  min={1}
+                                  max={512}
+                                >
+                                  <NumberInputField />
+                                  <NumberInputStepper>
+                                    <NumberIncrementStepper />
+                                    <NumberDecrementStepper />
+                                  </NumberInputStepper>
+                                </NumberInput>
+                              </FormControl>
+                            </>
+                          )}
+                          
+                          {/* For RL models */}
+                          {(selectedModel.includes('5') || selectedModel.includes('6') || selectedModel.includes('7') || 
+                            selectedModel.includes('8') || selectedModel.includes('9')) && (
+                            <>
+                              <FormControl id="timesteps">
+                                <FormLabel>Timesteps</FormLabel>
+                                <NumberInput 
+                                  value={parameters.timesteps} 
+                                  onChange={(value) => handleParameterChange('timesteps', parseInt(value))}
+                                  min={100}
+                                  max={100000}
+                                >
+                                  <NumberInputField />
+                                  <NumberInputStepper>
+                                    <NumberIncrementStepper />
+                                    <NumberDecrementStepper />
+                                  </NumberInputStepper>
+                                </NumberInput>
+                              </FormControl>
+                              
+                              <FormControl id="environment">
+                                <FormLabel>Environment</FormLabel>
+                                <Select 
+                                  value={parameters.environment} 
+                                  onChange={(e) => handleParameterChange('environment', e.target.value)}
+                                >
+                                  <option value="CartPole-v1">CartPole-v1 (Simple)</option>
+                                  <option value="Pendulum-v1">Pendulum-v1 (Continuous)</option>
+                                  <option value="LunarLander-v2">LunarLander-v2 (Complex)</option>
+                                </Select>
+                              </FormControl>
+                            </>
+                          )}
+                        </Grid>
                       </VStack>
                     )}
                     
-                    <Button 
-                      type="submit" 
-                      colorScheme="teal" 
-                      size="lg"
-                      leftIcon={<FiZap />}
-                      isDisabled={!selectedModel}
-                    >
-                      Start Training
-                    </Button>
+                    <Flex gap={4} justify="flex-end">
+                      <Button 
+                        variant="outline"
+                        colorScheme="gray"
+                        leftIcon={<FiUpload />}
+                        onClick={() => router.push('/data')}
+                      >
+                        Manage Datasets
+                      </Button>
+                      <Button 
+                        type="submit" 
+                        colorScheme="teal" 
+                        size="lg"
+                        leftIcon={<FiZap />}
+                        isDisabled={!selectedModel}
+                      >
+                        Start Training
+                      </Button>
+                    </Flex>
                   </VStack>
                 </form>
               </CardBody>
