@@ -22,7 +22,7 @@ export default function Models() {
     }
     
     // Verify token and get user profile
-    fetch('http://localhost:5004/api/auth/profile', {
+    fetch('http://localhost:3005/api/auth/profile', {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -41,7 +41,7 @@ export default function Models() {
         setUser(userData);
         
         // Get available models
-        return fetch('http://localhost:5004/api/models', {
+        return fetch('http://localhost:3005/api/models', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
