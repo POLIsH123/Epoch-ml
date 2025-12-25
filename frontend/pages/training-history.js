@@ -41,7 +41,7 @@ export default function TrainingHistory() {
         setUser(userData);
         
         // Get training history
-        return fetch('http://localhost:5002/api/training', {
+        return fetch('http://localhost:5003/api/training', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
