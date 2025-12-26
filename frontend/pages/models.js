@@ -1,7 +1,7 @@
-import { Box, Heading, Text, Button, VStack, Container, Grid, Card, CardHeader, CardBody, Flex, Icon, useColorModeValue, useToast, Spinner } from '@chakra-ui/react';
+import { Box, Heading, Text, Button, VStack, Container, Grid, Card, CardHeader, CardBody, Flex, Icon, useColorModeValue, useToast, Spinner, Alert } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { FiCpu, FiDatabase, FiActivity, FiLayers, FiGrid, FiBarChart2, FiInfo, FiPlus } from 'react-icons/fi';
+import { FiCpu, FiDatabase, FiActivity, FiLayers, FiGrid, FiBarChart2, FiInfo, FiPlus, FiDownload, FiTrash2 } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import Sidebar from '../components/Sidebar';
 
@@ -60,6 +60,115 @@ export default function Models() {
       router.push('/login');
     });
   }, [router]);
+  
+  const handleDownloadModel = async (modelId, modelName) => {
+    try {
+      // Create a temporary link to trigger the download
+      const link = document.createElement('a');
+      link.href = `http://localhost:5001/api/models/${modelId}/download`;
+      link.setAttribute('download', `${modelName.replace(/\s+/g, '_')}_model.json`);
+      
+      // Add authorization header using fetch to get the file
+      const response = await fetch(link.href, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Download failed');
+      }
+      
+      // Get the file blob
+      const blob = await response.blob();
+      
+      // Create a local URL for the blob
+      const url = window.URL.createObjectURL(blob);
+      
+      // Create a temporary link and trigger download
+      const tempLink = document.createElement('a');
+      tempLink.href = url;
+      tempLink.setAttribute('download', `${modelName.replace(/\s+/g, '_')}_model.json`);
+      document.body.appendChild(tempLink);
+      tempLink.click();
+      
+      // Clean up
+      document.body.removeChild(tempLink);
+      window.URL.revokeObjectURL(url);
+      
+      // Update user credits in the state
+      // We need to fetch the updated user data since credits were deducted on the server
+      const profileResponse = await fetch('http://localhost:5001/api/auth/profile', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (profileResponse.ok) {
+        const updatedUserData = await profileResponse.json();
+        setUser(updatedUserData);
+      }
+      
+      toast({
+        title: 'Model downloaded',
+        description: `Model "${modelName}" downloaded successfully`,
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      });
+    } catch (err) {
+      toast({
+        title: 'Download failed',
+        description: err.message || 'Please check your connection and try again',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  };
+  
+  const handleDeleteModel = async (modelId, modelName) => {
+    try {
+      const response = await fetch(`http://localhost:5001/api/models/${modelId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        // Remove the model from the local state
+        setModels(prev => prev.filter(model => model._id !== modelId));
+        
+        toast({
+          title: 'Model deleted',
+          description: `Model "${modelName}" has been deleted successfully`,
+          status: 'success',
+          duration: 5000,
+          isClosable: true,
+        });
+      } else {
+        toast({
+          title: 'Delete failed',
+          description: data.error || 'Could not delete model',
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+      }
+    } catch (err) {
+      toast({
+        title: 'Network error',
+        description: 'Please check your connection and try again',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  };
   
   if (loading) {
     return (
@@ -156,21 +265,24 @@ export default function Models() {
                                 Use Model
                               </Button>
                               <Button 
-                                variant="ghost" 
+                                variant="outline" 
                                 colorScheme="teal"
-                                leftIcon={<FiInfo />}
+                                leftIcon={<FiDownload />}
+                                onClick={() => handleDownloadModel(model._id, model.name)}
+                              >
+                                Download
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                colorScheme="red"
+                                leftIcon={<FiTrash2 />}
                                 onClick={() => {
-                                  // Show more details in a toast or modal
-                                  toast({
-                                    title: `${model.name} Details`,
-                                    description: `Architecture: ${model.architecture}\n${model.description}`,
-                                    status: 'info',
-                                    duration: 5000,
-                                    isClosable: true,
-                                  });
+                                  if (window.confirm(`Are you sure you want to delete "${model.name}"? This action cannot be undone.`)) {
+                                    handleDeleteModel(model._id, model.name);
+                                  }
                                 }}
                               >
-                                Info
+                                Delete
                               </Button>
                             </Flex>
                           </VStack>

@@ -1,7 +1,14 @@
 const express = require('express');
-const router = express.Router();
+const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const TrainingSession = require('../models/TrainingSession');
+const fs = require('fs');
+const path = require('path');
+
+// In-memory storage for models (same as in models.js)
+let modelsStorage = [];
+
+const router = express.Router();
 
 // Start a new training session
 router.post('/start', async (req, res) => {
@@ -11,7 +18,11 @@ router.post('/start', async (req, res) => {
       return res.status(401).json({ error: 'No token provided' });
     }
     
-    const user = await User.findOne({ token });
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key');
+    
+    // Find user by ID
+    const user = await User.findById(decoded.userId);
     if (!user) {
       return res.status(401).json({ error: 'Invalid token' });
     }
@@ -22,22 +33,68 @@ router.post('/start', async (req, res) => {
       return res.status(400).json({ error: 'Model ID and Dataset ID are required' });
     }
     
-    // Check if user has enough credits (simplified for this example)
-    // In a real app, you would calculate cost based on model type and parameters
-    const modelTrainingCost = 10; // Fixed cost for this example
+    // Get the model to determine its type for cost calculation
+    // Find the model in storage
+    const model = modelsStorage.find(m => m._id === modelId && m.userId === user._id);
+    
+    if (!model) {
+      return res.status(400).json({ error: 'Model not found' });
+    }
+    
+    // Calculate cost based on model type
+    let modelTrainingCost = 10; // Base cost
+    switch(model.type) {
+      case 'GPT-4':
+        modelTrainingCost = 100;
+        break;
+      case 'GPT-3.5':
+      case 'BERT':
+      case 'T5':
+        modelTrainingCost = 50;
+        break;
+      case 'GPT-3':
+      case 'ResNet':
+      case 'Inception':
+      case 'PPO':
+      case 'SAC':
+        modelTrainingCost = 30;
+        break;
+      case 'GPT-2':
+      case 'VGG':
+      case 'DQN':
+      case 'A2C':
+      case 'DDPG':
+      case 'TD3':
+        modelTrainingCost = 20;
+        break;
+      case 'LSTM':
+      case 'GRU':
+      case 'CNN':
+      case 'RNN':
+      case 'Random Forest':
+      case 'Gradient Boosting':
+      case 'XGBoost':
+      case 'LightGBM':
+        modelTrainingCost = 10;
+        break;
+      default:
+        modelTrainingCost = 10;
+    }
+    
     if (user.credits < modelTrainingCost) {
-      return res.status(400).json({ error: 'Insufficient credits' });
+      return res.status(400).json({ error: `Insufficient credits. Training this model requires ${modelTrainingCost} credits, but you only have ${user.credits}.` });
     }
     
     // Create a new training session
     const trainingSession = new TrainingSession({
-      userId: user._id,
+      userId: user._id.toString(), // Convert to string to match schema
       modelId,
       datasetId,
       targetColumn,
       parameters,
       status: 'queued',
-      startTime: new Date()
+      startTime: new Date(),
+      cost: modelTrainingCost // Add the cost field
     });
     
     await trainingSession.save();
@@ -49,9 +106,11 @@ router.post('/start', async (req, res) => {
     res.status(201).json({
       message: 'Training started successfully',
       sessionId: trainingSession._id,
-      creditsRemaining: user.credits
+      creditsRemaining: user.credits,
+      cost: modelTrainingCost
     });
   } catch (error) {
+    console.error('Error starting training:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -64,7 +123,11 @@ router.get('/', async (req, res) => {
       return res.status(401).json({ error: 'No token provided' });
     }
     
-    const user = await User.findOne({ token });
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key');
+    
+    // Find user by ID
+    const user = await User.findById(decoded.userId);
     if (!user) {
       return res.status(401).json({ error: 'Invalid token' });
     }
@@ -76,7 +139,7 @@ router.get('/', async (req, res) => {
         id: '1',
         modelId: 'model-1',
         modelName: 'Sentiment Analysis RNN',
-        modelType: 'RNN',
+        modelType: 'LSTM',
         datasetId: 'dataset-1',
         datasetName: 'IMDB Reviews',
         status: 'completed',
@@ -84,13 +147,14 @@ router.get('/', async (req, res) => {
         endTime: new Date(Date.now() - 1800000),
         accuracy: 0.87,
         loss: 0.32,
-        targetColumn: 'sentiment'
+        targetColumn: 'sentiment',
+        cost: 10
       },
       {
         id: '2',
         modelId: 'model-2',
         modelName: 'Image Classifier CNN',
-        modelType: 'CNN',
+        modelType: 'ResNet',
         datasetId: 'dataset-2',
         datasetName: 'MNIST Digits',
         status: 'completed',
@@ -98,13 +162,14 @@ router.get('/', async (req, res) => {
         endTime: new Date(Date.now() - 72000000),
         accuracy: 0.94,
         loss: 0.18,
-        targetColumn: 'label'
+        targetColumn: 'label',
+        cost: 30
       },
       {
         id: '3',
         modelId: 'model-3',
         modelName: 'Text Generator GPT',
-        modelType: 'GPT',
+        modelType: 'GPT-3',
         datasetId: 'dataset-3',
         datasetName: 'Custom Text',
         status: 'running',
@@ -112,12 +177,14 @@ router.get('/', async (req, res) => {
         endTime: null,
         accuracy: 0.0,
         loss: 1.2,
-        targetColumn: null
+        targetColumn: null,
+        cost: 50
       }
     ];
     
     res.json(mockSessions);
   } catch (error) {
+    console.error('Error fetching training history:', error);
     res.status(500).json({ error: error.message });
   }
 });

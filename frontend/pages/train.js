@@ -178,24 +178,29 @@ export default function TrainModel() {
       return;
     }
     
-    if (!selectedDataset) {
-      toast({
-        title: 'Dataset not selected',
-        description: 'Please select a dataset to train on',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
-      });
-      return;
+    // For RL models, dataset is not required
+    if (!['DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(selectedModelType)) {
+      if (!selectedDataset) {
+        toast({
+          title: 'Dataset not selected',
+          description: 'Please select a dataset to train on',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
+        return;
+      }
     }
     
-    // For non-RL models, target column is required
-    if (!(selectedModel.includes('5') || selectedModel.includes('6') || selectedModel.includes('7') || 
-          selectedModel.includes('8') || selectedModel.includes('9'))) {
-      if (!targetColumn) {
+    // For non-RL models, target column is required for custom datasets but not for pre-made datasets
+    if (!['DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(selectedModelType)) {
+      const selectedDatasetObj = datasets.find(ds => ds.id === selectedDataset);
+      const isPreMadeDataset = ['MNIST', 'CIFAR', 'IMDB', 'COCO'].some(name => selectedDatasetObj?.name.includes(name));
+      
+      if (!isPreMadeDataset && !targetColumn) {
         toast({
           title: 'Target column not specified',
-          description: 'Please specify the target column for supervised learning',
+          description: 'Please specify the target column for your custom dataset',
           status: 'error',
           duration: 3000,
           isClosable: true,
@@ -213,7 +218,7 @@ export default function TrainModel() {
         },
         body: JSON.stringify({
           modelId: selectedModel,
-          datasetId: selectedDataset,
+          datasetId: selectedDataset || null, // For RL models, we might not have a dataset
           targetColumn: targetColumn,
           parameters
         })
@@ -252,6 +257,49 @@ export default function TrainModel() {
   
   // Get the selected dataset object to show its columns
   const currentDataset = datasets.find(ds => ds.id === selectedDataset);
+  
+  // Get the selected model type to determine which parameters to show
+  const selectedModelType = models.find(m => m._id === selectedModel)?.type || '';
+  
+  // Check if the selected dataset is a pre-made dataset
+  const isPreMadeDataset = currentDataset && ['MNIST', 'CIFAR', 'IMDB', 'COCO'].some(name => currentDataset.name.includes(name));
+  
+  // Determine appropriate environments for RL models
+  const rlEnvironments = {
+    'DQN': ['CartPole-v1', 'LunarLander-v2', 'MountainCar-v0', 'Acrobot-v1'],
+    'A2C': ['CartPole-v1', 'LunarLander-v2', 'MountainCar-v0', 'Pendulum-v1'],
+    'PPO': ['CartPole-v1', 'LunarLander-v2', 'MountainCar-v0', 'Pendulum-v1', 'BipedalWalker-v3'],
+    'SAC': ['Pendulum-v1', 'MountainCarContinuous-v0', 'LunarLanderContinuous-v2'],
+    'DDPG': ['Pendulum-v1', 'MountainCarContinuous-v0', 'LunarLanderContinuous-v2'],
+    'TD3': ['Pendulum-v1', 'MountainCarContinuous-v0', 'LunarLanderContinuous-v2']
+  };
+  
+  // Determine appropriate datasets for each model type
+  const modelDatasets = {
+    'RNN': ['Time Series Data', 'Text Data', 'Sequential Data'],
+    'LSTM': ['Time Series Data', 'Text Data', 'Sequential Data'],
+    'GRU': ['Time Series Data', 'Text Data', 'Sequential Data'],
+    'CNN': ['Image Data', 'MNIST', 'CIFAR', 'COCO'],
+    'ResNet': ['Image Data', 'MNIST', 'CIFAR', 'COCO'],
+    'Inception': ['Image Data', 'CIFAR', 'COCO'],
+    'VGG': ['Image Data', 'MNIST', 'CIFAR'],
+    'GPT-2': ['Text Data', 'Books', 'Articles'],
+    'GPT-3': ['Text Data', 'Web Text', 'Books'],
+    'GPT-3.5': ['Text Data', 'Web Text', 'Books'],
+    'GPT-4': ['Text Data', 'Web Text', 'Books'],
+    'BERT': ['Text Data', 'Wikipedia', 'Books'],
+    'T5': ['Text Data', 'Web Text', 'Books'],
+    'DQN': ['CartPole-v1', 'LunarLander-v2', 'MountainCar-v0'],
+    'A2C': ['CartPole-v1', 'LunarLander-v2', 'MountainCar-v0'],
+    'PPO': ['CartPole-v1', 'LunarLander-v2', 'MountainCar-v0', 'BipedalWalker-v3'],
+    'SAC': ['Pendulum-v1', 'MountainCarContinuous-v0'],
+    'DDPG': ['Pendulum-v1', 'MountainCarContinuous-v0'],
+    'TD3': ['Pendulum-v1', 'MountainCarContinuous-v0'],
+    'Random Forest': ['Tabular Data', 'CSV Data', 'Structured Data'],
+    'Gradient Boosting': ['Tabular Data', 'CSV Data', 'Structured Data'],
+    'XGBoost': ['Tabular Data', 'CSV Data', 'Structured Data'],
+    'LightGBM': ['Tabular Data', 'CSV Data', 'Structured Data']
+  };
   
   if (loading) {
     return (
@@ -329,10 +377,48 @@ export default function TrainModel() {
                         onChange={(e) => setNewModel(prev => ({...prev, type: e.target.value}))}
                         placeholder="Select type"
                       >
-                        <option value="RNN">RNN</option>
-                        <option value="CNN">CNN</option>
-                        <option value="GPT">GPT</option>
-                        <option value="Reinforcement Learning">Reinforcement Learning</option>
+                        {/* RNN Options */}
+                        <optgroup label="RNN Models">
+                          <option value="RNN">RNN</option>
+                          <option value="LSTM">LSTM</option>
+                          <option value="GRU">GRU</option>
+                        </optgroup>
+                        
+                        {/* CNN Options */}
+                        <optgroup label="CNN Models">
+                          <option value="CNN">CNN</option>
+                          <option value="ResNet">ResNet</option>
+                          <option value="Inception">Inception</option>
+                          <option value="VGG">VGG</option>
+                        </optgroup>
+                        
+                        {/* GPT Options */}
+                        <optgroup label="Transformer Models">
+                          <option value="GPT-2">GPT-2</option>
+                          <option value="GPT-3">GPT-3</option>
+                          <option value="GPT-3.5">GPT-3.5</option>
+                          <option value="GPT-4">GPT-4</option>
+                          <option value="BERT">BERT</option>
+                          <option value="T5">T5</option>
+                        </optgroup>
+                        
+                        {/* RL Options */}
+                        <optgroup label="Reinforcement Learning">
+                          <option value="DQN">DQN</option>
+                          <option value="A2C">A2C</option>
+                          <option value="PPO">PPO</option>
+                          <option value="SAC">SAC</option>
+                          <option value="DDPG">DDPG</option>
+                          <option value="TD3">TD3</option>
+                        </optgroup>
+                        
+                        {/* Ensemble Options */}
+                        <optgroup label="Ensemble Models">
+                          <option value="Random Forest">Random Forest</option>
+                          <option value="Gradient Boosting">Gradient Boosting</option>
+                          <option value="XGBoost">XGBoost</option>
+                          <option value="LightGBM">LightGBM</option>
+                        </optgroup>
                       </Select>
                     </FormControl>
                     
@@ -390,35 +476,114 @@ export default function TrainModel() {
                         )}
                       </FormControl>
                       
-                      <FormControl id="dataset" isRequired>
-                        <FormLabel>Dataset</FormLabel>
-                        <Select 
-                          value={selectedDataset} 
-                          onChange={(e) => {
-                            setSelectedDataset(e.target.value);
-                            // Reset target column when dataset changes
-                            setTargetColumn('');
-                          }}
-                          placeholder={datasets.length > 0 ? "Select a dataset" : "No datasets available"}
-                          isDisabled={datasets.length === 0}
-                        >
-                          {Array.isArray(datasets) && datasets.map(dataset => (
-                            <option key={dataset.id} value={dataset.id}>
-                              {dataset.name} ({dataset.type})
-                            </option>
-                          ))}
-                        </Select>
-                        {datasets.length === 0 && (
-                          <Text mt={2} fontSize="sm" color="orange.500">
-                            No datasets available. Please upload a dataset first.
-                          </Text>
-                        )}
-                      </FormControl>
+                      {/* Show dataset selection only for non-RL models */}
+                      {!['DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(selectedModelType) && (
+                        <FormControl id="dataset" isRequired>
+                          <FormLabel>Dataset</FormLabel>
+                          <Select 
+                            value={selectedDataset} 
+                            onChange={(e) => {
+                              setSelectedDataset(e.target.value);
+                              // Reset target column when dataset changes
+                              setTargetColumn('');
+                            }}
+                            placeholder={datasets.length > 0 ? "Select a dataset" : "No datasets available"}
+                            isDisabled={datasets.length === 0}
+                          >
+                            {Array.isArray(datasets) && datasets.map(dataset => (
+                              <option key={dataset.id} value={dataset.id}>
+                                {dataset.name} ({dataset.type})
+                              </option>
+                            ))}
+                          </Select>
+                          {datasets.length === 0 && (
+                            <Text mt={2} fontSize="sm" color="orange.500">
+                              No datasets available. Please upload a dataset first.
+                            </Text>
+                          )}
+                        </FormControl>
+                      )}
+                      
+                      {/* Show environment selection only for RL models */}
+                      {['DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(selectedModelType) && (
+                        <FormControl id="environment" isRequired>
+                          <FormLabel>Environment</FormLabel>
+                          <Select 
+                            value={parameters.environment} 
+                            onChange={(e) => handleParameterChange('environment', e.target.value)}
+                          >
+                            {(rlEnvironments[selectedModelType] || ['CartPole-v1', 'Pendulum-v1', 'LunarLander-v2']).map(env => (
+                              <option key={env} value={env}>{env}</option>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      )}
                     </Grid>
                     
+                    {/* Info about appropriate datasets for the selected model */}
+                    {selectedModelType && !['DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(selectedModelType) && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <Box p={4} bg="green.100" borderRadius="md">
+                          <Text fontWeight="bold" color="green.800">
+                            Recommended datasets for {selectedModelType}: {modelDatasets[selectedModelType]?.join(', ') || 'Any dataset'}
+                          </Text>
+                        </Box>
+                      </motion.div>
+                    )}
+                    
+                    {/* Info about appropriate environments for RL models */}
+                    {selectedModelType && ['DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(selectedModelType) && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <Box p={4} bg="purple.100" borderRadius="md">
+                          <Text fontWeight="bold" color="purple.800">
+                            RL environment for {selectedModelType}: {parameters.environment}
+                          </Text>
+                          <Text fontSize="sm" color="purple.700">
+                            No dataset required for reinforcement learning models.
+                          </Text>
+                        </Box>
+                      </motion.div>
+                    )}
+                    
+                    {/* Dataset columns info */}
+                    {selectedDataset && !['DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(selectedModelType) && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <Box p={4} bg="yellow.100" borderRadius="md">
+                          <Text fontWeight="bold" color="yellow.800">
+                            Columns in {currentDataset?.name}:
+                          </Text>
+                          <Flex wrap="wrap" gap={2} mt={2}>
+                            {currentDataset?.columns?.map((col, index) => (
+                              <Box 
+                                key={index} 
+                                px={3} 
+                                py={1} 
+                                bg="yellow.200" 
+                                borderRadius="md" 
+                                fontSize="sm"
+                              >
+                                {col}
+                              </Box>
+                            ))}
+                          </Flex>
+                        </Box>
+                      </motion.div>
+                    )}
+                    
                     {/* Target Column for Supervised Learning */}
-                    {selectedDataset && !(selectedModel.includes('5') || selectedModel.includes('6') || selectedModel.includes('7') || 
-                                          selectedModel.includes('8') || selectedModel.includes('9')) && (
+                    {selectedDataset && !['DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(selectedModelType) && !isPreMadeDataset && (
                       <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -426,36 +591,12 @@ export default function TrainModel() {
                       >
                         <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6}>
                           <FormControl id="targetColumn" isRequired>
-                            <FormLabel>Target Column</FormLabel>
-                            <Select
+                            <FormLabel>Target Column Name</FormLabel>
+                            <Input
                               value={targetColumn}
                               onChange={(e) => setTargetColumn(e.target.value)}
-                              placeholder="Select target column"
-                            >
-                              {/* Mock columns based on dataset type */}
-                              {currentDataset?.type === 'csv' && (
-                                <>
-                                  <option value="label">label</option>
-                                  <option value="target">target</option>
-                                  <option value="class">class</option>
-                                  <option value="output">output</option>
-                                </>
-                              )}
-                              {currentDataset?.type === 'image' && (
-                                <>
-                                  <option value="label">label</option>
-                                  <option value="category">category</option>
-                                  <option value="class">class</option>
-                                </>
-                              )}
-                              {currentDataset?.type === 'text' && (
-                                <>
-                                  <option value="sentiment">sentiment</option>
-                                  <option value="label">label</option>
-                                  <option value="category">category</option>
-                                </>
-                              )}
-                            </Select>
+                              placeholder="Enter target column name"
+                            />
                           </FormControl>
                           
                           <FormControl id="columnsInfo">
@@ -467,6 +608,24 @@ export default function TrainModel() {
                             />
                           </FormControl>
                         </Grid>
+                      </motion.div>
+                    )}
+                    
+                    {/* Info for pre-made datasets */}
+                    {selectedDataset && !['DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(selectedModelType) && isPreMadeDataset && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <Box p={4} bg="blue.100" borderRadius="md">
+                          <Text fontWeight="bold" color="blue.800">
+                            Pre-made dataset detected: {currentDataset?.name}
+                          </Text>
+                          <Text fontSize="sm" color="blue.700">
+                            Target column is automatically configured for this dataset.
+                          </Text>
+                        </Box>
                       </motion.div>
                     )}
                     
@@ -495,8 +654,7 @@ export default function TrainModel() {
                           </FormControl>
                           
                           {/* For non-RL models */}
-                          {!(selectedModel.includes('5') || selectedModel.includes('6') || selectedModel.includes('7') || 
-                             selectedModel.includes('8') || selectedModel.includes('9')) && (
+                          {!['DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(selectedModelType) && (
                             <>
                               <FormControl id="epochs">
                                 <FormLabel>Epochs</FormLabel>
@@ -533,8 +691,7 @@ export default function TrainModel() {
                           )}
                           
                           {/* For RL models */}
-                          {(selectedModel.includes('5') || selectedModel.includes('6') || selectedModel.includes('7') || 
-                            selectedModel.includes('8') || selectedModel.includes('9')) && (
+                          {['DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(selectedModelType) && (
                             <>
                               <FormControl id="timesteps">
                                 <FormLabel>Timesteps</FormLabel>
@@ -550,18 +707,6 @@ export default function TrainModel() {
                                     <NumberDecrementStepper />
                                   </NumberInputStepper>
                                 </NumberInput>
-                              </FormControl>
-                              
-                              <FormControl id="environment">
-                                <FormLabel>Environment</FormLabel>
-                                <Select 
-                                  value={parameters.environment} 
-                                  onChange={(e) => handleParameterChange('environment', e.target.value)}
-                                >
-                                  <option value="CartPole-v1">CartPole-v1 (Simple)</option>
-                                  <option value="Pendulum-v1">Pendulum-v1 (Continuous)</option>
-                                  <option value="LunarLander-v2">LunarLander-v2 (Complex)</option>
-                                </Select>
                               </FormControl>
                             </>
                           )}
@@ -583,7 +728,7 @@ export default function TrainModel() {
                         colorScheme="teal" 
                         size="lg"
                         leftIcon={<FiZap />}
-                        isDisabled={!selectedModel || !selectedDataset}
+                        isDisabled={!selectedModel || (!['DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(selectedModelType) && !selectedDataset)}
                       >
                         Start Training
                       </Button>

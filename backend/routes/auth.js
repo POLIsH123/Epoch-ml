@@ -1,125 +1,131 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { validateRegistration, validateLogin, handleValidationErrors } = require('../middleware/validation');
-
+const User = require('../models/User');
 const router = express.Router();
 
-// In-memory user storage (for testing only)
-let users = [];
-
 // Register a new user
-router.post('/register', validateRegistration, handleValidationErrors, async (req, res) => {
+router.post('/register', async (req, res) => {
   try {
     const { username, email, password } = req.body;
-    
+
     // Check if user already exists
-    const existingUser = users.find(u => u.email === email || u.username === username);
+    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
     if (existingUser) {
       return res.status(400).json({ error: 'User already exists' });
     }
-    
+
     // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-    
+    const hashedPassword = await bcrypt.hash(password, 12);
+
     // Create new user
-    const user = {
-      id: Date.now().toString(),
+    const user = new User({
       username,
       email,
       password: hashedPassword,
-      credits: 100, // Starting credits
-      role: 'user',
-      createdAt: new Date(),
-      lastLogin: null
-    };
-    
-    users.push(user);
-    
-    // Generate JWT token
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '24h' });
-    
+      credits: 100 // Start new users with 100 credits
+    });
+
+    await user.save();
+
+    // Create token
+    const token = jwt.sign(
+      { userId: user._id, username: user.username },
+      process.env.JWT_SECRET || 'fallback_secret_key',
+      { expiresIn: '7d' }
+    );
+
+    // Update user with token
+    user.token = token;
+    await user.save();
+
     res.status(201).json({
       message: 'User created successfully',
       token,
-      user: { id: user.id, username: user.username, email: user.email, credits: user.credits }
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        credits: user.credits
+      }
     });
-
   } catch (error) {
+    console.error('Registration error:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
 // Login user
-router.post('/login', validateLogin, handleValidationErrors, async (req, res) => {
+router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    
+
     // Find user by email
-    const user = users.find(u => u.email === email);
+    const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ error: 'Invalid credentials' });
+      return res.status(400).json({ error: 'Invalid email or password' });
     }
-    
+
     // Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ error: 'Invalid credentials' });
+      return res.status(400).json({ error: 'Invalid email or password' });
     }
-    
-    // Update last login time
-    user.lastLogin = new Date();
-    
-    // Generate JWT token
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '24h' });
-    
+
+    // Create token
+    const token = jwt.sign(
+      { userId: user._id, username: user.username },
+      process.env.JWT_SECRET || 'fallback_secret_key',
+      { expiresIn: '7d' }
+    );
+
+    // Update user with token
+    user.token = token;
+    await user.save();
+
     res.json({
       message: 'Login successful',
       token,
-      user: { id: user.id, username: user.username, email: user.email, credits: user.credits }
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        credits: user.credits
+      }
     });
-
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
 // Get user profile
-router.get('/profile', (req, res) => {
-  // Extract token from header
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
-  
-  if (!token) {
-    return res.status(401).json({ error: 'Access token required' });
-  }
-  
+router.get('/profile', async (req, res) => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
-    const user = users.find(u => u.id === decoded.userId);
-    
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
     }
+
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key');
     
-    res.json({ 
-      id: user.id, 
-      username: user.username, 
-      email: user.email, 
+    // Find user by ID
+    const user = await User.findById(decoded.userId).select('-password -token');
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    res.json({
+      username: user.username,
+      email: user.email,
       credits: user.credits,
-      role: user.role,
-      createdAt: user.createdAt,
-      lastLogin: user.lastLogin
+      role: user.role || 'user',
+      createdAt: user.createdAt
     });
   } catch (error) {
-    res.status(403).json({ error: 'Invalid or expired token' });
+    console.error('Profile error:', error);
+    res.status(401).json({ error: 'Invalid token' });
   }
-});
-
-// Logout user
-router.post('/logout', (req, res) => {
-  res.json({ message: 'Logged out successfully' });
 });
 
 module.exports = router;

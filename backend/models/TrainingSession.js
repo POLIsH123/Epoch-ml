@@ -2,51 +2,64 @@ const mongoose = require('mongoose');
 
 const trainingSessionSchema = new mongoose.Schema({
   userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    type: String, // Using String since we're not using actual ObjectId references in this mock
     required: true
   },
   modelId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Model',
+    type: String, // Using String for consistency with mock data
     required: true
   },
-  parameters: {
-    type: mongoose.Schema.Types.Mixed,
+  datasetId: {
+    type: String, // Using String for consistency with mock data
     required: true
+  },
+  targetColumn: {
+    type: String
+  },
+  parameters: {
+    learningRate: {
+      type: Number,
+      default: 0.001
+    },
+    epochs: {
+      type: Number,
+      default: 10
+    },
+    batchSize: {
+      type: Number,
+      default: 32
+    },
+    timesteps: {
+      type: Number,
+      default: 10000
+    },
+    environment: {
+      type: String,
+      default: 'CartPole-v1'
+    }
   },
   status: {
     type: String,
-    enum: ['pending', 'running', 'completed', 'failed'],
-    default: 'pending'
+    enum: ['queued', 'running', 'completed', 'failed'],
+    default: 'queued'
   },
-  progress: {
-    type: Number,
-    default: 0,
-    min: 0,
-    max: 100
-  },
-  cost: {
-    type: Number,
-    required: true
-  },
-  results: {
-    type: mongoose.Schema.Types.Mixed
-  },
-  trainingLog: [{
-    timestamp: { type: Date, default: Date.now },
-    message: String,
-    level: { type: String, enum: ['info', 'warning', 'error'] }
-  }],
-  startedAt: {
+  startTime: {
     type: Date,
     default: Date.now
   },
-  completedAt: {
+  endTime: {
     type: Date
+  },
+  accuracy: {
+    type: Number
+  },
+  loss: {
+    type: Number
+  },
+  cost: {
+    type: Number,
+    default: 10  // Default cost for training session
   }
-}, {
-  timestamps: true
 });
 
 module.exports = mongoose.model('TrainingSession', trainingSessionSchema);
