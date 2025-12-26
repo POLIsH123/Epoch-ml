@@ -22,8 +22,8 @@ router.get('/', async (req, res) => {
       return res.status(401).json({ error: 'Invalid token' });
     }
     
-    // Get models for the current user
-    const userModels = getUserModels(user._id);
+    // Get models for the current user - convert user._id to string to match stored userId
+    const userModels = getUserModels(user._id.toString());
     
     res.json(userModels);
   } catch (error) {
@@ -69,14 +69,14 @@ router.post('/', async (req, res) => {
       architecture = 'Ensemble';
     }
     
-    // Create a new model and add to storage
+    // Create a new model and add to storage - ensure userId is string
     const newModel = {
       _id: Date.now().toString(), // Using timestamp as string ID
       name,
       type,
       architecture,
       description: description || `A ${type} model for ${name}`,
-      userId: user._id,
+      userId: user._id.toString(), // Convert to string to ensure consistency
       createdAt: new Date()
     };
     
@@ -106,8 +106,8 @@ router.get('/:id', async (req, res) => {
       return res.status(401).json({ error: 'Invalid token' });
     }
     
-    // Find the model in storage
-    const model = getModelById(req.params.id, user._id);
+    // Find the model in storage - convert user._id to string
+    const model = getModelById(req.params.id, user._id.toString());
     
     if (!model) {
       return res.status(404).json({ error: 'Model not found' });
@@ -137,8 +137,8 @@ router.delete('/:id', async (req, res) => {
       return res.status(401).json({ error: 'Invalid token' });
     }
     
-    // Attempt to delete the model from storage
-    const deleted = deleteModel(req.params.id, user._id);
+    // Attempt to delete the model from storage - convert user._id to string
+    const deleted = deleteModel(req.params.id, user._id.toString());
     
     if (!deleted) {
       return res.status(404).json({ error: 'Model not found' });
@@ -168,8 +168,8 @@ router.get('/:id/download', async (req, res) => {
       return res.status(401).json({ error: 'Invalid token' });
     }
     
-    // Find the model in storage
-    const model = getModelById(req.params.id, user._id);
+    // Find the model in storage - convert user._id to string
+    const model = getModelById(req.params.id, user._id.toString());
     
     if (!model) {
       return res.status(404).json({ error: 'Model not found' });
