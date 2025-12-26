@@ -2,8 +2,6 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { getUserModels, getModelById, addModel, updateModel, deleteModel, findModel } = require('../models/ModelStorage');
-const fs = require('fs');
-const path = require('path');
 
 const router = express.Router();
 
