@@ -133,5 +133,23 @@
     "description": "hvnjjn,",
     "userId": "694efb3b2ea7f78c266f687a",
     "createdAt": "2025-12-26T21:36:20.193Z"
+  },
+  {
+    "_id": "1766785172676",
+    "name": "Dev Chawla",
+    "type": "LightGBM",
+    "architecture": "Ensemble",
+    "description": "hell na",
+    "userId": "694efb3b2ea7f78c266f687a",
+    "createdAt": "2025-12-26T21:39:32.676Z"
+  },
+  {
+    "_id": "1766785185031",
+    "name": "Dev Chawla",
+    "type": "Gradient Boosting",
+    "architecture": "Ensemble",
+    "description": "hell na",
+    "userId": "694efb3b2ea7f78c266f687a",
+    "createdAt": "2025-12-26T21:39:45.031Z"
   }
 ]
