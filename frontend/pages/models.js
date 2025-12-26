@@ -57,7 +57,13 @@ export default function Models() {
     })
     .then(res => res.json())
     .then(data => {
-      setModels(data);
+      // Filter out GPT/BERT models and RL models
+      const filteredModels = Array.isArray(data) ? 
+        data.filter(model => 
+          model && 
+          !['GPT-2', 'GPT-3', 'GPT-3.5', 'GPT-4', 'BERT', 'T5', 'DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(model.type)
+        ) : [];
+      setModels(filteredModels);
       setLoading(false);
     })
     .catch(err => {
@@ -163,7 +169,7 @@ export default function Models() {
       const data = await response.json();
       
       if (response.ok) {
-        setModels(prev => prev.filter(model => model._id !== modelId));
+        setModels(prev => prev.filter(model => model && model._id !== modelId));
         toast({
           title: 'Model deleted',
           description: 'Your model has been deleted successfully',
@@ -320,7 +326,7 @@ export default function Models() {
               </Card>
             ) : (
               <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }} gap={6}>
-                {models.map(model => (
+                {models.filter(model => model).map(model => (
                   <motion.div
                     key={model._id}
                     whileHover={{ y: -5 }}
