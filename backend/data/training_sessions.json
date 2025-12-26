@@ -1,1 +1,19 @@
-[]
+[
+  {
+    "_id": "1766786688690",
+    "userId": "694f01deaec939ec74be377d",
+    "modelId": "1766786660913",
+    "datasetId": "dataset-9",
+    "targetColumn": "price",
+    "parameters": {
+      "epochs": 10,
+      "batchSize": 32,
+      "learningRate": 0.001,
+      "timesteps": 1000,
+      "environment": "CartPole-v1"
+    },
+    "status": "queued",
+    "startTime": "2025-12-26T22:04:48.690Z",
+    "cost": 10
+  }
+]

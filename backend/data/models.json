@@ -162,30 +162,12 @@
     "createdAt": "2025-12-26T21:40:56.989Z"
   },
   {
-    "_id": "1766785620666",
+    "_id": "1766786660913",
     "name": "Dev Chawla",
-    "type": "LSTM",
+    "type": "GRU",
     "architecture": "RNN",
     "description": "hell na",
     "userId": "694f01deaec939ec74be377d",
-    "createdAt": "2025-12-26T21:47:00.666Z"
-  },
-  {
-    "_id": "1766785634878",
-    "name": "WIN_20240527_19_24_59_Pro",
-    "type": "Inception",
-    "architecture": "CNN",
-    "description": "hvnjjn,",
-    "userId": "694f01deaec939ec74be377d",
-    "createdAt": "2025-12-26T21:47:14.878Z"
-  },
-  {
-    "_id": "1766785642127",
-    "name": "Dev Chawla",
-    "type": "RNN",
-    "architecture": "RNN",
-    "description": "hvnjjn,",
-    "userId": "694f01deaec939ec74be377d",
-    "createdAt": "2025-12-26T21:47:22.127Z"
+    "createdAt": "2025-12-26T22:04:20.913Z"
   }
 ]
