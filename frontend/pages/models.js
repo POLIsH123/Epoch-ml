@@ -1,14 +1,21 @@
-import { Box, Heading, Text, Button, VStack, Container, Grid, Card, CardHeader, CardBody, Flex, Icon, useColorModeValue, useToast, Spinner, Alert } from '@chakra-ui/react';
+import { Box, Heading, Text, Button, VStack, Container, Card, CardHeader, CardBody, Grid, FormControl, FormLabel, Select, Input, useColorModeValue, useToast, Flex, Icon, Spinner } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { FiCpu, FiDatabase, FiActivity, FiLayers, FiGrid, FiBarChart2, FiInfo, FiPlus, FiDownload, FiTrash2 } from 'react-icons/fi';
+import { FiPlus, FiCpu, FiDatabase, FiLayers, FiBarChart2 } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import Sidebar from '../components/Sidebar';
 
 export default function Models() {
-  const [models, setModels] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [models, setModels] = useState([]);
+  const [formData, setFormData] = useState({
+    name: '',
+    type: '',
+    architecture: '',
+    description: ''
+  });
+  const [creating, setCreating] = useState(false);
   const router = useRouter();
   const toast = useToast();
   
@@ -41,7 +48,7 @@ export default function Models() {
       if (userData) {
         setUser(userData);
         
-        // Get available models
+        // Get user's models
         return fetch('http://localhost:5001/api/models', {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -55,80 +62,90 @@ export default function Models() {
       setLoading(false);
     })
     .catch(err => {
-      console.error('Error fetching data:', err);
+      console.error('Error fetching models:', err);
       localStorage.removeItem('token');
       router.push('/login');
     });
   }, [router]);
   
-  const handleDownloadModel = async (modelId, modelName) => {
-    try {
-      // Create a temporary link to trigger the download
-      const link = document.createElement('a');
-      link.href = `http://localhost:5001/api/models/${modelId}/download`;
-      link.setAttribute('download', `${modelName.replace(/\s+/g, '_')}_model.json`);
-      
-      // Add authorization header using fetch to get the file
-      const response = await fetch(link.href, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Download failed');
-      }
-      
-      // Get the file blob
-      const blob = await response.blob();
-      
-      // Create a local URL for the blob
-      const url = window.URL.createObjectURL(blob);
-      
-      // Create a temporary link and trigger download
-      const tempLink = document.createElement('a');
-      tempLink.href = url;
-      tempLink.setAttribute('download', `${modelName.replace(/\s+/g, '_')}_model.json`);
-      document.body.appendChild(tempLink);
-      tempLink.click();
-      
-      // Clean up
-      document.body.removeChild(tempLink);
-      window.URL.revokeObjectURL(url);
-      
-      // Update user credits in the state
-      // We need to fetch the updated user data since credits were deducted on the server
-      const profileResponse = await fetch('http://localhost:5001/api/auth/profile', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      if (profileResponse.ok) {
-        const updatedUserData = await profileResponse.json();
-        setUser(updatedUserData);
-      }
-      
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+  
+  const handleCreateModel = async (e) => {
+    e.preventDefault();
+    
+    if (!formData.name || !formData.type) {
       toast({
-        title: 'Model downloaded',
-        description: `Model "${modelName}" downloaded successfully`,
-        status: 'success',
-        duration: 5000,
+        title: 'Missing required fields',
+        description: 'Please fill in the model name and type',
+        status: 'error',
+        duration: 3000,
         isClosable: true,
       });
+      return;
+    }
+    
+    setCreating(true);
+    
+    try {
+      const response = await fetch('http://localhost:5001/api/models', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          type: formData.type,
+          architecture: formData.architecture,
+          description: formData.description
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        setModels(prev => [...prev, data.model]);
+        setFormData({
+          name: '',
+          type: '',
+          architecture: '',
+          description: ''
+        });
+        toast({
+          title: 'Model created',
+          description: 'Your model has been created successfully',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+      } else {
+        toast({
+          title: 'Creation failed',
+          description: data.error || 'Could not create model',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
+      }
     } catch (err) {
       toast({
-        title: 'Download failed',
-        description: err.message || 'Please check your connection and try again',
+        title: 'Network error',
+        description: 'Please check your connection and try again',
         status: 'error',
-        duration: 5000,
+        duration: 3000,
         isClosable: true,
       });
+    } finally {
+      setCreating(false);
     }
   };
   
-  const handleDeleteModel = async (modelId, modelName) => {
+  const handleDeleteModel = async (modelId) => {
     try {
       const response = await fetch(`http://localhost:5001/api/models/${modelId}`, {
         method: 'DELETE',
@@ -140,22 +157,20 @@ export default function Models() {
       const data = await response.json();
       
       if (response.ok) {
-        // Remove the model from the local state
         setModels(prev => prev.filter(model => model._id !== modelId));
-        
         toast({
           title: 'Model deleted',
-          description: `Model "${modelName}" has been deleted successfully`,
+          description: 'Your model has been deleted successfully',
           status: 'success',
-          duration: 5000,
+          duration: 3000,
           isClosable: true,
         });
       } else {
         toast({
-          title: 'Delete failed',
+          title: 'Deletion failed',
           description: data.error || 'Could not delete model',
           status: 'error',
-          duration: 5000,
+          duration: 3000,
           isClosable: true,
         });
       }
@@ -164,11 +179,26 @@ export default function Models() {
         title: 'Network error',
         description: 'Please check your connection and try again',
         status: 'error',
-        duration: 5000,
+        duration: 3000,
         isClosable: true,
       });
     }
   };
+  
+  // Define model types excluding GPT/BERT and RL models
+  const modelTypes = [
+    { value: 'LSTM', label: 'LSTM (Long Short-Term Memory)', category: 'RNN' },
+    { value: 'GRU', label: 'GRU (Gated Recurrent Unit)', category: 'RNN' },
+    { value: 'RNN', label: 'RNN (Recurrent Neural Network)', category: 'RNN' },
+    { value: 'CNN', label: 'CNN (Convolutional Neural Network)', category: 'CNN' },
+    { value: 'ResNet', label: 'ResNet (Residual Network)', category: 'CNN' },
+    { value: 'VGG', label: 'VGG Network', category: 'CNN' },
+    { value: 'Inception', label: 'Inception Network', category: 'CNN' },
+    { value: 'Random Forest', label: 'Random Forest', category: 'Ensemble' },
+    { value: 'Gradient Boosting', label: 'Gradient Boosting', category: 'Ensemble' },
+    { value: 'XGBoost', label: 'XGBoost', category: 'Ensemble' },
+    { value: 'LightGBM', label: 'LightGBM', category: 'Ensemble' },
+  ];
   
   if (loading) {
     return (
@@ -191,8 +221,8 @@ export default function Models() {
           >
             <Flex justify="space-between" align="center">
               <VStack align="start" spacing={2}>
-                <Heading as="h1" size="lg">Your Models</Heading>
-                <Text color="gray.500">Browse and manage your trained models</Text>
+                <Heading as="h1" size="lg">Models</Heading>
+                <Text color="gray.500">Create and manage your machine learning models</Text>
               </VStack>
               <Flex align="center" gap={4}>
                 <Box p={3} bg="teal.100" borderRadius="md">
@@ -205,92 +235,140 @@ export default function Models() {
             </Flex>
           </motion.div>
           
-          {/* Model Grid */}
+          {/* Create Model Form */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            {models.length === 0 ? (
-              <Card bg={cardBg} textAlign="center" py={12}>
-                <VStack spacing={4}>
-                  <Icon as={FiDatabase} w={16} h={16} color="gray.400" />
-                  <Heading as="h2" size="md">No models yet</Heading>
-                  <Text color="gray.500">You haven't created any models yet</Text>
+            <Card bg={cardBg}>
+              <CardHeader>
+                <Flex align="center">
+                  <Icon as={FiPlus} w={6} h={6} color="teal.500" mr={3} />
+                  <Heading as="h3" size="md">Create New Model</Heading>
+                </Flex>
+              </CardHeader>
+              <CardBody>
+                <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6}>
+                  <FormControl id="name" isRequired>
+                    <FormLabel>Model Name</FormLabel>
+                    <Input 
+                      value={formData.name} 
+                      onChange={(e) => handleInputChange('name', e.target.value)}
+                      placeholder="Enter model name"
+                    />
+                  </FormControl>
+                  
+                  <FormControl id="type" isRequired>
+                    <FormLabel>Model Type</FormLabel>
+                    <Select 
+                      value={formData.type} 
+                      onChange={(e) => handleInputChange('type', e.target.value)}
+                    >
+                      <option value="">Select model type</option>
+                      {modelTypes.map(type => (
+                        <option key={type.value} value={type.value}>
+                          {type.label}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  
+                  <FormControl id="architecture">
+                    <FormLabel>Architecture</FormLabel>
+                    <Select 
+                      value={formData.architecture} 
+                      onChange={(e) => handleInputChange('architecture', e.target.value)}
+                    >
+                      <option value="">Select architecture</option>
+                      <option value="RNN">RNN</option>
+                      <option value="CNN">CNN</option>
+                      <option value="Transformer">Transformer</option>
+                      <option value="Ensemble">Ensemble</option>
+                    </Select>
+                  </FormControl>
+                  
+                  <FormControl id="description">
+                    <FormLabel>Description</FormLabel>
+                    <Input 
+                      value={formData.description} 
+                      onChange={(e) => handleInputChange('description', e.target.value)}
+                      placeholder="Enter model description"
+                    />
+                  </FormControl>
+                </Grid>
+                
+                <Flex justify="flex-end" mt={6}>
                   <Button 
                     colorScheme="teal" 
                     leftIcon={<FiPlus />}
-                    onClick={() => router.push('/train')}
-                    size="lg"
+                    onClick={handleCreateModel}
+                    isLoading={creating}
                   >
-                    Create Your First Model
+                    Create Model
                   </Button>
+                </Flex>
+              </CardBody>
+            </Card>
+          </motion.div>
+          
+          {/* Models List */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            {models.length === 0 ? (
+              <Card bg={cardBg} textAlign="center" py={12}>
+                <VStack spacing={4}>
+                  <Icon as={FiCpu} w={16} h={16} color="gray.400" />
+                  <Heading as="h2" size="md">No models yet</Heading>
+                  <Text color="gray.500">Create your first model to get started</Text>
                 </VStack>
               </Card>
             ) : (
               <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }} gap={6}>
-                {models.map(model => {
-                  // Choose appropriate icon based on model type
-                  let icon = FiCpu;
-                  if (model.type.includes('CNN')) icon = FiDatabase;
-                  if (model.type.includes('GPT') || model.type.includes('Transformer')) icon = FiActivity;
-                  if (model.type.includes('Reinforcement')) icon = FiGrid;
-                  if (model.type.includes('Ensemble')) icon = FiLayers;
-                  
-                  return (
-                    <motion.div
-                      key={model._id}
-                      whileHover={{ y: -5 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <Card bg={cardBg} h="full">
-                        <CardHeader>
-                          <Flex align="center">
-                            <Icon as={icon} w={6} h={6} color="teal.500" mr={3} />
+                {models.map(model => (
+                  <motion.div
+                    key={model._id}
+                    whileHover={{ y: -5 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Card bg={cardBg}>
+                      <CardHeader>
+                        <Flex justify="space-between" align="center">
+                          <Flex align="center" gap={3}>
+                            <Icon as={FiCpu} color="teal.500" />
                             <Heading as="h3" size="md">{model.name}</Heading>
                           </Flex>
-                        </CardHeader>
-                        <CardBody>
-                          <VStack align="start" spacing={4}>
-                            <Text><strong>Type:</strong> {model.type}</Text>
-                            <Text><strong>Architecture:</strong> {model.architecture}</Text>
-                            <Text><strong>Description:</strong> {model.description}</Text>
-                            
-                            <Flex justify="space-between" align="center" width="100%" mt={4}>
-                              <Button 
-                                variant="outline" 
-                                colorScheme="teal"
-                                onClick={() => router.push(`/train?model=${model._id}`)}
-                              >
-                                Use Model
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                colorScheme="teal"
-                                leftIcon={<FiDownload />}
-                                onClick={() => handleDownloadModel(model._id, model.name)}
-                              >
-                                Download
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                colorScheme="red"
-                                leftIcon={<FiTrash2 />}
-                                onClick={() => {
-                                  if (window.confirm(`Are you sure you want to delete "${model.name}"? This action cannot be undone.`)) {
-                                    handleDeleteModel(model._id, model.name);
-                                  }
-                                }}
-                              >
-                                Delete
-                              </Button>
-                            </Flex>
-                          </VStack>
-                        </CardBody>
-                      </Card>
-                    </motion.div>
-                  );
-                })}
+                        </Flex>
+                      </CardHeader>
+                      <CardBody>
+                        <VStack align="start" spacing={3}>
+                          <Text><strong>Type:</strong> {model.type}</Text>
+                          <Text><strong>Architecture:</strong> {model.architecture}</Text>
+                          <Text><strong>Description:</strong> {model.description}</Text>
+                          <Text><strong>Created:</strong> {new Date(model.createdAt).toLocaleDateString()}</Text>
+                          
+                          <Flex justify="space-between" align="center" width="100%" mt={4}>
+                            <Button 
+                              variant="outline" 
+                              colorScheme="red"
+                              size="sm"
+                              onClick={() => {
+                                if (window.confirm('Are you sure you want to delete this model? This action cannot be undone.')) {
+                                  handleDeleteModel(model._id);
+                                }
+                              }}
+                            >
+                              Delete
+                            </Button>
+                          </Flex>
+                        </VStack>
+                      </CardBody>
+                    </Card>
+                  </motion.div>
+                ))}
               </Grid>
             )}
           </motion.div>
