@@ -12,7 +12,6 @@ export default function Models() {
   const [formData, setFormData] = useState({
     name: '',
     type: '',
-    architecture: '',
     description: ''
   });
   const [creating, setCreating] = useState(false);
@@ -89,6 +88,14 @@ export default function Models() {
       return;
     }
     
+    // Determine architecture based on model type
+    const getArchitecture = (type) => {
+      if (['LSTM', 'GRU', 'RNN'].includes(type)) return 'RNN';
+      if (['CNN', 'ResNet', 'VGG', 'Inception'].includes(type)) return 'CNN';
+      if (['Random Forest', 'Gradient Boosting', 'XGBoost', 'LightGBM'].includes(type)) return 'Ensemble';
+      return type;
+    };
+    
     setCreating(true);
     
     try {
@@ -101,7 +108,7 @@ export default function Models() {
         body: JSON.stringify({
           name: formData.name,
           type: formData.type,
-          architecture: formData.architecture,
+          architecture: getArchitecture(formData.type),
           description: formData.description
         })
       });
@@ -113,7 +120,6 @@ export default function Models() {
         setFormData({
           name: '',
           type: '',
-          architecture: '',
           description: ''
         });
         toast({
@@ -271,20 +277,6 @@ export default function Models() {
                           {type.label}
                         </option>
                       ))}
-                    </Select>
-                  </FormControl>
-                  
-                  <FormControl id="architecture">
-                    <FormLabel>Architecture</FormLabel>
-                    <Select 
-                      value={formData.architecture} 
-                      onChange={(e) => handleInputChange('architecture', e.target.value)}
-                    >
-                      <option value="">Select architecture</option>
-                      <option value="RNN">RNN</option>
-                      <option value="CNN">CNN</option>
-                      <option value="Transformer">Transformer</option>
-                      <option value="Ensemble">Ensemble</option>
                     </Select>
                   </FormControl>
                   

@@ -97,5 +97,23 @@
     "description": "A GPT-4 model for tdufyu",
     "userId": "694efb3b2ea7f78c266f687a",
     "createdAt": "2025-12-26T21:17:07.884Z"
+  },
+  {
+    "_id": "1766784722227",
+    "name": "Dev Chawla",
+    "type": "LSTM",
+    "architecture": "RNN",
+    "description": "A LSTM model for Dev Chawla",
+    "userId": "694efb3b2ea7f78c266f687a",
+    "createdAt": "2025-12-26T21:32:02.227Z"
+  },
+  {
+    "_id": "1766784820097",
+    "name": "WIN_20240527_19_24_59_Pro",
+    "type": "RNN",
+    "architecture": "RNN",
+    "description": "A RNN model for WIN_20240527_19_24_59_Pro",
+    "userId": "694efb3b2ea7f78c266f687a",
+    "createdAt": "2025-12-26T21:33:40.097Z"
   }
 ]
