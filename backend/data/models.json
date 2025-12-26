@@ -34,5 +34,23 @@
     "description": "A RNN model for uojhknlfghjk",
     "userId": "694dcb2612d315f3326f731a",
     "createdAt": "2025-12-26T06:06:41.888Z"
+  },
+  {
+    "_id": "1766729687208",
+    "name": "HJH",
+    "type": "RNN",
+    "architecture": "RNN",
+    "description": "A RNN model for HJH",
+    "userId": "694dcb2612d315f3326f731a",
+    "createdAt": "2025-12-26T06:14:47.208Z"
+  },
+  {
+    "_id": "1766729730306",
+    "name": "klvg",
+    "type": "GRU",
+    "architecture": "RNN",
+    "description": "A GRU model for klvg",
+    "userId": "694dcb2612d315f3326f731a",
+    "createdAt": "2025-12-26T06:15:30.306Z"
   }
 ]

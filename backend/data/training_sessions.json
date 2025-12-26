@@ -1,1 +1,36 @@
-[]
+[
+  {
+    "_id": "1766729699516",
+    "userId": "694dcb2612d315f3326f731a",
+    "modelId": "1766729687208",
+    "datasetId": "dataset-9",
+    "targetColumn": "price",
+    "parameters": {
+      "learningRate": 0.001,
+      "epochs": 10,
+      "batchSize": 32,
+      "timesteps": 10000,
+      "environment": "CartPole-v1"
+    },
+    "status": "queued",
+    "startTime": "2025-12-26T06:14:59.516Z",
+    "cost": 10
+  },
+  {
+    "_id": "1766729744164",
+    "userId": "694dcb2612d315f3326f731a",
+    "modelId": "1766729730306",
+    "datasetId": "dataset-5",
+    "targetColumn": "",
+    "parameters": {
+      "learningRate": 0.001,
+      "epochs": 100,
+      "batchSize": 32,
+      "timesteps": 10000,
+      "environment": "CartPole-v1"
+    },
+    "status": "queued",
+    "startTime": "2025-12-26T06:15:44.164Z",
+    "cost": 10
+  }
+]
