@@ -1,8 +1,12 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const TrainingSession = require('../models/TrainingSession');
 const { findModel } = require('../models/ModelStorage');
+
+// In-memory storage for training sessions
+if (!global.trainingSessions) {
+  global.trainingSessions = [];
+}
 
 const router = express.Router();
 
@@ -81,19 +85,21 @@ router.post('/start', async (req, res) => {
       return res.status(400).json({ error: `Insufficient credits. Training this model requires ${modelTrainingCost} credits, but you only have ${user.credits}.` });
     }
     
-    // Create a new training session
-    const trainingSession = new TrainingSession({
-      userId: user._id.toString(), // Convert to string to match schema
+    // Create a new training session in memory
+    const trainingSession = {
+      _id: Date.now().toString(),
+      userId: user._id.toString(),
       modelId,
       datasetId,
       targetColumn,
       parameters,
       status: 'queued',
       startTime: new Date(),
-      cost: modelTrainingCost // Add the cost field
-    });
+      cost: modelTrainingCost
+    };
     
-    await trainingSession.save();
+    // Add to in-memory storage
+    global.trainingSessions.push(trainingSession);
     
     // Deduct credits from user account
     user.credits -= modelTrainingCost;
@@ -128,9 +134,31 @@ router.get('/', async (req, res) => {
       return res.status(401).json({ error: 'Invalid token' });
     }
     
+    // Get training sessions for this user from in-memory storage
+    const userSessions = global.trainingSessions.filter(session => session.userId === user._id.toString());
+    
     // In a real app, this would fetch from the TrainingSession model
-    // For now, returning mock data
-    const mockSessions = [
+    // For now, returning user sessions with model details
+    const sessionsWithDetails = await Promise.all(userSessions.map(async (session) => {
+      // Find the model associated with this session
+      const model = findModel(session.modelId);
+      
+      return {
+        id: session._id,
+        modelId: session.modelId,
+        modelName: model ? model.name : 'Unknown Model',
+        modelType: model ? model.type : 'Unknown',
+        datasetId: session.datasetId,
+        status: session.status,
+        startTime: session.startTime,
+        cost: session.cost,
+        targetColumn: session.targetColumn,
+        parameters: session.parameters
+      };
+    }));
+    
+    // If no user sessions, return some mock data
+    const mockSessions = sessionsWithDetails.length > 0 ? sessionsWithDetails : [
       {
         id: '1',
         modelId: 'model-1',
