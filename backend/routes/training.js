@@ -1,12 +1,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const { findModel } = require('../models/ModelStorage');
-
-// In-memory storage for training sessions
-if (!global.trainingSessions) {
-  global.trainingSessions = [];
-}
+const { findModel, addTrainingSession, getTrainingSessions, getUserTrainingSessions } = require('../models/ModelStorage');
 
 const router = express.Router();
 
@@ -85,7 +80,7 @@ router.post('/start', async (req, res) => {
       return res.status(400).json({ error: `Insufficient credits. Training this model requires ${modelTrainingCost} credits, but you only have ${user.credits}.` });
     }
     
-    // Create a new training session in memory
+    // Create a new training session in file storage
     const trainingSession = {
       _id: Date.now().toString(),
       userId: user._id.toString(),
@@ -98,8 +93,8 @@ router.post('/start', async (req, res) => {
       cost: modelTrainingCost
     };
     
-    // Add to in-memory storage
-    global.trainingSessions.push(trainingSession);
+    // Add to file-based storage
+    addTrainingSession(trainingSession);
     
     // Deduct credits from user account
     user.credits -= modelTrainingCost;
@@ -134,12 +129,12 @@ router.get('/', async (req, res) => {
       return res.status(401).json({ error: 'Invalid token' });
     }
     
-    // Get training sessions for this user from in-memory storage
-    const userSessions = global.trainingSessions.filter(session => session.userId === user._id.toString());
+    // Get training sessions for this user from file storage
+    const userSessions = getUserTrainingSessions(user._id.toString());
     
     // In a real app, this would fetch from the TrainingSession model
     // For now, returning user sessions with model details
-    const sessionsWithDetails = await Promise.all(userSessions.map(async (session) => {
+    const sessionsWithDetails = userSessions.map((session) => {
       // Find the model associated with this session
       const model = findModel(session.modelId);
       
@@ -155,7 +150,7 @@ router.get('/', async (req, res) => {
         targetColumn: session.targetColumn,
         parameters: session.parameters
       };
-    }));
+    });
     
     // If no user sessions, return some mock data
     const mockSessions = sessionsWithDetails.length > 0 ? sessionsWithDetails : [
