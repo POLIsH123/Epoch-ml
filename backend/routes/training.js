@@ -3,6 +3,18 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { findModel, addTrainingSession, getTrainingSessions, getUserTrainingSessions } = require('../models/ModelStorage');
 
+// Function to delete a training session
+const deleteTrainingSession = (sessionId, userId) => {
+  const sessions = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '../data/training_sessions.json'), 'utf8'));
+  const sessionIndex = sessions.findIndex(session => session._id === sessionId && session.userId === userId);
+  if (sessionIndex !== -1) {
+    sessions.splice(sessionIndex, 1);
+    require('fs').writeFileSync(require('path').join(__dirname, '../data/training_sessions.json'), JSON.stringify(sessions, null, 2));
+    return true;
+  }
+  return false;
+};
+
 const router = express.Router();
 
 // Start a new training session
@@ -212,6 +224,37 @@ router.get('/', async (req, res) => {
     res.json(mockSessions);
   } catch (error) {
     console.error('Error fetching training history:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete a training session
+router.delete('/:id', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+    
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key');
+    
+    // Find user by ID
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+    
+    // Attempt to delete the training session
+    const deleted = deleteTrainingSession(req.params.id, user._id.toString());
+    
+    if (!deleted) {
+      return res.status(404).json({ error: 'Training session not found' });
+    }
+    
+    res.json({ message: 'Training session deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting training session:', error);
     res.status(500).json({ error: error.message });
   }
 });
