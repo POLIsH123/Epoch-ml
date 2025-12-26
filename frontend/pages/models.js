@@ -1,7 +1,7 @@
 import { Box, Heading, Text, Button, VStack, Container, Card, CardHeader, CardBody, Grid, FormControl, FormLabel, Select, Input, useColorModeValue, useToast, Flex, Icon, Spinner } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { FiPlus, FiCpu, FiDatabase, FiLayers, FiBarChart2 } from 'react-icons/fi';
+import { FiPlus, FiCpu, FiDatabase, FiLayers, FiBarChart2, FiDownload } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import Sidebar from '../components/Sidebar';
 
@@ -197,6 +197,55 @@ export default function Models() {
     }
   };
   
+  const handleDownloadModel = async (modelId, modelName) => {
+    try {
+      const response = await fetch(`http://localhost:5001/api/models/${modelId}/download`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (response.ok) {
+        // Create a blob from the response and trigger download
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${modelName.replace(/\s+/g, '_')}_model.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        toast({
+          title: 'Model downloaded',
+          description: 'Your model has been downloaded successfully',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+      } else {
+        const errorData = await response.json();
+        toast({
+          title: 'Download failed',
+          description: errorData.error || 'Could not download model',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    } catch (err) {
+      toast({
+        title: 'Network error',
+        description: 'Please check your connection and try again',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+  
   // Define model types excluding GPT/BERT and RL models
   const modelTypes = [
     { value: 'LSTM', label: 'LSTM (Long Short-Term Memory)', category: 'RNN' },
@@ -348,7 +397,7 @@ export default function Models() {
                           <Text><strong>Description:</strong> {model.description}</Text>
                           <Text><strong>Created:</strong> {new Date(model.createdAt).toLocaleDateString()}</Text>
                           
-                          <Flex justify="space-between" align="center" width="100%" mt={4}>
+                          <Flex justify="space-between" align="center" width="100%" mt={4} gap={2}>
                             <Button 
                               variant="outline" 
                               colorScheme="red"
@@ -360,6 +409,15 @@ export default function Models() {
                               }}
                             >
                               Delete
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              colorScheme="blue"
+                              size="sm"
+                              leftIcon={<FiDownload />}
+                              onClick={() => handleDownloadModel(model._id, model.name)}
+                            >
+                              Download
                             </Button>
                           </Flex>
                         </VStack>
