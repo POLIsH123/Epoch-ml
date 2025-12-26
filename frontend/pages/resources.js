@@ -8,6 +8,7 @@ import Sidebar from '../components/Sidebar';
 export default function Resources() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [purchasing, setPurchasing] = useState(false);
   const router = useRouter();
   const toast = useToast();
   
@@ -48,6 +49,28 @@ export default function Resources() {
       router.push('/login');
     });
   }, [router]);
+  
+  const handlePurchase = async (credits, cost) => {
+    setPurchasing(true);
+    
+    // Simulate payment processing
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // In a real implementation, this would connect to a payment processor
+    // For now, we'll just show a success message
+    toast({
+      title: 'Purchase successful',
+      description: `${credits} credits have been added to your account`,
+      status: 'success',
+      duration: 3000,
+      isClosable: true,
+    });
+    
+    // Update user credits locally (in a real app, we'd fetch updated profile)
+    setUser(prev => ({ ...prev, credits: (prev.credits || 0) + credits }));
+    
+    setPurchasing(false);
+  };
   
   if (loading) {
     return (
@@ -111,66 +134,11 @@ export default function Resources() {
             </StatGroup>
           </motion.div>
           
-          {/* Resource Tiers */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <Card bg={cardBg}>
-              <CardHeader>
-                <Flex align="center">
-                  <Icon as={FiCpu} w={6} h={6} color="teal.500" mr={3} />
-                  <Heading as="h3" size="md">Compute Tiers</Heading>
-                </Flex>
-              </CardHeader>
-              <CardBody>
-                <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }} gap={6}>
-                  <Card>
-                    <CardBody>
-                      <VStack align="start" spacing={4}>
-                        <Heading size="sm">Basic</Heading>
-                        <Text><strong>GPU:</strong> Shared CPU</Text>
-                        <Text><strong>Credits:</strong> 1/minute</Text>
-                        <Text><strong>Max Memory:</strong> 4GB</Text>
-                        <Button colorScheme="gray" variant="outline" size="sm">Current Tier</Button>
-                      </VStack>
-                    </CardBody>
-                  </Card>
-                  
-                  <Card>
-                    <CardBody>
-                      <VStack align="start" spacing={4}>
-                        <Heading size="sm">Standard</Heading>
-                        <Text><strong>GPU:</strong> T4 x1</Text>
-                        <Text><strong>Credits:</strong> 3/minute</Text>
-                        <Text><strong>Max Memory:</strong> 16GB</Text>
-                        <Button colorScheme="teal" variant="outline" size="sm">Upgrade</Button>
-                      </VStack>
-                    </CardBody>
-                  </Card>
-                  
-                  <Card>
-                    <CardBody>
-                      <VStack align="start" spacing={4}>
-                        <Heading size="sm">Premium</Heading>
-                        <Text><strong>GPU:</strong> V100 x2</Text>
-                        <Text><strong>Credits:</strong> 10/minute</Text>
-                        <Text><strong>Max Memory:</strong> 64GB</Text>
-                        <Button colorScheme="teal" variant="outline" size="sm">Upgrade</Button>
-                      </VStack>
-                    </CardBody>
-                  </Card>
-                </Grid>
-              </CardBody>
-            </Card>
-          </motion.div>
-          
           {/* Purchase Options */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
           >
             <Card bg={cardBg}>
               <CardHeader>
@@ -186,7 +154,14 @@ export default function Resources() {
                       <VStack align="start" spacing={3}>
                         <Heading size="sm">100 Credits</Heading>
                         <Text>$5.00</Text>
-                        <Button colorScheme="teal" size="sm">Purchase</Button>
+                        <Button 
+                          colorScheme="teal" 
+                          size="sm"
+                          onClick={() => handlePurchase(100, 5)}
+                          isLoading={purchasing}
+                        >
+                          Purchase
+                        </Button>
                       </VStack>
                     </CardBody>
                   </Card>
@@ -196,7 +171,14 @@ export default function Resources() {
                       <VStack align="start" spacing={3}>
                         <Heading size="sm">500 Credits</Heading>
                         <Text>$20.00</Text>
-                        <Button colorScheme="teal" size="sm">Purchase</Button>
+                        <Button 
+                          colorScheme="teal" 
+                          size="sm"
+                          onClick={() => handlePurchase(500, 20)}
+                          isLoading={purchasing}
+                        >
+                          Purchase
+                        </Button>
                       </VStack>
                     </CardBody>
                   </Card>
@@ -206,7 +188,14 @@ export default function Resources() {
                       <VStack align="start" spacing={3}>
                         <Heading size="sm">1000 Credits</Heading>
                         <Text>$35.00</Text>
-                        <Button colorScheme="teal" size="sm">Purchase</Button>
+                        <Button 
+                          colorScheme="teal" 
+                          size="sm"
+                          onClick={() => handlePurchase(1000, 35)}
+                          isLoading={purchasing}
+                        >
+                          Purchase
+                        </Button>
                       </VStack>
                     </CardBody>
                   </Card>
@@ -219,7 +208,7 @@ export default function Resources() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
           >
             <Card bg={cardBg}>
               <CardHeader>
