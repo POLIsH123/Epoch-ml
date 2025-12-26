@@ -172,56 +172,8 @@ router.get('/', async (req, res) => {
       };
     });
     
-    // If no user sessions, return some mock data
-    const mockSessions = sessionsWithDetails.length > 0 ? sessionsWithDetails : [
-      {
-        id: '1',
-        modelId: 'model-1',
-        modelName: 'Sentiment Analysis RNN',
-        modelType: 'LSTM',
-        datasetId: 'dataset-1',
-        datasetName: 'IMDB Reviews',
-        status: 'completed',
-        startTime: new Date(Date.now() - 3600000),
-        endTime: new Date(Date.now() - 1800000),
-        accuracy: 0.87,
-        loss: 0.32,
-        targetColumn: 'sentiment',
-        cost: 10
-      },
-      {
-        id: '2',
-        modelId: 'model-2',
-        modelName: 'Image Classifier CNN',
-        modelType: 'ResNet',
-        datasetId: 'dataset-2',
-        datasetName: 'MNIST Digits',
-        status: 'completed',
-        startTime: new Date(Date.now() - 86400000),
-        endTime: new Date(Date.now() - 72000000),
-        accuracy: 0.94,
-        loss: 0.18,
-        targetColumn: 'label',
-        cost: 30
-      },
-      {
-        id: '3',
-        modelId: 'model-3',
-        modelName: 'Text Generator GPT',
-        modelType: 'GPT-3',
-        datasetId: 'dataset-3',
-        datasetName: 'Custom Text',
-        status: 'running',
-        startTime: new Date(),
-        endTime: null,
-        accuracy: 0.0,
-        loss: 1.2,
-        targetColumn: null,
-        cost: 50
-      }
-    ];
-    
-    res.json(mockSessions);
+    // Return the actual sessions (could be empty array if no sessions)
+    res.json(sessionsWithDetails);
   } catch (error) {
     console.error('Error fetching training history:', error);
     res.status(500).json({ error: error.message });

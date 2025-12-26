@@ -1,4 +1,4 @@
-import { Box, Heading, Text, Button, VStack, Container, Card, CardHeader, CardBody, Flex, Icon, useColorModeValue, useToast, Grid, FormControl, FormLabel, Input, Switch, Select } from '@chakra-ui/react';
+import { Box, Heading, Text, Button, VStack, Container, Card, CardHeader, CardBody, Flex, Icon, useColorModeValue, useToast, Grid, FormControl, FormLabel, Input, Switch, Select, Modal, ModalOverlay, ModalContent, ModalHeader, ModalFooter, ModalBody, ModalCloseButton, useDisclosure } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { FiUser, FiMail, FiLock, FiBell, FiGlobe, FiSun, FiMoon, FiHardDrive, FiZap, FiDatabase } from 'react-icons/fi';
@@ -17,6 +17,7 @@ export default function Settings() {
   });
   const router = useRouter();
   const toast = useToast();
+  const { isOpen: isDeleteModalOpen, onOpen: onDeleteModalOpen, onClose: onDeleteModalClose } = useDisclosure();
   
   const bg = useColorModeValue('gray.50', 'gray.900');
   const cardBg = useColorModeValue('white', 'gray.800');
@@ -71,6 +72,82 @@ export default function Settings() {
       duration: 3000,
       isClosable: true,
     });
+  };
+  
+  const handleChangePassword = () => {
+    toast({
+      title: 'Feature coming soon',
+      description: 'Password change functionality will be available in a future update',
+      status: 'info',
+      duration: 3000,
+      isClosable: true,
+    });
+  };
+  
+  const handleUpdateProfile = () => {
+    router.push('/profile');
+  };
+  
+  const handleClearData = () => {
+    toast({
+      title: 'Feature coming soon',
+      description: 'Data clearing functionality will be available in a future update',
+      status: 'info',
+      duration: 3000,
+      isClosable: true,
+    });
+  };
+  
+  const handleResetAccount = () => {
+    toast({
+      title: 'Feature coming soon',
+      description: 'Account reset functionality will be available in a future update',
+      status: 'info',
+      duration: 3000,
+      isClosable: true,
+    });
+  };
+  
+  const handleDeleteAccount = async () => {
+    try {
+      const response = await fetch('http://localhost:5001/api/auth/delete-account', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        // Clear token and redirect to login
+        localStorage.removeItem('token');
+        router.push('/login');
+        toast({
+          title: 'Account deleted',
+          description: 'Your account has been deleted successfully',
+          status: 'success',
+          duration: 5000,
+          isClosable: true,
+        });
+      } else {
+        toast({
+          title: 'Delete failed',
+          description: data.error || 'Could not delete account',
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+      }
+    } catch (err) {
+      toast({
+        title: 'Network error',
+        description: 'Please check your connection and try again',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
   };
   
   if (loading) {
@@ -145,10 +222,10 @@ export default function Settings() {
                 </Grid>
                 
                 <Flex justify="flex-end" mt={6} gap={3}>
-                  <Button colorScheme="gray" variant="outline">
+                  <Button colorScheme="gray" variant="outline" onClick={handleChangePassword}>
                     Change Password
                   </Button>
-                  <Button colorScheme="teal" leftIcon={<FiLock />}>
+                  <Button colorScheme="teal" leftIcon={<FiUser />} onClick={handleUpdateProfile}>
                     Update Profile
                   </Button>
                 </Flex>
@@ -294,13 +371,13 @@ export default function Settings() {
                   </Text>
                   
                   <Flex gap={3} justify="flex-end">
-                    <Button colorScheme="red" variant="outline">
+                    <Button colorScheme="red" variant="outline" onClick={handleClearData}>
                       Clear All Data
                     </Button>
-                    <Button colorScheme="red" variant="outline">
+                    <Button colorScheme="red" variant="outline" onClick={handleResetAccount}>
                       Reset Account
                     </Button>
-                    <Button colorScheme="red" leftIcon={<FiDatabase />}>
+                    <Button colorScheme="red" leftIcon={<FiDatabase />} onClick={onDeleteModalOpen}>
                       Delete Account
                     </Button>
                   </Flex>
@@ -310,6 +387,42 @@ export default function Settings() {
           </motion.div>
         </VStack>
       </Box>
+      
+      {/* Delete Account Confirmation Modal */}
+      <Modal isOpen={isDeleteModalOpen} onClose={onDeleteModalClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Confirm Account Deletion</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <Text mb={3}>
+              Are you sure you want to delete your account? This action is irreversible and will permanently remove all your data including:
+            </Text>
+            <ul style={{ paddingLeft: '20px', marginBottom: '15px' }}>
+              <li>Your models and training sessions</li>
+              <li>Your datasets and configurations</li>
+              <li>Your account information and settings</li>
+            </ul>
+            <Text fontWeight="bold" color="red.500">
+              This action cannot be undone. Please type "DELETE" to confirm.
+            </Text>
+          </ModalBody>
+          <ModalFooter>
+            <Button colorScheme="gray" mr={3} onClick={onDeleteModalClose}>
+              Cancel
+            </Button>
+            <Button 
+              colorScheme="red" 
+              onClick={() => {
+                handleDeleteAccount();
+                onDeleteModalClose();
+              }}
+            >
+              Delete Account
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 }

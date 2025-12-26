@@ -128,4 +128,83 @@ router.get('/profile', async (req, res) => {
   }
 });
 
+// Update user profile
+router.put('/profile', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key');
+    
+    // Find user by ID
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    const { username, email } = req.body;
+
+    // Check if new username or email already exists for other users
+    if (username && username !== user.username) {
+      const existingUser = await User.findOne({ username, _id: { $ne: user._id } });
+      if (existingUser) {
+        return res.status(400).json({ error: 'Username already exists' });
+      }
+      user.username = username;
+    }
+
+    if (email && email !== user.email) {
+      const existingUser = await User.findOne({ email, _id: { $ne: user._id } });
+      if (existingUser) {
+        return res.status(400).json({ error: 'Email already exists' });
+      }
+      user.email = email;
+    }
+
+    await user.save();
+
+    res.json({
+      message: 'Profile updated successfully',
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        credits: user.credits
+      }
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete user account
+router.delete('/delete-account', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key');
+    
+    // Find user by ID and delete
+    const user = await User.findByIdAndDelete(decoded.userId);
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid token or user not found' });
+    }
+
+    res.json({
+      message: 'Account deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete account error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

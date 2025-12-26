@@ -52,5 +52,50 @@
     "description": "A GRU model for klvg",
     "userId": "694dcb2612d315f3326f731a",
     "createdAt": "2025-12-26T06:15:30.306Z"
+  },
+  {
+    "_id": "1766782689455",
+    "name": "tdufyu",
+    "type": "RNN",
+    "architecture": "RNN",
+    "description": "A RNN model for tdufyu",
+    "userId": "694dcb2612d315f3326f731a",
+    "createdAt": "2025-12-26T20:58:09.455Z"
+  },
+  {
+    "_id": "1766782719819",
+    "name": "jk",
+    "type": "A2C",
+    "architecture": "Reinforcement Learning",
+    "description": "A A2C model for jk",
+    "userId": "694dcb2612d315f3326f731a",
+    "createdAt": "2025-12-26T20:58:39.819Z"
+  },
+  {
+    "_id": "1766782731824",
+    "name": "=-",
+    "type": "CNN",
+    "architecture": "CNN",
+    "description": "A CNN model for =-",
+    "userId": "694dcb2612d315f3326f731a",
+    "createdAt": "2025-12-26T20:58:51.824Z"
+  },
+  {
+    "_id": "1766782748243",
+    "name": "ygi",
+    "type": "GPT-4",
+    "architecture": "Transformer",
+    "description": "A GPT-4 model for ygi",
+    "userId": "694dcb2612d315f3326f731a",
+    "createdAt": "2025-12-26T20:59:08.243Z"
+  },
+  {
+    "_id": "1766783827884",
+    "name": "tdufyu",
+    "type": "GPT-4",
+    "architecture": "Transformer",
+    "description": "A GPT-4 model for tdufyu",
+    "userId": "694efb3b2ea7f78c266f687a",
+    "createdAt": "2025-12-26T21:17:07.884Z"
   }
 ]
