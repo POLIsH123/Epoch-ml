@@ -32,8 +32,16 @@ router.post('/start', async (req, res) => {
     // Find the model in storage
     const model = findModel(modelId);
     
-    if (!model || model.userId !== user._id) {
-      return res.status(400).json({ error: 'Model not found' });
+    if (!model) {
+      return res.status(400).json({ error: `Model with ID ${modelId} not found in storage` });
+    }
+    
+    // Convert both to string for comparison to handle potential type mismatches
+    const modelUserId = model.userId.toString();
+    const requestUserId = user._id.toString();
+    
+    if (modelUserId !== requestUserId) {
+      return res.status(400).json({ error: `Model does not belong to user. Model user: ${modelUserId}, Request user: ${requestUserId}` });
     }
     
     // Calculate cost based on model type
