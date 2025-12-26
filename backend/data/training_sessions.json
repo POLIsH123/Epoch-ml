@@ -1,19 +1,19 @@
 [
   {
-    "_id": "1766786688690",
+    "_id": "1766787468088",
     "userId": "694f01deaec939ec74be377d",
-    "modelId": "1766786660913",
-    "datasetId": "dataset-9",
-    "targetColumn": "price",
+    "modelId": "1766787445352",
+    "datasetId": "dataset-10",
+    "targetColumn": "species",
     "parameters": {
-      "epochs": 10,
+      "epochs": 1,
       "batchSize": 32,
       "learningRate": 0.001,
       "timesteps": 1000,
       "environment": "CartPole-v1"
     },
     "status": "queued",
-    "startTime": "2025-12-26T22:04:48.690Z",
+    "startTime": "2025-12-26T22:17:48.088Z",
     "cost": 10
   }
 ]

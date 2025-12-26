@@ -1,5 +1,5 @@
 import { Box, Flex, Text, VStack, Icon, useColorModeValue } from '@chakra-ui/react';
-import { FiHome, FiBarChart2, FiCpu, FiDatabase, FiActivity, FiGrid, FiLayers, FiClock, FiDollarSign, FiSettings, FiUser, FiUpload, FiMessageSquare } from 'react-icons/fi';
+import { FiHome, FiBarChart2, FiCpu, FiDatabase, FiActivity, FiGrid, FiLayers, FiClock, FiDollarSign, FiSettings, FiUser, FiUpload, FiMessageSquare, FiPlay } from 'react-icons/fi';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 
@@ -13,6 +13,7 @@ export default function Sidebar({ user }) {
     { name: 'Dashboard', icon: FiHome, path: '/dashboard' },
     { name: 'Prompt Engineering', icon: FiMessageSquare, path: '/prompt-engineering' },
     { name: 'Train Model', icon: FiCpu, path: '/train' },
+    { name: 'Test Model', icon: FiPlay, path: '/test-model' },
     { name: 'Models', icon: FiDatabase, path: '/models' },
     { name: 'Data', icon: FiUpload, path: '/data' },
     { name: 'Training History', icon: FiClock, path: '/training-history' },

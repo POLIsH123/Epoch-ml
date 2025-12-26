@@ -162,12 +162,12 @@
     "createdAt": "2025-12-26T21:40:56.989Z"
   },
   {
-    "_id": "1766786660913",
+    "_id": "1766787445352",
     "name": "Dev Chawla",
-    "type": "GRU",
-    "architecture": "RNN",
+    "type": "XGBoost",
+    "architecture": "Ensemble",
     "description": "hell na",
     "userId": "694f01deaec939ec74be377d",
-    "createdAt": "2025-12-26T22:04:20.913Z"
+    "createdAt": "2025-12-26T22:17:25.352Z"
   }
 ]
