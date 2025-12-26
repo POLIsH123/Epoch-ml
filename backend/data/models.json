@@ -115,5 +115,23 @@
     "description": "A RNN model for WIN_20240527_19_24_59_Pro",
     "userId": "694efb3b2ea7f78c266f687a",
     "createdAt": "2025-12-26T21:33:40.097Z"
+  },
+  {
+    "_id": "1766784937752",
+    "name": "Dev Chawla",
+    "type": "LightGBM",
+    "architecture": "Ensemble",
+    "description": "hell na",
+    "userId": "694efb3b2ea7f78c266f687a",
+    "createdAt": "2025-12-26T21:35:37.752Z"
+  },
+  {
+    "_id": "1766784980193",
+    "name": "WIN_20240527_19_24_59_Pro",
+    "type": "Gradient Boosting",
+    "architecture": "Ensemble",
+    "description": "hvnjjn,",
+    "userId": "694efb3b2ea7f78c266f687a",
+    "createdAt": "2025-12-26T21:36:20.193Z"
   }
 ]
