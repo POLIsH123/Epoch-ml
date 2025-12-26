@@ -2,11 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const TrainingSession = require('../models/TrainingSession');
-const fs = require('fs');
-const path = require('path');
-
-// In-memory storage for models (same as in models.js)
-let modelsStorage = [];
+const { findModel } = require('../models/ModelStorage');
 
 const router = express.Router();
 
@@ -35,9 +31,9 @@ router.post('/start', async (req, res) => {
     
     // Get the model to determine its type for cost calculation
     // Find the model in storage
-    const model = modelsStorage.find(m => m._id === modelId && m.userId === user._id);
+    const model = findModel(modelId);
     
-    if (!model) {
+    if (!model || model.userId !== user._id) {
       return res.status(400).json({ error: 'Model not found' });
     }
     

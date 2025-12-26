@@ -1,14 +1,11 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const Model = require('../models/Model');
+const { getUserModels, getModelById, addModel, updateModel, deleteModel, findModel } = require('../models/ModelStorage');
 const fs = require('fs');
 const path = require('path');
 
 const router = express.Router();
-
-// In-memory storage for models (in a real app, this would be a database)
-let modelsStorage = [];
 
 // Get all models for the authenticated user
 router.get('/', async (req, res) => {
@@ -27,8 +24,8 @@ router.get('/', async (req, res) => {
       return res.status(401).json({ error: 'Invalid token' });
     }
     
-    // Filter models for the current user
-    const userModels = modelsStorage.filter(model => model.userId === user._id);
+    // Get models for the current user
+    const userModels = getUserModels(user._id);
     
     res.json(userModels);
   } catch (error) {
@@ -85,7 +82,7 @@ router.post('/', async (req, res) => {
       createdAt: new Date()
     };
     
-    modelsStorage.push(newModel);
+    addModel(newModel);
     
     res.status(201).json(newModel);
   } catch (error) {
@@ -112,7 +109,7 @@ router.get('/:id', async (req, res) => {
     }
     
     // Find the model in storage
-    const model = modelsStorage.find(m => m._id === req.params.id && m.userId === user._id);
+    const model = getModelById(req.params.id, user._id);
     
     if (!model) {
       return res.status(404).json({ error: 'Model not found' });
@@ -142,15 +139,12 @@ router.delete('/:id', async (req, res) => {
       return res.status(401).json({ error: 'Invalid token' });
     }
     
-    // Find the model in storage
-    const modelIndex = modelsStorage.findIndex(m => m._id === req.params.id && m.userId === user._id);
+    // Attempt to delete the model from storage
+    const deleted = deleteModel(req.params.id, user._id);
     
-    if (modelIndex === -1) {
+    if (!deleted) {
       return res.status(404).json({ error: 'Model not found' });
     }
-    
-    // Remove the model from storage
-    modelsStorage.splice(modelIndex, 1);
     
     res.json({ message: 'Model deleted successfully' });
   } catch (error) {
@@ -177,7 +171,7 @@ router.get('/:id/download', async (req, res) => {
     }
     
     // Find the model in storage
-    const model = modelsStorage.find(m => m._id === req.params.id && m.userId === user._id);
+    const model = getModelById(req.params.id, user._id);
     
     if (!model) {
       return res.status(404).json({ error: 'Model not found' });
