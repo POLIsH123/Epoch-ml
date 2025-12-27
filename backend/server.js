@@ -1,10 +1,19 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const http = require('http');
+const { Server } = require('socket.io');
 const { connectDB } = require('./config/db');
 require('dotenv').config();
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
 
 // Connect to database
 connectDB();
@@ -12,6 +21,9 @@ connectDB();
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Make io accessible to our routes
+app.set('io', io);
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
@@ -29,8 +41,22 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/build/index.html'));
 });
 
+// Socket configuration
+io.on('connection', (socket) => {
+  console.log('A user connected:', socket.id);
+
+  socket.on('join', (userId) => {
+    socket.join(userId);
+    console.log(`User ${userId} joined their notification room`);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected');
+  });
+});
+
 const PORT = process.env.PORT || 5001;
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

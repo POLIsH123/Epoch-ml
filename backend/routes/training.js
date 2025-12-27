@@ -120,6 +120,19 @@ router.post('/start', async (req, res) => {
     pythonProcess.on('close', (code) => {
       activeTrainingProcesses.delete(trainingSession._id.toString());
       console.log(`Training process for ${trainingSession._id} finished with code ${code}`);
+
+      const io = req.app.get('io');
+      if (code === 0) {
+        io.to(user._id.toString()).emit('training_finished', {
+          sessionId: trainingSession._id,
+          modelName: model.name
+        });
+      } else {
+        io.to(user._id.toString()).emit('training_failed', {
+          sessionId: trainingSession._id,
+          modelName: model.name
+        });
+      }
     });
 
     res.status(201).json({
