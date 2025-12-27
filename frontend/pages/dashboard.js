@@ -1,7 +1,7 @@
 import { Box, Heading, Text, Button, VStack, Container, Grid, SimpleGrid, Stat, StatLabel, StatNumber, StatHelpText, StatGroup, Card, CardHeader, CardBody, Flex, Icon, useColorModeValue, Spinner, Alert, useToast, Badge } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { FiCpu, FiBarChart2, FiZap, FiDollarSign, FiDatabase, FiUsers, FiActivity, FiTrendingUp, FiClock, FiCheckCircle } from 'react-icons/fi';
+import { FiCpu, FiBarChart2, FiZap, FiDollarSign, FiDatabase, FiUsers, FiActivity, FiTrendingUp, FiClock, FiCheckCircle, FiInfo } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import Sidebar from '../components/Sidebar';
 

@@ -1,4 +1,4 @@
-import { Box, Heading, Text, Button, VStack, Container, Card, CardHeader, CardBody, Grid, FormControl, FormLabel, Select, Input, useColorModeValue, useToast, Flex, Icon, Spinner } from '@chakra-ui/react';
+import { Box, Heading, Text, Button, VStack, Container, Card, CardHeader, CardBody, Grid, FormControl, FormLabel, Select, Input, useColorModeValue, useToast, Flex, Icon, Spinner, Textarea } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { FiZap, FiDatabase, FiCpu, FiBarChart2, FiDollarSign, FiTarget } from 'react-icons/fi';
