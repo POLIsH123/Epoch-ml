@@ -11,7 +11,7 @@ from bson import ObjectId
 MONGO_URI = os.getenv('MONGODB_URI', 'mongodb://localhost:27017/epoch-ml')
 SAVED_MODELS_DIR = 'models/saved'
 
-def update_session(session_id, status, progress=None, accuracy=None, loss=None):
+def update_session(session_id, status, progress=None, accuracy=None, loss=None, metric_name=None):
     client = MongoClient(MONGO_URI)
     db = client.get_default_database()
     update_data = {'status': status}
@@ -21,6 +21,8 @@ def update_session(session_id, status, progress=None, accuracy=None, loss=None):
         update_data['accuracy'] = accuracy
     if loss is not None:
         update_data['loss'] = loss
+    if metric_name is not None:
+        update_data['metricName'] = metric_name
     
     if status == 'completed':
         update_data['endTime'] = tf.timestamp().numpy() # Just a placeholder for date
@@ -108,13 +110,16 @@ def train(session_id, dataset_id, params_json):
                       loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True) if dataset_id in ['dataset-1', 'dataset-2'] else 'mse',
                       metrics=['accuracy'] if dataset_id in ['dataset-1', 'dataset-2'] else ['mae'])
 
+        metric_name = 'Accuracy' if dataset_id in ['dataset-1', 'dataset-2'] else 'MAE'
+        
         # Create a custom callback to update progress
         class ProgressCallback(tf.keras.callbacks.Callback):
             def on_epoch_end(self, epoch, logs=None):
-                acc = logs.get('accuracy') or logs.get('mae')
+                # Use dataset appropriate metric
+                acc = logs.get('accuracy') or logs.get('val_accuracy') or logs.get('mae') or logs.get('val_mae')
                 loss = logs.get('loss')
-                print(f"Epoch {epoch+1} ended. Accuracy/MAE: {acc}, Loss: {loss}")
-                update_session(session_id, 'running', progress=(epoch + 1) / params.get('epochs', 5) * 100, accuracy=acc, loss=loss)
+                print(f"Epoch {epoch+1} ended. {metric_name}: {acc}, Loss: {loss}")
+                update_session(session_id, 'running', progress=(epoch + 1) / params.get('epochs', 5) * 100, accuracy=acc, loss=loss, metric_name=metric_name)
 
         epochs = params.get('epochs', 5)
         model.fit(x_train, y_train, epochs=epochs, callbacks=[ProgressCallback()])

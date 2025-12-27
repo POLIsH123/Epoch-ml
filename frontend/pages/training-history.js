@@ -11,56 +11,56 @@ export default function TrainingHistory() {
   const [user, setUser] = useState(null);
   const router = useRouter();
   const toast = useToast();
-  
+
   const bg = useColorModeValue('gray.50', 'gray.900');
   const cardBg = useColorModeValue('white', 'gray.800');
-  
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
       router.push('/login');
       return;
     }
-    
+
     // Verify token and get user profile
     fetch('http://localhost:5001/api/auth/profile', {
       headers: {
         'Authorization': `Bearer ${token}`
       }
     })
-    .then(res => {
-      if (res.status === 401) {
-        // Token is invalid, redirect to login
+      .then(res => {
+        if (res.status === 401) {
+          // Token is invalid, redirect to login
+          localStorage.removeItem('token');
+          router.push('/login');
+          return;
+        }
+        return res.json();
+      })
+      .then(userData => {
+        if (userData) {
+          setUser(userData);
+
+          // Get training history
+          return fetch('http://localhost:5001/api/training', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        setSessions(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Error fetching training history:', err);
         localStorage.removeItem('token');
         router.push('/login');
-        return;
-      }
-      return res.json();
-    })
-    .then(userData => {
-      if (userData) {
-        setUser(userData);
-        
-        // Get training history
-        return fetch('http://localhost:5001/api/training', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-      }
-    })
-    .then(res => res.json())
-    .then(data => {
-      setSessions(data);
-      setLoading(false);
-    })
-    .catch(err => {
-      console.error('Error fetching training history:', err);
-      localStorage.removeItem('token');
-      router.push('/login');
-    });
+      });
   }, [router]);
-  
+
   const handleDeleteSession = async (sessionId, sessionName) => {
     try {
       const response = await fetch(`http://localhost:5001/api/training/${sessionId}`, {
@@ -69,13 +69,13 @@ export default function TrainingHistory() {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok) {
         // Remove the session from the local state
         setSessions(prev => prev.filter(session => session.id !== sessionId));
-        
+
         toast({
           title: 'Session deleted',
           description: `Training session "${sessionName}" has been deleted successfully`,
@@ -102,9 +102,9 @@ export default function TrainingHistory() {
       });
     }
   };
-  
+
   const getStatusColor = (status) => {
-    switch(status) {
+    switch (status) {
       case 'completed':
         return 'green';
       case 'running':
@@ -117,9 +117,9 @@ export default function TrainingHistory() {
         return 'gray';
     }
   };
-  
+
   const getStatusIcon = (status) => {
-    switch(status) {
+    switch (status) {
       case 'completed':
         return FiCheckCircle;
       case 'running':
@@ -132,7 +132,7 @@ export default function TrainingHistory() {
         return FiClock;
     }
   };
-  
+
   if (loading) {
     return (
       <Flex minH="100vh" align="center" justify="center" bg={bg}>
@@ -140,7 +140,7 @@ export default function TrainingHistory() {
       </Flex>
     );
   }
-  
+
   return (
     <Box minH="100vh" bg={bg}>
       <Sidebar user={user} />
@@ -167,7 +167,7 @@ export default function TrainingHistory() {
               </Flex>
             </Flex>
           </motion.div>
-          
+
           {/* Training Sessions Grid */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -180,8 +180,8 @@ export default function TrainingHistory() {
                   <Icon as={FiBarChart2} w={16} h={16} color="gray.400" />
                   <Heading as="h2" size="md">No training sessions yet</Heading>
                   <Text color="gray.500">You haven't started any model training sessions yet</Text>
-                  <Button 
-                    colorScheme="teal" 
+                  <Button
+                    colorScheme="teal"
                     onClick={() => router.push('/train')}
                     size="lg"
                   >
@@ -193,7 +193,7 @@ export default function TrainingHistory() {
               <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }} gap={6}>
                 {sessions.map(session => {
                   const StatusIcon = getStatusIcon(session.status);
-                  
+
                   return (
                     <motion.div
                       key={session.id}
@@ -219,22 +219,28 @@ export default function TrainingHistory() {
                             <Text><strong>Status:</strong> {session.status}</Text>
                             <Text><strong>Cost:</strong> {session.cost} credits</Text>
                             <Text><strong>Start Time:</strong> {new Date(session.startTime).toLocaleString()}</Text>
-                            
+
                             {session.endTime && (
                               <Text><strong>End Time:</strong> {new Date(session.endTime).toLocaleString()}</Text>
                             )}
-                            
-                            {session.accuracy && (
-                              <Text><strong>Accuracy:</strong> {(session.accuracy * 100).toFixed(2)}%</Text>
+
+                            {session.accuracy !== undefined && (
+                              <Text>
+                                <strong>{session.metricName || 'Accuracy'}:</strong> {
+                                  (session.metricName === 'MAE' || session.accuracy > 1.1)
+                                    ? session.accuracy.toFixed(4)
+                                    : (session.accuracy * 100).toFixed(2) + '%'
+                                }
+                              </Text>
                             )}
-                            
-                            {session.loss && (
-                              <Text><strong>Loss:</strong> session.loss.toFixed(4)</Text>
+
+                            {session.loss !== undefined && (
+                              <Text><strong>Loss:</strong> {session.loss.toFixed(4)}</Text>
                             )}
-                            
+
                             <Flex justify="space-between" align="center" width="100%" mt={4}>
-                              <Button 
-                                variant="outline" 
+                              <Button
+                                variant="outline"
                                 colorScheme="red"
                                 leftIcon={<FiTrash2 />}
                                 onClick={() => {

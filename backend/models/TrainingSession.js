@@ -53,6 +53,10 @@ const trainingSessionSchema = new mongoose.Schema({
   accuracy: {
     type: Number
   },
+  metricName: {
+    type: String,
+    default: 'Accuracy'
+  },
   loss: {
     type: Number
   },
