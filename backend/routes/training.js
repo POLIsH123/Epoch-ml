@@ -81,9 +81,12 @@ router.post('/start', async (req, res) => {
       case 'LightGBM':
         modelTrainingCost = 10;
         break;
-      default:
-        modelTrainingCost = 10;
     }
+
+    // Dynamic cost based on epochs
+    const epochs = parameters?.epochs || 5;
+    const epochMultiplier = Math.max(1, epochs / 5);
+    modelTrainingCost = Math.round(modelTrainingCost * epochMultiplier);
 
     if (user.credits < modelTrainingCost) {
       return res.status(400).json({ error: `Insufficient credits. Requires ${modelTrainingCost}, have ${user.credits}.` });

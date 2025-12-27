@@ -26,48 +26,48 @@ export default function TrainModel() {
   const [trainingCost, setTrainingCost] = useState(0);
   const router = useRouter();
   const toast = useToast();
-  
+
   const bg = useColorModeValue('gray.50', 'gray.900');
   const cardBg = useColorModeValue('white', 'gray.800');
-  
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
       router.push('/login');
       return;
     }
-    
+
     // Fetch user profile, models, and datasets
     Promise.all([
       fetch('http://localhost:5001/api/auth/profile', {
         headers: { 'Authorization': `Bearer ${token}` }
       }).then(res => res.json()),
-      
+
       fetch('http://localhost:5001/api/models', {
         headers: { 'Authorization': `Bearer ${token}` }
       }).then(res => res.json()),
-      
+
       fetch('http://localhost:5001/api/resources/datasets', {
         headers: { 'Authorization': `Bearer ${token}` }
       }).then(res => res.json())
     ])
-    .then(([userData, modelData, datasetData]) => {
-      setUser(userData);
-      // Filter out GPT/BERT models and RL models
-      const filteredModels = modelData.filter(model => 
-        !['GPT-2', 'GPT-3', 'GPT-3.5', 'GPT-4', 'BERT', 'T5', 'DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(model.type)
-      );
-      setModels(filteredModels);
-      setDatasets(datasetData);
-      setLoading(false);
-    })
-    .catch(err => {
-      console.error('Error fetching data:', err);
-      localStorage.removeItem('token');
-      router.push('/login');
-    });
+      .then(([userData, modelData, datasetData]) => {
+        setUser(userData);
+        // Filter out GPT/BERT models and RL models
+        const filteredModels = modelData.filter(model =>
+          !['GPT-2', 'GPT-3', 'GPT-3.5', 'GPT-4', 'BERT', 'T5', 'DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(model.type)
+        );
+        setModels(filteredModels);
+        setDatasets(datasetData);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Error fetching data:', err);
+        localStorage.removeItem('token');
+        router.push('/login');
+      });
   }, [router]);
-  
+
   // Update columns when dataset changes
   useEffect(() => {
     if (formData.datasetId) {
@@ -81,14 +81,14 @@ export default function TrainModel() {
       setColumns([]);
     }
   }, [formData.datasetId, datasets]);
-  
+
   // Update training cost when model type changes
   useEffect(() => {
     if (formData.modelId) {
       const selectedModel = models.find(m => m._id === formData.modelId);
       if (selectedModel) {
         let cost = 10; // Base cost
-        switch(selectedModel.type) {
+        switch (selectedModel.type) {
           case 'ResNet':
           case 'Inception':
             cost = 30;
@@ -109,11 +109,17 @@ export default function TrainModel() {
           default:
             cost = 10;
         }
-        setTrainingCost(cost);
+
+        // Dynamic cost based on epochs
+        const epochs = formData.parameters.epochs || 5;
+        const epochMultiplier = Math.max(1, epochs / 5);
+        const dynamicCost = Math.round(cost * epochMultiplier);
+
+        setTrainingCost(dynamicCost);
       }
     }
-  }, [formData.modelId, models]);
-  
+  }, [formData.modelId, formData.parameters.epochs, models]);
+
   const handleInputChange = (field, value) => {
     if (field.includes('.')) {
       const [parent, child] = field.split('.');
@@ -131,10 +137,10 @@ export default function TrainModel() {
       }));
     }
   };
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.modelId || !formData.datasetId) {
       toast({
         title: 'Missing required fields',
@@ -145,7 +151,7 @@ export default function TrainModel() {
       });
       return;
     }
-    
+
     if (user.credits < trainingCost) {
       toast({
         title: 'Insufficient credits',
@@ -156,7 +162,7 @@ export default function TrainModel() {
       });
       return;
     }
-    
+
     try {
       const response = await fetch('http://localhost:5001/api/training/start', {
         method: 'POST',
@@ -171,9 +177,9 @@ export default function TrainModel() {
           parameters: formData.parameters
         })
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok) {
         toast({
           title: 'Training started',
@@ -182,10 +188,10 @@ export default function TrainModel() {
           duration: 5000,
           isClosable: true,
         });
-        
+
         // Update user credits
         setUser(prev => ({ ...prev, credits: data.creditsRemaining }));
-        
+
         // Reset form
         setFormData({
           modelId: '',
@@ -218,7 +224,7 @@ export default function TrainModel() {
       });
     }
   };
-  
+
   if (loading) {
     return (
       <Flex minH="100vh" align="center" justify="center" bg={bg}>
@@ -226,7 +232,7 @@ export default function TrainModel() {
       </Flex>
     );
   }
-  
+
   return (
     <Box minH="100vh" bg={bg}>
       <Sidebar user={user} />
@@ -253,7 +259,7 @@ export default function TrainModel() {
               </Flex>
             </Flex>
           </motion.div>
-          
+
           {/* Training Form */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -271,8 +277,8 @@ export default function TrainModel() {
                 <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6}>
                   <FormControl id="modelId" isRequired>
                     <FormLabel>Model</FormLabel>
-                    <Select 
-                      value={formData.modelId} 
+                    <Select
+                      value={formData.modelId}
                       onChange={(e) => handleInputChange('modelId', e.target.value)}
                     >
                       <option value="">Select a model</option>
@@ -283,11 +289,11 @@ export default function TrainModel() {
                       ))}
                     </Select>
                   </FormControl>
-                  
+
                   <FormControl id="datasetId" isRequired>
                     <FormLabel>Dataset</FormLabel>
-                    <Select 
-                      value={formData.datasetId} 
+                    <Select
+                      value={formData.datasetId}
                       onChange={(e) => handleInputChange('datasetId', e.target.value)}
                     >
                       <option value="">Select a dataset</option>
@@ -298,11 +304,11 @@ export default function TrainModel() {
                       ))}
                     </Select>
                   </FormControl>
-                  
+
                   <FormControl id="targetColumn">
                     <FormLabel>Target Column</FormLabel>
-                    <Select 
-                      value={formData.targetColumn} 
+                    <Select
+                      value={formData.targetColumn}
                       onChange={(e) => handleInputChange('targetColumn', e.target.value)}
                     >
                       <option value="">Select target column</option>
@@ -313,17 +319,17 @@ export default function TrainModel() {
                       ))}
                     </Select>
                   </FormControl>
-                  
+
                   <FormControl id="trainingCost">
                     <FormLabel>Training Cost</FormLabel>
-                    <Input 
-                      value={`${trainingCost} credits`} 
-                      isDisabled 
+                    <Input
+                      value={`${trainingCost} credits`}
+                      isDisabled
                       bg="gray.100"
                     />
                   </FormControl>
                 </Grid>
-                
+
                 {/* Parameters based on model type */}
                 {models.find(m => m._id === formData.modelId) && (
                   <Box mt={6}>
@@ -331,38 +337,38 @@ export default function TrainModel() {
                     <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }} gap={4}>
                       <FormControl id="epochs">
                         <FormLabel>Epochs</FormLabel>
-                        <Input 
-                          type="number" 
-                          value={formData.parameters.epochs} 
+                        <Input
+                          type="number"
+                          value={formData.parameters.epochs}
                           onChange={(e) => handleInputChange('parameters.epochs', parseInt(e.target.value))}
                         />
                       </FormControl>
-                      
+
                       <FormControl id="batchSize">
                         <FormLabel>Batch Size</FormLabel>
-                        <Input 
-                          type="number" 
-                          value={formData.parameters.batchSize} 
+                        <Input
+                          type="number"
+                          value={formData.parameters.batchSize}
                           onChange={(e) => handleInputChange('parameters.batchSize', parseInt(e.target.value))}
                         />
                       </FormControl>
-                      
+
                       <FormControl id="learningRate">
                         <FormLabel>Learning Rate</FormLabel>
-                        <Input 
-                          type="number" 
+                        <Input
+                          type="number"
                           step="0.001"
-                          value={formData.parameters.learningRate} 
+                          value={formData.parameters.learningRate}
                           onChange={(e) => handleInputChange('parameters.learningRate', parseFloat(e.target.value))}
                         />
                       </FormControl>
                     </Grid>
                   </Box>
                 )}
-                
+
                 <Flex justify="flex-end" mt={6}>
-                  <Button 
-                    colorScheme="teal" 
+                  <Button
+                    colorScheme="teal"
                     leftIcon={<FiBarChart2 />}
                     onClick={handleSubmit}
                   >
@@ -372,7 +378,7 @@ export default function TrainModel() {
               </CardBody>
             </Card>
           </motion.div>
-          
+
           {/* Model Information */}
           {formData.modelId && (
             <motion.div
@@ -391,7 +397,7 @@ export default function TrainModel() {
                   {(() => {
                     const model = models.find(m => m._id === formData.modelId);
                     if (!model) return null;
-                    
+
                     return (
                       <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6}>
                         <VStack align="start" spacing={2}>
