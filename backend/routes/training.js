@@ -4,6 +4,7 @@ const User = require('../models/User');
 const TrainingSession = require('../models/TrainingSession');
 const Model = require('../models/Model');
 const { spawn } = require('child_process');
+const path = require('path');
 
 // Helper to manage training processes (mock for now, but integration ready)
 const activeTrainingProcesses = new Map();
@@ -106,7 +107,6 @@ router.post('/start', async (req, res) => {
     await user.save();
 
     // Spawn Python Training Process using VENV
-    const path = require('path');
     const pythonPath = path.join(process.cwd(), 'venv', 'Scripts', 'python');
     const pythonProcess = spawn(pythonPath, [
       'training/train_model.py',

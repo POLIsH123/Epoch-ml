@@ -2,6 +2,8 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Model = require('../models/Model');
+const { spawn } = require('child_process');
+const path = require('path');
 
 const router = express.Router();
 
@@ -218,7 +220,6 @@ router.post('/:id/test', async (req, res) => {
     const { testData } = req.body;
 
     // Perform inference using Python script in VENV
-    const path = require('path');
     const pythonPath = path.join(process.cwd(), 'venv', 'Scripts', 'python');
     const pythonProcess = spawn(pythonPath, ['models/inference.py', model._id, JSON.stringify(testData || "{}")]);
 
