@@ -105,8 +105,10 @@ router.post('/start', async (req, res) => {
     user.credits -= modelTrainingCost;
     await user.save();
 
-    // Spawn Python Training Process
-    const pythonProcess = spawn('python', [
+    // Spawn Python Training Process using VENV
+    const path = require('path');
+    const pythonPath = path.join(process.cwd(), 'venv', 'Scripts', 'python');
+    const pythonProcess = spawn(pythonPath, [
       'training/train_model.py',
       trainingSession._id.toString(),
       datasetId,

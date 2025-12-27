@@ -217,9 +217,10 @@ router.post('/:id/test', async (req, res) => {
 
     const { testData } = req.body;
 
-    // In a real app, this spawns python inference.py
-    const { spawn } = require('child_process');
-    const pythonProcess = spawn('python', ['models/inference.py', model._id, JSON.stringify(testData || "{}")]);
+    // Perform inference using Python script in VENV
+    const path = require('path');
+    const pythonPath = path.join(process.cwd(), 'venv', 'Scripts', 'python');
+    const pythonProcess = spawn(pythonPath, ['models/inference.py', model._id, JSON.stringify(testData || "{}")]);
 
     let output = '';
     pythonProcess.stdout.on('data', (data) => {
