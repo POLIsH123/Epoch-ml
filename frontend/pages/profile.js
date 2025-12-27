@@ -28,12 +28,21 @@ export default function Profile() {
     Promise.all([
       fetch('http://localhost:5001/api/auth/profile', {
         headers: { 'Authorization': `Bearer ${token}` }
-      }).then(res => res.json()),
+      }),
       fetch('http://localhost:5001/api/training/stats', {
         headers: { 'Authorization': `Bearer ${token}` }
-      }).then(res => res.json())
+      })
     ])
-      .then(([userData, statsData]) => {
+      .then(async ([profileRes, statsRes]) => {
+        if (profileRes.status === 401 || statsRes.status === 401) {
+          localStorage.removeItem('token');
+          router.push('/login');
+          return;
+        }
+
+        const userData = await profileRes.json();
+        const statsData = await statsRes.json();
+
         setUser(userData);
         setEditData({ username: userData.username, email: userData.email });
         setStats(statsData);
@@ -41,8 +50,7 @@ export default function Profile() {
       })
       .catch(err => {
         console.error('Error fetching data:', err);
-        localStorage.removeItem('token');
-        router.push('/login');
+        setLoading(false);
       });
   }, [router]);
 
