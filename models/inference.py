@@ -10,8 +10,8 @@ def predict(model_id, input_data_json):
     try:
         model_path = os.path.join(SAVED_MODELS_DIR, f"{model_id}.h5")
         if not os.path.exists(model_path):
-            print(json.dumps({"error": f"Model file {model_id}.h5 not found"}))
-            return
+            print(json.dumps({"error": f"Model file {model_id}.h5 not found. Please train the model first."}))
+            sys.exit(1)
 
         model = tf.keras.models.load_model(model_path)
         
@@ -53,6 +53,7 @@ def predict(model_id, input_data_json):
 
     except Exception as e:
         print(json.dumps({"error": str(e)}))
+        sys.exit(1)
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:

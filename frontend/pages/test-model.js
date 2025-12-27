@@ -261,7 +261,7 @@ export default function TestModel() {
 
                     <Heading as="h4" size="sm">Predictions:</Heading>
                     <Grid templateColumns={{ base: '1fr' }} gap={3}>
-                      {testResults.predictions.map((prediction, index) => (
+                      {testResults.predictions && testResults.predictions.map((prediction, index) => (
                         <Card key={index} variant="outline" p={3}>
                           <Flex justify="space-between" align="center">
                             <VStack align="start" spacing={1}>
