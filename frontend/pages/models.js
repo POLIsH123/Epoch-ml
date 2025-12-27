@@ -17,72 +17,72 @@ export default function Models() {
   const [creating, setCreating] = useState(false);
   const router = useRouter();
   const toast = useToast();
-  
+
   const bg = useColorModeValue('gray.50', 'gray.900');
   const cardBg = useColorModeValue('white', 'gray.800');
-  
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
       router.push('/login');
       return;
     }
-    
+
     // Verify token and get user profile
     fetch('http://localhost:5001/api/auth/profile', {
       headers: {
         'Authorization': `Bearer ${token}`
       }
     })
-    .then(res => {
-      if (res.status === 401) {
-        // Token is invalid, redirect to login
+      .then(res => {
+        if (res.status === 401) {
+          // Token is invalid, redirect to login
+          localStorage.removeItem('token');
+          router.push('/login');
+          return;
+        }
+        return res.json();
+      })
+      .then(userData => {
+        if (userData) {
+          setUser(userData);
+
+          // Get user's models
+          return fetch('http://localhost:5001/api/models', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        // Filter out GPT/BERT models and RL models
+        const filteredModels = Array.isArray(data) ?
+          data.filter(model =>
+            model &&
+            !['GPT-2', 'GPT-3', 'GPT-3.5', 'GPT-4', 'BERT', 'T5', 'DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(model.type)
+          ) : [];
+        setModels(filteredModels);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Error fetching models:', err);
         localStorage.removeItem('token');
         router.push('/login');
-        return;
-      }
-      return res.json();
-    })
-    .then(userData => {
-      if (userData) {
-        setUser(userData);
-        
-        // Get user's models
-        return fetch('http://localhost:5001/api/models', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-      }
-    })
-    .then(res => res.json())
-    .then(data => {
-      // Filter out GPT/BERT models and RL models
-      const filteredModels = Array.isArray(data) ? 
-        data.filter(model => 
-          model && 
-          !['GPT-2', 'GPT-3', 'GPT-3.5', 'GPT-4', 'BERT', 'T5', 'DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(model.type)
-        ) : [];
-      setModels(filteredModels);
-      setLoading(false);
-    })
-    .catch(err => {
-      console.error('Error fetching models:', err);
-      localStorage.removeItem('token');
-      router.push('/login');
-    });
+      });
   }, [router]);
-  
+
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
   };
-  
+
   const handleCreateModel = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.name || !formData.type) {
       toast({
         title: 'Missing required fields',
@@ -93,7 +93,7 @@ export default function Models() {
       });
       return;
     }
-    
+
     // Determine architecture based on model type
     const getArchitecture = (type) => {
       if (['LSTM', 'GRU', 'RNN'].includes(type)) return 'RNN';
@@ -101,9 +101,9 @@ export default function Models() {
       if (['Random Forest', 'Gradient Boosting', 'XGBoost', 'LightGBM'].includes(type)) return 'Ensemble';
       return type;
     };
-    
+
     setCreating(true);
-    
+
     try {
       const response = await fetch('http://localhost:5001/api/models', {
         method: 'POST',
@@ -118,9 +118,9 @@ export default function Models() {
           description: formData.description
         })
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok) {
         setModels(prev => [...prev, data.model]);
         setFormData({
@@ -156,7 +156,7 @@ export default function Models() {
       setCreating(false);
     }
   };
-  
+
   const handleDeleteModel = async (modelId) => {
     try {
       const response = await fetch(`http://localhost:5001/api/models/${modelId}`, {
@@ -165,9 +165,9 @@ export default function Models() {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok) {
         setModels(prev => prev.filter(model => model && model._id !== modelId));
         toast({
@@ -196,7 +196,7 @@ export default function Models() {
       });
     }
   };
-  
+
   const handleDownloadModel = async (modelId, modelName) => {
     try {
       const response = await fetch(`http://localhost:5001/api/models/${modelId}/download`, {
@@ -205,7 +205,7 @@ export default function Models() {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
-      
+
       if (response.ok) {
         // Create a blob from the response and trigger download
         const blob = await response.blob();
@@ -217,7 +217,7 @@ export default function Models() {
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
-        
+
         toast({
           title: 'Model downloaded',
           description: 'Your model has been downloaded successfully',
@@ -245,7 +245,7 @@ export default function Models() {
       });
     }
   };
-  
+
   // Define model types excluding GPT/BERT and RL models
   const modelTypes = [
     { value: 'LSTM', label: 'LSTM (Long Short-Term Memory)', category: 'RNN' },
@@ -260,7 +260,7 @@ export default function Models() {
     { value: 'XGBoost', label: 'XGBoost', category: 'Ensemble' },
     { value: 'LightGBM', label: 'LightGBM', category: 'Ensemble' },
   ];
-  
+
   if (loading) {
     return (
       <Flex minH="100vh" align="center" justify="center" bg={bg}>
@@ -268,7 +268,7 @@ export default function Models() {
       </Flex>
     );
   }
-  
+
   return (
     <Box minH="100vh" bg={bg}>
       <Sidebar user={user} />
@@ -295,7 +295,7 @@ export default function Models() {
               </Flex>
             </Flex>
           </motion.div>
-          
+
           {/* Create Model Form */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -313,17 +313,17 @@ export default function Models() {
                 <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6}>
                   <FormControl id="name" isRequired>
                     <FormLabel>Model Name</FormLabel>
-                    <Input 
-                      value={formData.name} 
+                    <Input
+                      value={formData.name}
                       onChange={(e) => handleInputChange('name', e.target.value)}
                       placeholder="Enter model name"
                     />
                   </FormControl>
-                  
+
                   <FormControl id="type" isRequired>
                     <FormLabel>Model Type</FormLabel>
-                    <Select 
-                      value={formData.type} 
+                    <Select
+                      value={formData.type}
                       onChange={(e) => handleInputChange('type', e.target.value)}
                     >
                       <option value="">Select model type</option>
@@ -334,20 +334,20 @@ export default function Models() {
                       ))}
                     </Select>
                   </FormControl>
-                  
+
                   <FormControl id="description">
                     <FormLabel>Description</FormLabel>
-                    <Input 
-                      value={formData.description} 
+                    <Input
+                      value={formData.description}
                       onChange={(e) => handleInputChange('description', e.target.value)}
                       placeholder="Enter model description"
                     />
                   </FormControl>
                 </Grid>
-                
+
                 <Flex justify="flex-end" mt={6}>
-                  <Button 
-                    colorScheme="teal" 
+                  <Button
+                    colorScheme="teal"
                     leftIcon={<FiPlus />}
                     onClick={handleCreateModel}
                     isLoading={creating}
@@ -358,7 +358,7 @@ export default function Models() {
               </CardBody>
             </Card>
           </motion.div>
-          
+
           {/* Models List */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -396,12 +396,12 @@ export default function Models() {
                           <Text><strong>Architecture:</strong> {model.architecture}</Text>
                           <Text><strong>Description:</strong> {model.description}</Text>
                           <Text><strong>Created:</strong> {new Date(model.createdAt).toLocaleDateString()}</Text>
-                          
-                          <Flex justify="space-between" align="center" width="100%" mt={4} gap={2}>
-                            <Button 
-                              variant="outline" 
+
+                          <Flex justify="space-between" align="center" width="100%" mt={4} gap={2} flexWrap="wrap">
+                            <Button
+                              variant="outline"
                               colorScheme="red"
-                              size="sm"
+                              size="xs"
                               onClick={() => {
                                 if (window.confirm('Are you sure you want to delete this model? This action cannot be undone.')) {
                                   handleDeleteModel(model._id);
@@ -410,10 +410,26 @@ export default function Models() {
                             >
                               Delete
                             </Button>
-                            <Button 
-                              variant="outline" 
+                            <Button
+                              colorScheme="teal"
+                              size="xs"
+                              leftIcon={<FiCpu />}
+                              onClick={() => router.push('/train')}
+                            >
+                              Train
+                            </Button>
+                            <Button
+                              colorScheme="orange"
+                              size="xs"
+                              leftIcon={<FiPlay />}
+                              onClick={() => router.push('/test-model')}
+                            >
+                              Test
+                            </Button>
+                            <Button
+                              variant="outline"
                               colorScheme="blue"
-                              size="sm"
+                              size="xs"
                               leftIcon={<FiDownload />}
                               onClick={() => handleDownloadModel(model._id, model.name)}
                             >

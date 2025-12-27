@@ -8,10 +8,10 @@ export default function Sidebar({ user }) {
   const bg = useColorModeValue('gray.100', 'gray.700');
   const activeBg = useColorModeValue('teal.500', 'teal.700');
   const activeColor = useColorModeValue('white', 'white');
-  
+
   const menuItems = [
     { name: 'Dashboard', icon: FiHome, path: '/dashboard' },
-    { name: 'Prompt Engineering', icon: FiMessageSquare, path: '/prompt-engineering' },
+    { name: 'AI Playground', icon: FiMessageSquare, path: '/prompt-engineering' },
     { name: 'Train Model', icon: FiCpu, path: '/train' },
     { name: 'Test Model', icon: FiPlay, path: '/test-model' },
     { name: 'Models', icon: FiDatabase, path: '/models' },
@@ -21,15 +21,15 @@ export default function Sidebar({ user }) {
     { name: 'Profile', icon: FiUser, path: '/profile' },
     { name: 'Settings', icon: FiSettings, path: '/settings' },
   ];
-  
+
   return (
-    <Box 
-      w="250px" 
-      h="100vh" 
-      pos="fixed" 
-      left={0} 
-      top={0} 
-      bg={bg} 
+    <Box
+      w="250px"
+      h="100vh"
+      pos="fixed"
+      left={0}
+      top={0}
+      bg={bg}
       boxShadow="md"
       zIndex={10}
       borderRight="1px solid"
@@ -43,7 +43,7 @@ export default function Sidebar({ user }) {
           </Flex>
           <Text fontSize="sm" color="gray.500" mt={1}>Machine Learning Platform</Text>
         </Box>
-        
+
         {menuItems.map((item, index) => (
           <Link key={index} href={item.path} passHref>
             <Box
@@ -63,7 +63,7 @@ export default function Sidebar({ user }) {
           </Link>
         ))}
       </VStack>
-      
+
       {user && (
         <Box pos="absolute" bottom={4} left={4} right={4}>
           <Flex align="center" p={3} bg={useColorModeValue('gray.200', 'gray.600')} borderRadius="md">

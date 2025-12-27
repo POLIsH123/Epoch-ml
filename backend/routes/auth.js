@@ -108,7 +108,7 @@ router.get('/profile', async (req, res) => {
 
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key');
-    
+
     // Find user by ID
     const user = await User.findById(decoded.userId).select('-password -token');
     if (!user) {
@@ -138,7 +138,7 @@ router.put('/profile', async (req, res) => {
 
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key');
-    
+
     // Find user by ID
     const user = await User.findById(decoded.userId);
     if (!user) {
@@ -181,6 +181,20 @@ router.put('/profile', async (req, res) => {
   }
 });
 
+// Top up credits
+router.post('/profile/topup', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key');
+    const user = await User.findById(decoded.userId);
+    user.credits += 500;
+    await user.save();
+    res.json({ message: 'Credits added', credits: user.credits });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Delete user account
 router.delete('/delete-account', async (req, res) => {
   try {
@@ -191,7 +205,7 @@ router.delete('/delete-account', async (req, res) => {
 
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key');
-    
+
     // Find user by ID and delete
     const user = await User.findByIdAndDelete(decoded.userId);
     if (!user) {

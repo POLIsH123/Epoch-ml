@@ -12,46 +12,46 @@ export default function Profile() {
   const [editData, setEditData] = useState({ username: '', email: '' });
   const router = useRouter();
   const toast = useToast();
-  
+
   const bg = useColorModeValue('gray.50', 'gray.900');
   const cardBg = useColorModeValue('white', 'gray.800');
-  
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
       router.push('/login');
       return;
     }
-    
+
     // Verify token is valid by making a simple API call
     fetch('http://localhost:5001/api/auth/profile', {
       headers: {
         'Authorization': `Bearer ${token}`
       }
     })
-    .then(res => {
-      if (res.status === 401) {
-        // Token is invalid, redirect to login
+      .then(res => {
+        if (res.status === 401) {
+          // Token is invalid, redirect to login
+          localStorage.removeItem('token');
+          router.push('/login');
+          return;
+        }
+        return res.json();
+      })
+      .then(data => {
+        if (data) {
+          setUser(data);
+          setEditData({ username: data.username, email: data.email });
+          setLoading(false);
+        }
+      })
+      .catch(err => {
+        console.error('Error fetching user data:', err);
         localStorage.removeItem('token');
         router.push('/login');
-        return;
-      }
-      return res.json();
-    })
-    .then(data => {
-      if (data) {
-        setUser(data);
-        setEditData({ username: data.username, email: data.email });
-        setLoading(false);
-      }
-    })
-    .catch(err => {
-      console.error('Error fetching user data:', err);
-      localStorage.removeItem('token');
-      router.push('/login');
-    });
+      });
   }, [router]);
-  
+
   const handleEditToggle = () => {
     if (isEditing) {
       // Cancel editing, reset to original values
@@ -59,7 +59,7 @@ export default function Profile() {
     }
     setIsEditing(!isEditing);
   };
-  
+
   const handleUpdateProfile = async () => {
     try {
       const response = await fetch('http://localhost:5001/api/auth/profile', {
@@ -73,9 +73,9 @@ export default function Profile() {
           email: editData.email
         })
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok) {
         setUser(data.user);
         setIsEditing(false);
@@ -105,7 +105,7 @@ export default function Profile() {
       });
     }
   };
-  
+
   if (loading) {
     return (
       <Flex minH="100vh" align="center" justify="center" bg={bg}>
@@ -113,7 +113,7 @@ export default function Profile() {
       </Flex>
     );
   }
-  
+
   return (
     <Box minH="100vh" bg={bg}>
       <Sidebar user={user} />
@@ -131,16 +131,39 @@ export default function Profile() {
                 <Text color="gray.500">Manage your account settings</Text>
               </VStack>
               <Flex align="center" gap={4}>
-                <Box p={3} bg="teal.100" borderRadius="md">
-                  <Flex align="center" gap={2}>
-                    <Icon as={FiDollarSign} color="teal.500" />
-                    <Text fontWeight="bold">{user?.credits || 100} credits</Text>
-                  </Flex>
-                </Box>
+                <Flex align="center" gap={3}>
+                  <Box p={3} bg="teal.100" borderRadius="md">
+                    <Flex align="center" gap={2}>
+                      <Icon as={FiDollarSign} color="teal.500" />
+                      <Text fontWeight="bold">{user?.credits || 100} credits</Text>
+                    </Flex>
+                  </Box>
+                  <Button
+                    colorScheme="teal"
+                    size="sm"
+                    leftIcon={<FiZap />}
+                    onClick={async () => {
+                      // For demo purposes, we'll call a mock top-up
+                      try {
+                        const response = await fetch('http://localhost:5001/api/auth/profile/topup', {
+                          method: 'POST',
+                          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                        });
+                        if (response.ok) {
+                          const data = await response.json();
+                          setUser(prev => ({ ...prev, credits: data.credits }));
+                          toast({ title: 'Credits added', status: 'success' });
+                        }
+                      } catch (e) { }
+                    }}
+                  >
+                    Top Up
+                  </Button>
+                </Flex>
               </Flex>
             </Flex>
           </motion.div>
-          
+
           {/* Stats Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -153,13 +176,13 @@ export default function Profile() {
                 <StatNumber>{user?.username}</StatNumber>
                 <StatHelpText>Your account name</StatHelpText>
               </Stat>
-              
+
               <Stat>
                 <StatLabel>Email</StatLabel>
                 <StatNumber>{user?.email}</StatNumber>
                 <StatHelpText>Your registered email</StatHelpText>
               </Stat>
-              
+
               <Stat>
                 <StatLabel>Member Since</StatLabel>
                 <StatNumber>{new Date(user?.createdAt).getFullYear()}</StatNumber>
@@ -167,7 +190,7 @@ export default function Profile() {
               </Stat>
             </StatGroup>
           </motion.div>
-          
+
           {/* Profile Information */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -181,9 +204,9 @@ export default function Profile() {
                     <Icon as={FiUser} w={6} h={6} color="teal.500" mr={3} />
                     <Heading as="h3" size="md">Profile Information</Heading>
                   </Flex>
-                  <Button 
-                    leftIcon={<FiEdit2 />} 
-                    colorScheme="teal" 
+                  <Button
+                    leftIcon={<FiEdit2 />}
+                    colorScheme="teal"
                     variant="outline"
                     onClick={handleEditToggle}
                   >
@@ -195,43 +218,43 @@ export default function Profile() {
                 <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6}>
                   <FormControl id="username">
                     <FormLabel>Username</FormLabel>
-                    <Input 
-                      value={editData.username} 
-                      onChange={(e) => setEditData({...editData, username: e.target.value})} 
+                    <Input
+                      value={editData.username}
+                      onChange={(e) => setEditData({ ...editData, username: e.target.value })}
                       isDisabled={!isEditing}
                     />
                   </FormControl>
-                  
+
                   <FormControl id="email">
                     <FormLabel>Email</FormLabel>
-                    <Input 
-                      value={editData.email} 
-                      onChange={(e) => setEditData({...editData, email: e.target.value})} 
+                    <Input
+                      value={editData.email}
+                      onChange={(e) => setEditData({ ...editData, email: e.target.value })}
                       isDisabled={!isEditing}
                     />
                   </FormControl>
-                  
+
                   <FormControl id="role">
                     <FormLabel>Role</FormLabel>
                     <Input value={user?.role || ''} isDisabled />
                   </FormControl>
-                  
+
                   <FormControl id="createdAt">
                     <FormLabel>Member Since</FormLabel>
                     <Input value={new Date(user?.createdAt).toLocaleDateString() || ''} isDisabled />
                   </FormControl>
                 </Grid>
-                
+
                 {isEditing && (
                   <Flex justify="flex-end" mt={6} gap={3}>
-                    <Button 
-                      colorScheme="gray" 
+                    <Button
+                      colorScheme="gray"
                       onClick={handleEditToggle}
                     >
                       Cancel
                     </Button>
-                    <Button 
-                      colorScheme="teal" 
+                    <Button
+                      colorScheme="teal"
                       onClick={handleUpdateProfile}
                     >
                       Save Changes
@@ -241,7 +264,7 @@ export default function Profile() {
               </CardBody>
             </Card>
           </motion.div>
-          
+
           {/* Account Stats */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -266,7 +289,7 @@ export default function Profile() {
                       </VStack>
                     </CardBody>
                   </Card>
-                  
+
                   <Card>
                     <CardBody>
                       <VStack align="center">
@@ -276,7 +299,7 @@ export default function Profile() {
                       </VStack>
                     </CardBody>
                   </Card>
-                  
+
                   <Card>
                     <CardBody>
                       <VStack align="center">

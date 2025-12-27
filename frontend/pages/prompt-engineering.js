@@ -160,7 +160,7 @@ export default function PromptEngineering() {
           >
             <Flex justify="space-between" align="center">
               <VStack align="start" spacing={2}>
-                <Heading as="h1" size="lg">Prompt Engineering</Heading>
+                <Heading as="h1" size="lg">AI Playground</Heading>
                 <Text color="gray.500">Design and test system prompts for AI models</Text>
               </VStack>
               <Flex align="center" gap={4}>
