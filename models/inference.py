@@ -44,6 +44,7 @@ def predict(model_id, input_data_json):
         results = {
             "predictions": [],
             "accuracy": 0.0, # Placeholder or from some test run
+            "metricName": "Accuracy",
             "processingTime": "0.1s"
         }
         

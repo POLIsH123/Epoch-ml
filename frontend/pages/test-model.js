@@ -255,7 +255,11 @@ export default function TestModel() {
                     <Flex justify="space-between" width="100%" bg="gray.100" p={3} borderRadius="md">
                       <Text><strong>Model:</strong> {testResults.model}</Text>
                       <Text><strong>Type:</strong> {testResults.type}</Text>
-                      <Text><strong>Accuracy:</strong> {(testResults.accuracy * 100).toFixed(2)}%</Text>
+                      <Text><strong>{testResults.metricName || 'Accuracy'}:</strong> {
+                        (testResults.metricName === 'MAE' || testResults.accuracy > 1.1)
+                          ? testResults.accuracy.toFixed(4)
+                          : (testResults.accuracy * 100).toFixed(2) + '%'
+                      }</Text>
                       <Text><strong>Processing Time:</strong> {testResults.processingTime}</Text>
                     </Flex>
 
