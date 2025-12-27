@@ -10,6 +10,14 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [recentActivity, setRecentActivity] = useState([]);
+  const [stats, setStats] = useState({
+    totalSessions: 0,
+    successRate: 0,
+    totalCreditsSpent: 0,
+    activityTrend: 0,
+    activeNodes: 1204,
+    latency: 42
+  });
   const router = useRouter();
   const toast = useToast();
 
@@ -23,49 +31,58 @@ export default function Dashboard() {
       return;
     }
 
-    // Verify token is valid by making a simple API call
-    fetch('http://localhost:5001/api/auth/profile', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-      .then(res => {
-        if (res.status === 401) {
-          // Token is invalid, redirect to login
+    // Verify token and fetch data
+    const fetchData = async () => {
+      try {
+        const profileRes = await fetch('http://localhost:5001/api/auth/profile', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (profileRes.status === 401) {
           localStorage.removeItem('token');
           router.push('/login');
           return;
         }
-        return res.json();
-      })
-      .then(data => {
-        if (data) {
-          setUser(data);
-          setLoading(false);
 
-          // Fetch latest training session
+        const userData = await profileRes.json();
+        setUser(userData);
+
+        // Fetch other data in parallel
+        const [trainingRes, statsRes] = await Promise.all([
           fetch('http://localhost:5001/api/training', {
             headers: { 'Authorization': `Bearer ${token}` }
+          }),
+          fetch('http://localhost:5001/api/training/stats', {
+            headers: { 'Authorization': `Bearer ${token}` }
           })
-            .then(res => res.json())
-            .then(sessions => {
-              if (sessions && sessions.length > 0) {
-                // Sort by start time descending
-                const sorted = sessions.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
-                setRecentActivity(sorted.slice(0, 3).map(s => ({
-                  action: `Trained ${s.modelName} on ${s.datasetId}`,
-                  time: new Date(s.startTime).toLocaleTimeString()
-                })));
-              }
-            });
+        ]);
+
+        if (trainingRes.ok) {
+          const sessions = await trainingRes.json();
+          if (sessions && sessions.length > 0) {
+            const sorted = sessions.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
+            setRecentActivity(sorted.slice(0, 3).map(s => ({
+              action: `Trained ${s.modelName} on ${s.datasetId}`,
+              time: new Date(s.startTime).toLocaleTimeString()
+            })));
+          }
         }
-      })
-      .catch(err => {
-        console.error('Error fetching user data:', err);
-        setError('Failed to load user data. Please try logging in again.');
-        localStorage.removeItem('token');
-        router.push('/login');
-      });
+
+        if (statsRes.ok) {
+          const statsData = await statsRes.json();
+          setStats(statsData);
+        }
+
+        setLoading(false);
+
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+        setError('Failed to load dashboard data. Check your connection to the AI engine.');
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, [router]);
 
   if (loading) {
@@ -130,17 +147,20 @@ export default function Dashboard() {
                 <CardBody>
                   <Stat>
                     <StatLabel color="gray.500">Available Credits</StatLabel>
-                    <StatNumber fontSize="2xl">{user?.credits || 100}</StatNumber>
-                    <StatHelpText><Icon as={FiTrendingUp} color="green.500" /> +5% from yesterday</StatHelpText>
+                    <StatNumber fontSize="2xl">{user?.credits || 0}</StatNumber>
+                    <StatHelpText>
+                      <Icon as={stats.activityTrend >= 0 ? FiTrendingUp : FiActivity} color={stats.activityTrend >= 0 ? "green.500" : "red.500"} />
+                      {stats.activityTrend >= 0 ? ` +${stats.activityTrend}%` : ` ${stats.activityTrend}%`} vs Prev 24h
+                    </StatHelpText>
                   </Stat>
                 </CardBody>
               </Card>
               <Card bg={cardBg} borderRadius="xl" borderTop="4px solid" borderTopColor="blue.400">
                 <CardBody>
                   <Stat>
-                    <StatLabel color="gray.500">Compute Status</StatLabel>
-                    <StatNumber fontSize="2xl">Optimal</StatNumber>
-                    <StatHelpText><Icon as={FiActivity} color="blue.500" /> Latency: 42ms</StatHelpText>
+                    <StatLabel color="gray.500">Model Success Rate</StatLabel>
+                    <StatNumber fontSize="2xl">{stats.successRate}%</StatNumber>
+                    <StatHelpText><Icon as={FiCheckCircle} color="blue.500" /> {stats.completedSessions} / {stats.totalSessions} sessions</StatHelpText>
                   </Stat>
                 </CardBody>
               </Card>
@@ -148,17 +168,17 @@ export default function Dashboard() {
                 <CardBody>
                   <Stat>
                     <StatLabel color="gray.500">Active Nodes</StatLabel>
-                    <StatNumber fontSize="2xl">1,204</StatNumber>
-                    <StatHelpText>Global Network</StatHelpText>
+                    <StatNumber fontSize="2xl">{stats.activeNodes.toLocaleString()}</StatNumber>
+                    <StatHelpText>Global Network Distributed</StatHelpText>
                   </Stat>
                 </CardBody>
               </Card>
               <Card bg={cardBg} borderRadius="xl" borderTop="4px solid" borderTopColor="orange.400">
                 <CardBody>
                   <Stat>
-                    <StatLabel color="gray.500">Security</StatLabel>
-                    <StatNumber fontSize="2xl">AES-256</StatNumber>
-                    <StatHelpText>Encrypted Data</StatHelpText>
+                    <StatLabel color="gray.500">Compute Latency</StatLabel>
+                    <StatNumber fontSize="2xl">{stats.latency}ms</StatNumber>
+                    <StatHelpText><Icon as={FiZap} color="orange.400" /> Edge Optimized</StatHelpText>
                   </Stat>
                 </CardBody>
               </Card>

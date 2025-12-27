@@ -41,17 +41,25 @@ export default function TrainModel() {
     Promise.all([
       fetch('http://localhost:5001/api/auth/profile', {
         headers: { 'Authorization': `Bearer ${token}` }
-      }).then(res => res.json()),
-
+      }),
       fetch('http://localhost:5001/api/models', {
         headers: { 'Authorization': `Bearer ${token}` }
-      }).then(res => res.json()),
-
+      }),
       fetch('http://localhost:5001/api/resources/datasets', {
         headers: { 'Authorization': `Bearer ${token}` }
-      }).then(res => res.json())
+      })
     ])
-      .then(([userData, modelData, datasetData]) => {
+      .then(async ([profileRes, modelsRes, datasetsRes]) => {
+        if (profileRes.status === 401 || modelsRes.status === 401 || datasetsRes.status === 401) {
+          localStorage.removeItem('token');
+          router.push('/login');
+          return;
+        }
+
+        const userData = await profileRes.json();
+        const modelData = await modelsRes.json();
+        const datasetData = await datasetsRes.json();
+
         setUser(userData);
         // Filter out GPT/BERT models and RL models
         const filteredModels = modelData.filter(model =>
@@ -63,8 +71,14 @@ export default function TrainModel() {
       })
       .catch(err => {
         console.error('Error fetching data:', err);
-        localStorage.removeItem('token');
-        router.push('/login');
+        toast({
+          title: 'Connection Error',
+          description: 'Could not connect to the backend server.',
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+        setLoading(false);
       });
   }, [router]);
 
@@ -337,7 +351,7 @@ export default function TrainModel() {
                     <Heading as="h4" size="sm" mb={4}>Training Parameters</Heading>
                     <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }} gap={4}>
                       <FormControl id="epochs">
-                        <FormLabel>Epochs</FormLabel>
+                        <FormLabel>Epochs (Full Passes)</FormLabel>
                         <Input
                           type="number"
                           value={formData.parameters.epochs}
@@ -346,7 +360,7 @@ export default function TrainModel() {
                       </FormControl>
 
                       <FormControl id="batchSize">
-                        <FormLabel>Batch Size</FormLabel>
+                        <FormLabel>Batch Size (Samples/Step)</FormLabel>
                         <Input
                           type="number"
                           value={formData.parameters.batchSize}
@@ -360,7 +374,7 @@ export default function TrainModel() {
                       <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6}>
                         {['RNN', 'LSTM', 'GRU'].includes(models.find(m => m._id === formData.modelId)?.type) && (
                           <FormControl id="timesteps">
-                            <FormLabel fontSize="sm">Timesteps (Sequence Length)</FormLabel>
+                            <FormLabel fontSize="sm">Timesteps (Historical Window)</FormLabel>
                             <Input
                               type="number"
                               value={formData.parameters.timesteps}
@@ -370,7 +384,7 @@ export default function TrainModel() {
                         )}
 
                         <FormControl id="learningRate">
-                          <FormLabel fontSize="sm">Learning Rate</FormLabel>
+                          <FormLabel fontSize="sm">Learning Rate (Step Size)</FormLabel>
                           <Input
                             type="number"
                             step="0.0001"

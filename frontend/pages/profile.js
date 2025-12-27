@@ -9,6 +9,7 @@ export default function Profile() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
+  const [stats, setStats] = useState({ totalSessions: 0, completedSessions: 0 });
   const [editData, setEditData] = useState({ username: '', email: '' });
   const router = useRouter();
   const toast = useToast();
@@ -23,30 +24,23 @@ export default function Profile() {
       return;
     }
 
-    // Verify token is valid by making a simple API call
-    fetch('http://localhost:5001/api/auth/profile', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-      .then(res => {
-        if (res.status === 401) {
-          // Token is invalid, redirect to login
-          localStorage.removeItem('token');
-          router.push('/login');
-          return;
-        }
-        return res.json();
-      })
-      .then(data => {
-        if (data) {
-          setUser(data);
-          setEditData({ username: data.username, email: data.email });
-          setLoading(false);
-        }
+    // Verify token and fetch data
+    Promise.all([
+      fetch('http://localhost:5001/api/auth/profile', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      }).then(res => res.json()),
+      fetch('http://localhost:5001/api/training/stats', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      }).then(res => res.json())
+    ])
+      .then(([userData, statsData]) => {
+        setUser(userData);
+        setEditData({ username: userData.username, email: userData.email });
+        setStats(statsData);
+        setLoading(false);
       })
       .catch(err => {
-        console.error('Error fetching user data:', err);
+        console.error('Error fetching data:', err);
         localStorage.removeItem('token');
         router.push('/login');
       });
@@ -284,7 +278,7 @@ export default function Profile() {
                     <CardBody>
                       <VStack align="center">
                         <Icon as={FiBarChart2} w={8} h={8} color="teal.500" />
-                        <Text fontWeight="bold">0</Text>
+                        <Text fontWeight="bold">{stats.completedSessions}</Text>
                         <Text fontSize="sm">Models Created</Text>
                       </VStack>
                     </CardBody>
@@ -294,7 +288,7 @@ export default function Profile() {
                     <CardBody>
                       <VStack align="center">
                         <Icon as={FiClock} w={8} h={8} color="teal.500" />
-                        <Text fontWeight="bold">0</Text>
+                        <Text fontWeight="bold">{stats.totalSessions}</Text>
                         <Text fontSize="sm">Training Sessions</Text>
                       </VStack>
                     </CardBody>
