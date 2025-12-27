@@ -229,13 +229,21 @@ router.post('/:id/test', async (req, res) => {
     });
 
     pythonProcess.on('close', (code) => {
-      if (code !== 0) {
-        return res.status(500).json({ error: 'Inference failed' });
-      }
       try {
-        const results = JSON.parse(output);
+        // Find the last JSON block in the output (to avoid TF noise)
+        const lastBraceIndex = output.lastIndexOf('}');
+        const firstBraceIndex = output.lastIndexOf('{', lastBraceIndex);
+        const jsonStr = output.substring(firstBraceIndex, lastBraceIndex + 1);
+
+        const results = JSON.parse(jsonStr || '{}');
+        if (code !== 0 || results.error) {
+          return res.status(500).json({ error: results.error || 'Inference failed' });
+        }
         res.json(results);
       } catch (e) {
+        if (code !== 0) {
+          return res.status(500).json({ error: `Inference failed with code ${code}. ${output}` });
+        }
         res.status(500).json({ error: 'Failed to parse inference results' });
       }
     });
