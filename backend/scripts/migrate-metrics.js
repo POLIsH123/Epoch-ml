@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const TrainingSession = require('./backend/models/TrainingSession');
+const TrainingSession = require('../models/TrainingSession');
 require('dotenv').config();
 
 const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/epoch-ml';
