@@ -353,29 +353,62 @@ export default function TrainModel() {
                           onChange={(e) => handleInputChange('parameters.batchSize', parseInt(e.target.value))}
                         />
                       </FormControl>
+                    </Grid>
 
-                      <FormControl id="learningRate">
-                        <FormLabel>Learning Rate</FormLabel>
-                        <Input
-                          type="number"
-                          step="0.001"
-                          value={formData.parameters.learningRate}
-                          onChange={(e) => handleInputChange('parameters.learningRate', parseFloat(e.target.value))}
-                        />
-                      </FormControl>
+                    <Box mt={6} p={4} bg="gray.50" borderRadius="md" border="1px dashed" borderColor="gray.300">
+                      <Heading size="xs" mb={4} color="gray.600">Advanced Parameters</Heading>
+                      <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6}>
+                        {['RNN', 'LSTM', 'GRU'].includes(models.find(m => m._id === formData.modelId)?.type) && (
+                          <FormControl id="timesteps">
+                            <FormLabel fontSize="sm">Timesteps (Sequence Length)</FormLabel>
+                            <Input
+                              type="number"
+                              value={formData.parameters.timesteps}
+                              onChange={(e) => handleInputChange('parameters.timesteps', parseInt(e.target.value))}
+                            />
+                          </FormControl>
+                        )}
 
-                      {['GPT-4', 'GPT-3.5', 'GPT-3', 'BERT', 'T5'].includes(models.find(m => m._id === formData.modelId)?.type) && (
-                        <FormControl id="systemPrompt">
-                          <FormLabel>System Prompt</FormLabel>
-                          <Textarea
-                            value={formData.parameters.systemPrompt}
-                            onChange={(e) => handleInputChange('parameters.systemPrompt', e.target.value)}
-                            placeholder="You are a helpful assistant..."
-                            rows={3}
+                        <FormControl id="learningRate">
+                          <FormLabel fontSize="sm">Learning Rate</FormLabel>
+                          <Input
+                            type="number"
+                            step="0.0001"
+                            value={formData.parameters.learningRate}
+                            onChange={(e) => handleInputChange('parameters.learningRate', parseFloat(e.target.value))}
                           />
                         </FormControl>
-                      )}
-                    </Grid>
+                      </Grid>
+                    </Box>
+
+                    {['GPT-4', 'GPT-3.5', 'GPT-3', 'BERT', 'T5'].includes(models.find(m => m._id === formData.modelId)?.type) && (
+                      <FormControl id="systemPrompt" mt={4}>
+                        <FormLabel>System Prompt</FormLabel>
+                        <Textarea
+                          value={formData.parameters.systemPrompt}
+                          onChange={(e) => handleInputChange('parameters.systemPrompt', e.target.value)}
+                          placeholder="You are a helpful assistant..."
+                          rows={3}
+                        />
+                      </FormControl>
+                    )}
+
+                    {['DQN', 'PPO', 'SAC', 'A2C', 'DDPG', 'TD3'].includes(models.find(m => m._id === formData.modelId)?.type) && (
+                      <Box mt={6}>
+                        <Heading size="xs" mb={4} color="gray.600">Reinforcement Learning Settings</Heading>
+                        <FormControl id="environment">
+                          <FormLabel>Environment</FormLabel>
+                          <Select
+                            value={formData.parameters.environment}
+                            onChange={(e) => handleInputChange('parameters.environment', e.target.value)}
+                          >
+                            <option value="CartPole-v1">CartPole-v1</option>
+                            <option value="LunarLander-v2">LunarLander-v2</option>
+                            <option value="MountainCar-v0">MountainCar-v0</option>
+                          </Select>
+                        </FormControl>
+                      </Box>
+                    )}
                   </Box>
                 )}
 
@@ -431,6 +464,6 @@ export default function TrainModel() {
           )}
         </VStack>
       </Box>
-    </Box>
+    </Box >
   );
 }
