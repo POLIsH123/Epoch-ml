@@ -73,6 +73,14 @@ const trainingSessionSchema = new mongoose.Schema({
   progress: {
     type: Number,
     default: 0
+  },
+  currentEpoch: {
+    type: Number,
+    default: 0
+  },
+  totalEpochs: {
+    type: Number,
+    default: 0
   }
 });
 

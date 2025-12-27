@@ -250,6 +250,15 @@ export default function TrainingHistory() {
                               </Flex>
                             )}
 
+                            {session.totalEpochs > 0 && (
+                              <Flex align="center" gap={2}>
+                                <Text><strong>Epoch Progress:</strong></Text>
+                                <Badge colorScheme="blue">
+                                  {session.currentEpoch} / {session.totalEpochs}
+                                </Badge>
+                              </Flex>
+                            )}
+
                             <Flex justify="space-between" align="center" width="100%" mt={4}>
                               <Button
                                 variant="outline"

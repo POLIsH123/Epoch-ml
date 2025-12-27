@@ -30,7 +30,7 @@ export default function TrainingVisualization({ trainingSession }) {
     accuracy: [0.5, 0.6, 0.65, 0.7, 0.75, 0.78, 0.8, 0.82, 0.85, 0.88],
     epochs: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
   };
-  
+
   // Prepare data for loss chart
   const lossData = {
     labels: trainingHistory.epochs,
@@ -43,7 +43,7 @@ export default function TrainingVisualization({ trainingSession }) {
       },
     ],
   };
-  
+
   // Prepare data for accuracy chart
   const accuracyData = {
     labels: trainingHistory.epochs,
@@ -56,7 +56,7 @@ export default function TrainingVisualization({ trainingSession }) {
       },
     ],
   };
-  
+
   // Chart options
   const options = {
     responsive: true,
@@ -69,15 +69,15 @@ export default function TrainingVisualization({ trainingSession }) {
       },
     },
   };
-  
+
   // Calculate final metrics
   const finalLoss = trainingHistory.loss[trainingHistory.loss.length - 1];
   const finalAccuracy = trainingHistory.accuracy[trainingHistory.accuracy.length - 1];
-  
+
   return (
     <VStack spacing={6} align="stretch">
       <Heading as="h2" size="md">Training Progress</Heading>
-      
+
       {trainingSession && (
         <>
           <StatGroup>
@@ -85,19 +85,26 @@ export default function TrainingVisualization({ trainingSession }) {
               <StatLabel>Current Status</StatLabel>
               <StatNumber textTransform="capitalize">{trainingSession.status}</StatNumber>
             </Stat>
-            
+
             <Stat>
               <StatLabel>Progress</StatLabel>
               <StatNumber>{trainingSession.progress}%</StatNumber>
             </Stat>
-            
+
+            {trainingSession.totalEpochs > 0 && (
+              <Stat>
+                <StatLabel>Epoch</StatLabel>
+                <StatNumber>{trainingSession.currentEpoch} / {trainingSession.totalEpochs}</StatNumber>
+              </Stat>
+            )}
+
             {trainingSession.status === 'completed' && (
               <>
                 <Stat>
                   <StatLabel>Final Loss</StatLabel>
                   <StatNumber>{finalLoss ? finalLoss.toFixed(4) : 'N/A'}</StatNumber>
                 </Stat>
-                
+
                 <Stat>
                   <StatLabel>Final Accuracy</StatLabel>
                   <StatNumber>{finalAccuracy ? `${(finalAccuracy * 100).toFixed(2)}%` : 'N/A'}</StatNumber>
@@ -105,13 +112,13 @@ export default function TrainingVisualization({ trainingSession }) {
               </>
             )}
           </StatGroup>
-          
-          <Progress 
-            value={trainingSession.progress} 
-            size="md" 
-            colorScheme="teal" 
+
+          <Progress
+            value={trainingSession.progress}
+            size="md"
+            colorScheme="teal"
           />
-          
+
           {trainingSession.status === 'completed' && (
             <Grid templateColumns={{ base: '1fr', lg: 'repeat(2, 1fr)' }} gap={6}>
               <Card>
@@ -122,7 +129,7 @@ export default function TrainingVisualization({ trainingSession }) {
                   <Line options={options} data={lossData} />
                 </CardBody>
               </Card>
-              
+
               <Card>
                 <CardHeader>
                   <Heading size="sm">Accuracy Over Time</Heading>
@@ -135,7 +142,7 @@ export default function TrainingVisualization({ trainingSession }) {
           )}
         </>
       )}
-      
+
       {!trainingSession && (
         <Text>No training session selected or available.</Text>
       )}

@@ -117,6 +117,14 @@ router.post('/start', async (req, res) => {
 
     activeTrainingProcesses.set(trainingSession._id.toString(), pythonProcess);
 
+    // DRAIN THE PIPES! (Prevents the "Epoch 308" hang)
+    pythonProcess.stdout.on('data', (data) => {
+      // Optional: console.log(`[Python Training]: ${data}`);
+    });
+
+    pythonProcess.stderr.on('data', (data) => {
+      console.error(`[Python Error]: ${data}`);
+    });
     pythonProcess.on('close', (code) => {
       activeTrainingProcesses.delete(trainingSession._id.toString());
       console.log(`Training process for ${trainingSession._id} finished with code ${code}`);
@@ -134,17 +142,18 @@ router.post('/start', async (req, res) => {
         });
       }
     });
+  });
 
-    res.status(201).json({
-      message: 'Training started successfully',
-      sessionId: trainingSession._id,
-      creditsRemaining: user.credits,
-      cost: modelTrainingCost
-    });
+res.status(201).json({
+  message: 'Training started successfully',
+  sessionId: trainingSession._id,
+  creditsRemaining: user.credits,
+  cost: modelTrainingCost
+});
   } catch (error) {
-    console.error('Error starting training:', error);
-    res.status(500).json({ error: error.message });
-  }
+  console.error('Error starting training:', error);
+  res.status(500).json({ error: error.message });
+}
 });
 
 // Get user's training history
@@ -185,7 +194,9 @@ router.get('/', async (req, res) => {
         accuracyPercent: session.accuracyPercent,
         metricName: session.metricName,
         loss: session.loss,
-        lossPercent: session.lossPercent
+        lossPercent: session.lossPercent,
+        currentEpoch: session.currentEpoch,
+        totalEpochs: session.totalEpochs
       };
     }));
 

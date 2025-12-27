@@ -11,9 +11,13 @@ from bson import ObjectId
 MONGO_URI = os.getenv('MONGODB_URI', 'mongodb://localhost:27017/epoch-ml')
 SAVED_MODELS_DIR = 'models/saved'
 
-def update_session(session_id, status, progress=None, accuracy=None, loss=None, metric_name=None, accuracy_percent=None, loss_percent=None):
-    client = MongoClient(MONGO_URI)
-    db = client.get_default_database()
+def update_session(session_id, status, progress=None, accuracy=None, loss=None, metric_name=None, accuracy_percent=None, loss_percent=None, current_epoch=None, total_epochs=None, db=None):
+    close_at_end = False
+    if db is None:
+        client = MongoClient(MONGO_URI)
+        db = client.get_default_database()
+        close_at_end = True
+    
     update_data = {'status': status}
     if progress is not None:
         update_data['progress'] = progress
@@ -27,18 +31,26 @@ def update_session(session_id, status, progress=None, accuracy=None, loss=None, 
         update_data['accuracyPercent'] = accuracy_percent
     if loss_percent is not None:
         update_data['lossPercent'] = loss_percent
+    if current_epoch is not None:
+        update_data['currentEpoch'] = current_epoch
+    if total_epochs is not None:
+        update_data['totalEpochs'] = total_epochs
     
     if status == 'completed':
         update_data['endTime'] = tf.timestamp().numpy() # Just a placeholder for date
     
     db.trainingsessions.update_one({'_id': ObjectId(session_id)}, {'$set': update_data})
-    client.close()
+    
+    if close_at_end:
+        db.client.close()
 
 def train(session_id, dataset_id, params_json):
     params = json.loads(params_json)
-    print(f"Starting training for session {session_id} on dataset {dataset_id}")
+    client = MongoClient(MONGO_URI)
+    db = client.get_default_database()
     
-    update_session(session_id, 'running')
+    print(f"Starting training for session {session_id} on dataset {dataset_id}")
+    update_session(session_id, 'running', db=db)
     
     try:
         if dataset_id == 'dataset-1': # MNIST
@@ -118,6 +130,8 @@ def train(session_id, dataset_id, params_json):
         y_mean = np.mean(y_train) if dataset_id not in ['dataset-1', 'dataset-2'] else 1.0
         initial_loss = [None] # Use list to make it mutable in callback
 
+        epochs = params.get('epochs', 5)
+        
         # Create a custom callback to update progress
         class ProgressCallback(tf.keras.callbacks.Callback):
             def on_epoch_end(self, epoch, logs=None):
@@ -138,38 +152,38 @@ def train(session_id, dataset_id, params_json):
                 # Calculate loss percent (improvement compared to start)
                 loss_pct = (current_loss / initial_loss[0] * 100) if initial_loss[0] != 0 else 0
                 
-                print(f"Epoch {epoch+1} ended. {metric_name}: {acc} ({acc_pct:.2f}%), Loss: {current_loss} ({loss_pct:.2f}%)")
+                print(f"Epoch {epoch+1}/{epochs} ended. {metric_name}: {acc} ({acc_pct:.2f}%), Loss: {current_loss} ({loss_pct:.2f}%)")
                 update_session(session_id, 'running', 
-                               progress=(epoch + 1) / params.get('epochs', 5) * 100, 
+                               progress=(epoch + 1) / epochs * 100, 
                                accuracy=acc, 
                                loss=current_loss, 
                                metric_name=metric_name,
                                accuracy_percent=acc_pct,
-                               loss_percent=loss_pct)
+                               loss_percent=loss_pct,
+                               current_epoch=epoch + 1,
+                               total_epochs=epochs,
+                               db=db)
 
-        epochs = params.get('epochs', 5)
-        model.fit(x_train, y_train, epochs=epochs, callbacks=[ProgressCallback()])
+        model.fit(x_train, y_train, epochs=epochs, callbacks=[ProgressCallback()], verbose=0)
 
         # Save model
         if not os.path.exists(SAVED_MODELS_DIR):
             os.makedirs(SAVED_MODELS_DIR)
         
-        # We need to know which model ID this session belongs to
-        client = MongoClient(MONGO_URI)
-        db = client.get_default_database()
         session = db.trainingsessions.find_one({'_id': ObjectId(session_id)})
         model_id = session['modelId']
-        client.close()
-
+        
         save_path = os.path.join(SAVED_MODELS_DIR, f"{model_id}.h5")
         model.save(save_path)
         print(f"Model saved to {save_path}")
 
-        update_session(session_id, 'completed', progress=100)
+        update_session(session_id, 'completed', progress=100, total_epochs=epochs, current_epoch=epochs, db=db)
 
     except Exception as e:
         print(f"Training failed: {e}")
-        update_session(session_id, 'failed')
+        update_session(session_id, 'failed', db=db)
+    finally:
+        client.close()
 
 if __name__ == "__main__":
     if len(sys.argv) < 4:
