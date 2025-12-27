@@ -32,14 +32,28 @@ app.use('/api/training', require('./routes/training'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/resources', require('./routes/resources')); // For profile and datasets
 
-// Serve static files from the React app build
-app.use(express.static(path.join(__dirname, '../frontend/build')));
+const fs = require('fs');
 
-// The "catchall" handler: for any request that doesn't
-// match one above, send back React's index.html file.
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/build/index.html'));
-});
+// Serve static files from the React app build
+const buildPath = path.join(__dirname, '../frontend/build');
+if (fs.existsSync(buildPath)) {
+  app.use(express.static(buildPath));
+
+  // The "catchall" handler: for any request that doesn't
+  // match one above, send back React's index.html file.
+  app.get('*', (req, res) => {
+    const indexPath = path.join(buildPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      res.status(404).send('Not Found (and no frontend build found)');
+    }
+  });
+} else {
+  app.get('/', (req, res) => {
+    res.json({ message: 'Epoch-ML Backend API is running. (Frontend build not detected - run npm run dev in frontend folder)' });
+  });
+}
 
 // Socket configuration
 io.on('connection', (socket) => {

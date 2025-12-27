@@ -217,11 +217,11 @@ router.post('/:id/test', async (req, res) => {
     const model = await Model.findOne({ _id: req.params.id, createdBy: user._id });
     if (!model) return res.status(404).json({ error: 'Model not found' });
 
-    const { testData } = req.body;
+    const { testData, datasetId } = req.body;
 
     // Perform inference using Python script in VENV
     const pythonPath = path.join(process.cwd(), 'venv', 'Scripts', 'python');
-    const pythonProcess = spawn(pythonPath, ['models/inference.py', model._id, JSON.stringify(testData || "{}")]);
+    const pythonProcess = spawn(pythonPath, ['models/inference.py', model._id, JSON.stringify(testData || "{}"), datasetId || 'unknown']);
 
     let output = '';
     pythonProcess.stdout.on('data', (data) => {

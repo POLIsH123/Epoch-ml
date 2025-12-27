@@ -11,7 +11,7 @@ import numpy as np
 
 SAVED_MODELS_DIR = 'models/saved'
 
-def predict(model_id, input_data_json):
+def predict(model_id, input_data_json, dataset_id):
     try:
         model_path = os.path.join(SAVED_MODELS_DIR, f"{model_id}.h5")
         if not os.path.exists(model_path):
@@ -44,7 +44,7 @@ def predict(model_id, input_data_json):
         results = {
             "predictions": [],
             "accuracy": 0.0, # Placeholder or from some test run
-            "metricName": "Accuracy",
+            "metricName": "Accuracy" if dataset_id in ['dataset-1', 'dataset-2'] else "MAE",
             "processingTime": "0.1s"
         }
         
@@ -63,7 +63,8 @@ def predict(model_id, input_data_json):
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print(json.dumps({"error": "Usage: python inference.py <model_id> <input_data_json>"}))
+        print(json.dumps({"error": "Usage: python inference.py <model_id> <input_data_json> [dataset_id]"}))
         sys.exit(1)
     
-    predict(sys.argv[1], sys.argv[2])
+    dataset_id = sys.argv[3] if len(sys.argv) > 3 else 'unknown'
+    predict(sys.argv[1], sys.argv[2], dataset_id)

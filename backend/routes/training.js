@@ -181,7 +181,9 @@ router.get('/', async (req, res) => {
         cost: session.cost,
         targetColumn: session.targetColumn,
         parameters: session.parameters,
-        accuracy: session.accuracy
+        accuracy: session.accuracy,
+        metricName: session.metricName,
+        loss: session.loss
       };
     }));
 

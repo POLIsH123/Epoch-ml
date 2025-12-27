@@ -226,8 +226,10 @@ export default function TrainingHistory() {
 
                             {session.accuracy !== undefined && (
                               <Text>
-                                <strong>{session.metricName || 'Accuracy'}:</strong> {
-                                  (session.metricName === 'MAE' || session.accuracy > 1.1)
+                                <strong>{
+                                  session.metricName || (['dataset-9', 'dataset-13'].includes(session.datasetId) ? 'MAE' : 'Accuracy')
+                                }:</strong> {
+                                  (session.metricName === 'MAE' || session.accuracy > 1.1 || ['dataset-9', 'dataset-13'].includes(session.datasetId))
                                     ? session.accuracy.toFixed(4)
                                     : (session.accuracy * 100).toFixed(2) + '%'
                                 }
