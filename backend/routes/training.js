@@ -182,8 +182,10 @@ router.get('/', async (req, res) => {
         targetColumn: session.targetColumn,
         parameters: session.parameters,
         accuracy: session.accuracy,
+        accuracyPercent: session.accuracyPercent,
         metricName: session.metricName,
-        loss: session.loss
+        loss: session.loss,
+        lossPercent: session.lossPercent
       };
     }));
 

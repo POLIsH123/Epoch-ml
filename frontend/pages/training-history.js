@@ -225,19 +225,29 @@ export default function TrainingHistory() {
                             )}
 
                             {session.accuracy !== undefined && (
-                              <Text>
-                                <strong>{
-                                  session.metricName || (['dataset-9', 'dataset-13'].includes(session.datasetId) ? 'MAE' : 'Accuracy')
-                                }:</strong> {
-                                  (session.metricName === 'MAE' || session.accuracy > 1.1 || ['dataset-9', 'dataset-13'].includes(session.datasetId))
-                                    ? session.accuracy.toFixed(4)
-                                    : (session.accuracy * 100).toFixed(2) + '%'
-                                }
-                              </Text>
+                              <Flex align="center" gap={2}>
+                                <Text>
+                                  <strong>{
+                                    session.metricName || (['dataset-9', 'dataset-13'].includes(session.datasetId) ? 'MAE' : 'Accuracy')
+                                  }:</strong> {
+                                    (session.metricName === 'MAE' || session.accuracy > 1.1 || ['dataset-9', 'dataset-13'].includes(session.datasetId))
+                                      ? session.accuracy.toFixed(4)
+                                      : (session.accuracy * 100).toFixed(2) + '%'
+                                  }
+                                </Text>
+                                {session.accuracyPercent !== undefined && (
+                                  <Badge colorScheme="green">{session.accuracyPercent.toFixed(1)}% Acc</Badge>
+                                )}
+                              </Flex>
                             )}
 
                             {session.loss !== undefined && (
-                              <Text><strong>Loss:</strong> {session.loss.toFixed(4)}</Text>
+                              <Flex align="center" gap={2}>
+                                <Text><strong>Loss:</strong> {session.loss.toFixed(4)}</Text>
+                                {session.lossPercent !== undefined && (
+                                  <Badge colorScheme="orange">{session.lossPercent.toFixed(1)}% Loss</Badge>
+                                )}
+                              </Flex>
                             )}
 
                             <Flex justify="space-between" align="center" width="100%" mt={4}>

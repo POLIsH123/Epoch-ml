@@ -11,7 +11,7 @@ from bson import ObjectId
 MONGO_URI = os.getenv('MONGODB_URI', 'mongodb://localhost:27017/epoch-ml')
 SAVED_MODELS_DIR = 'models/saved'
 
-def update_session(session_id, status, progress=None, accuracy=None, loss=None, metric_name=None):
+def update_session(session_id, status, progress=None, accuracy=None, loss=None, metric_name=None, accuracy_percent=None, loss_percent=None):
     client = MongoClient(MONGO_URI)
     db = client.get_default_database()
     update_data = {'status': status}
@@ -23,6 +23,10 @@ def update_session(session_id, status, progress=None, accuracy=None, loss=None, 
         update_data['loss'] = loss
     if metric_name is not None:
         update_data['metricName'] = metric_name
+    if accuracy_percent is not None:
+        update_data['accuracyPercent'] = accuracy_percent
+    if loss_percent is not None:
+        update_data['lossPercent'] = loss_percent
     
     if status == 'completed':
         update_data['endTime'] = tf.timestamp().numpy() # Just a placeholder for date
@@ -111,15 +115,37 @@ def train(session_id, dataset_id, params_json):
                       metrics=['accuracy'] if dataset_id in ['dataset-1', 'dataset-2'] else ['mae'])
 
         metric_name = 'Accuracy' if dataset_id in ['dataset-1', 'dataset-2'] else 'MAE'
-        
+        y_mean = np.mean(y_train) if dataset_id not in ['dataset-1', 'dataset-2'] else 1.0
+        initial_loss = [None] # Use list to make it mutable in callback
+
         # Create a custom callback to update progress
         class ProgressCallback(tf.keras.callbacks.Callback):
             def on_epoch_end(self, epoch, logs=None):
                 # Use dataset appropriate metric
                 acc = logs.get('accuracy') or logs.get('val_accuracy') or logs.get('mae') or logs.get('val_mae')
-                loss = logs.get('loss')
-                print(f"Epoch {epoch+1} ended. {metric_name}: {acc}, Loss: {loss}")
-                update_session(session_id, 'running', progress=(epoch + 1) / params.get('epochs', 5) * 100, accuracy=acc, loss=loss, metric_name=metric_name)
+                current_loss = logs.get('loss')
+                
+                if initial_loss[0] is None:
+                    initial_loss[0] = current_loss
+                
+                # Calculate accuracy percent
+                if dataset_id in ['dataset-1', 'dataset-2']:
+                    acc_pct = acc * 100
+                else:
+                    # For regression, accuracy is 100 - (MAE / Mean * 100)
+                    acc_pct = max(0, 100 * (1 - acc / y_mean)) if y_mean != 0 else 0
+                
+                # Calculate loss percent (improvement compared to start)
+                loss_pct = (current_loss / initial_loss[0] * 100) if initial_loss[0] != 0 else 0
+                
+                print(f"Epoch {epoch+1} ended. {metric_name}: {acc} ({acc_pct:.2f}%), Loss: {current_loss} ({loss_pct:.2f}%)")
+                update_session(session_id, 'running', 
+                               progress=(epoch + 1) / params.get('epochs', 5) * 100, 
+                               accuracy=acc, 
+                               loss=current_loss, 
+                               metric_name=metric_name,
+                               accuracy_percent=acc_pct,
+                               loss_percent=loss_pct)
 
         epochs = params.get('epochs', 5)
         model.fit(x_train, y_train, epochs=epochs, callbacks=[ProgressCallback()])
