@@ -202,6 +202,7 @@ export default function TrainModel() {
             batchSize: 32,
             learningRate: 0.001,
             timesteps: 1000,
+            systemPrompt: 'You are a helpful assistant.',
             environment: 'CartPole-v1'
           }
         });
