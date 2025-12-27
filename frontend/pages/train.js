@@ -363,6 +363,18 @@ export default function TrainModel() {
                           onChange={(e) => handleInputChange('parameters.learningRate', parseFloat(e.target.value))}
                         />
                       </FormControl>
+
+                      {['GPT-4', 'GPT-3.5', 'GPT-3', 'BERT', 'T5'].includes(models.find(m => m._id === formData.modelId)?.type) && (
+                        <FormControl id="systemPrompt">
+                          <FormLabel>System Prompt</FormLabel>
+                          <Textarea
+                            value={formData.parameters.systemPrompt}
+                            onChange={(e) => handleInputChange('parameters.systemPrompt', e.target.value)}
+                            placeholder="You are a helpful assistant..."
+                            rows={3}
+                          />
+                        </FormControl>
+                      )}
                     </Grid>
                   </Box>
                 )}
