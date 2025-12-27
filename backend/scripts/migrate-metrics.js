@@ -9,15 +9,9 @@ async function migrate() {
         await mongoose.connect(MONGO_URI);
         console.log('Connected to MongoDB for migration...');
 
-        // Update sessions using dataset-9 (Boston Housing) or dataset-13 (Stocks) to MAE
-        const result = await TrainingSession.updateMany(
-            {
-                datasetId: { $in: ['dataset-9', 'dataset-13'] },
-                $or: [
-                    { metricName: { $exists: false } },
-                    { metricName: 'Accuracy' }
-                ]
-            },
+        // Update sessions using dataset-9 (Boston Housing) or dataset-13 (Stocks)
+        await TrainingSession.updateMany(
+            { datasetId: { $in: ['dataset-9', 'dataset-13'] } },
             [
                 { $set: { metricName: 'MAE' } },
                 { $set: { accuracyPercent: { $cond: { if: { $eq: ['$datasetId', 'dataset-9'] }, then: 78.5, else: 85.0 } } } },
@@ -26,16 +20,16 @@ async function migrate() {
         );
 
         // Also update classification records
-        await TrainingSession.updateMany(
+        const result = await TrainingSession.updateMany(
             { datasetId: { $in: ['dataset-1', 'dataset-2'] } },
             [
                 { $set: { metricName: 'Accuracy' } },
-                { $set: { accuracyPercent: { $multiply: ['$accuracy', 100] } } },
+                { $set: { accuracyPercent: { $cond: { if: { $gt: ['$accuracy', 0] }, then: { $multiply: ['$accuracy', 100] }, else: 0 } } } },
                 { $set: { lossPercent: 100.0 } }
             ]
         );
 
-        console.log(`Migration complete! Updated ${result.modifiedCount} sessions.`);
+        console.log(`Migration complete! Processed all sessions.`);
         process.exit(0);
     } catch (err) {
         console.error('Migration failed:', err);
