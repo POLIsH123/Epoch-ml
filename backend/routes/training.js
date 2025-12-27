@@ -142,18 +142,17 @@ router.post('/start', async (req, res) => {
         });
       }
     });
-  });
 
-res.status(201).json({
-  message: 'Training started successfully',
-  sessionId: trainingSession._id,
-  creditsRemaining: user.credits,
-  cost: modelTrainingCost
-});
+    res.status(201).json({
+      message: 'Training started successfully',
+      sessionId: trainingSession._id,
+      creditsRemaining: user.credits,
+      cost: modelTrainingCost
+    });
   } catch (error) {
-  console.error('Error starting training:', error);
-  res.status(500).json({ error: error.message });
-}
+    console.error('Error starting training:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Get user's training history

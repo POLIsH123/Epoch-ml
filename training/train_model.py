@@ -7,6 +7,10 @@ import numpy as np
 from pymongo import MongoClient
 from bson import ObjectId
 
+# Suppress TensorFlow noise
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+
 # Config
 MONGO_URI = os.getenv('MONGODB_URI', 'mongodb://localhost:27017/epoch-ml')
 SAVED_MODELS_DIR = 'models/saved'
@@ -74,6 +78,19 @@ def train(session_id, dataset_id, params_json):
                 tf.keras.layers.Dense(64, activation='relu'),
                 tf.keras.layers.Dense(10)
             ])
+        elif dataset_id == 'dataset-3': # CIFAR-100
+            print("Loading CIFAR-100 dataset...")
+            (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar100.load_data()
+            x_train, x_test = x_train / 255.0, x_test / 255.0
+            model = tf.keras.models.Sequential([
+                tf.keras.layers.Conv2D(64, (3, 3), activation='relu', input_shape=(32, 32, 3)),
+                tf.keras.layers.MaxPooling2D((2, 2)),
+                tf.keras.layers.Conv2D(128, (3, 3), activation='relu'),
+                tf.keras.layers.MaxPooling2D((2, 2)),
+                tf.keras.layers.Flatten(),
+                tf.keras.layers.Dense(256, activation='relu'),
+                tf.keras.layers.Dense(100)
+            ])
         elif dataset_id == 'dataset-13': # Stock Prices (Real Financial Data)
             import yfinance as yf
             print("Loading Stock Prices (AAPL) via yfinance...")
@@ -123,11 +140,11 @@ def train(session_id, dataset_id, params_json):
             ])
 
         model.compile(optimizer='adam',
-                      loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True) if dataset_id in ['dataset-1', 'dataset-2'] else 'mse',
-                      metrics=['accuracy'] if dataset_id in ['dataset-1', 'dataset-2'] else ['mae'])
+                      loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True) if dataset_id in ['dataset-1', 'dataset-2', 'dataset-3'] else 'mse',
+                      metrics=['accuracy'] if dataset_id in ['dataset-1', 'dataset-2', 'dataset-3'] else ['mae'])
 
-        metric_name = 'Accuracy' if dataset_id in ['dataset-1', 'dataset-2'] else 'MAE'
-        y_mean = np.mean(y_train) if dataset_id not in ['dataset-1', 'dataset-2'] else 1.0
+        metric_name = 'Accuracy' if dataset_id in ['dataset-1', 'dataset-2', 'dataset-3'] else 'MAE'
+        y_mean = np.mean(y_train) if dataset_id not in ['dataset-1', 'dataset-2', 'dataset-3'] else 1.0
         initial_loss = [None] # Use list to make it mutable in callback
 
         epochs = params.get('epochs', 5)
