@@ -1,19 +1,12 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const { findModel, addTrainingSession, getTrainingSessions, getUserTrainingSessions } = require('../models/ModelStorage');
+const TrainingSession = require('../models/TrainingSession');
+const Model = require('../models/Model');
+const { spawn } = require('child_process');
 
-// Function to delete a training session
-const deleteTrainingSession = (sessionId, userId) => {
-  const sessions = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '../data/training_sessions.json'), 'utf8'));
-  const sessionIndex = sessions.findIndex(session => session._id === sessionId && session.userId === userId);
-  if (sessionIndex !== -1) {
-    sessions.splice(sessionIndex, 1);
-    require('fs').writeFileSync(require('path').join(__dirname, '../data/training_sessions.json'), JSON.stringify(sessions, null, 2));
-    return true;
-  }
-  return false;
-};
+// Helper to manage training processes (mock for now, but integration ready)
+const activeTrainingProcesses = new Map();
 
 const router = express.Router();
 
@@ -24,41 +17,36 @@ router.post('/start', async (req, res) => {
     if (!token) {
       return res.status(401).json({ error: 'No token provided' });
     }
-    
+
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key');
-    
+
     // Find user by ID
     const user = await User.findById(decoded.userId);
     if (!user) {
       return res.status(401).json({ error: 'Invalid token' });
     }
-    
+
     const { modelId, datasetId, targetColumn, parameters } = req.body;
-    
+
     if (!modelId || !datasetId) {
       return res.status(400).json({ error: 'Model ID and Dataset ID are required' });
     }
-    
-    // Get the model to determine its type for cost calculation
-    // Find the model in storage
-    const model = findModel(modelId);
-    
+
+    // Find the model in DB
+    const model = await Model.findById(modelId);
+
     if (!model) {
-      return res.status(400).json({ error: `Model with ID ${modelId} not found in storage` });
+      return res.status(400).json({ error: `Model with ID ${modelId} not found` });
     }
-    
-    // Convert both to string for comparison to handle potential type mismatches
-    const modelUserId = model.userId.toString();
-    const requestUserId = user._id.toString();
-    
-    if (modelUserId !== requestUserId) {
-      return res.status(400).json({ error: `Model does not belong to user. Model user: ${modelUserId}, Request user: ${requestUserId}` });
+
+    if (model.createdBy.toString() !== user._id.toString()) {
+      return res.status(403).json({ error: 'Model does not belong to user' });
     }
-    
+
     // Calculate cost based on model type
     let modelTrainingCost = 10; // Base cost
-    switch(model.type) {
+    switch (model.type) {
       case 'GPT-4':
         modelTrainingCost = 100;
         break;
@@ -95,31 +83,43 @@ router.post('/start', async (req, res) => {
       default:
         modelTrainingCost = 10;
     }
-    
+
     if (user.credits < modelTrainingCost) {
-      return res.status(400).json({ error: `Insufficient credits. Training this model requires ${modelTrainingCost} credits, but you only have ${user.credits}.` });
+      return res.status(400).json({ error: `Insufficient credits. Requires ${modelTrainingCost}, have ${user.credits}.` });
     }
-    
-    // Create a new training session in file storage
-    const trainingSession = {
-      _id: Date.now().toString(),
+
+    // Create a new training session in DB
+    const trainingSession = new TrainingSession({
       userId: user._id.toString(),
       modelId,
       datasetId,
       targetColumn,
       parameters,
       status: 'queued',
-      startTime: new Date(),
       cost: modelTrainingCost
-    };
-    
-    // Add to file-based storage
-    addTrainingSession(trainingSession);
-    
-    // Deduct credits from user account
+    });
+
+    await trainingSession.save();
+
+    // Deduct credits
     user.credits -= modelTrainingCost;
     await user.save();
-    
+
+    // Spawn Python Training Process
+    const pythonProcess = spawn('python', [
+      'training/train_model.py',
+      trainingSession._id.toString(),
+      datasetId,
+      JSON.stringify(parameters)
+    ]);
+
+    activeTrainingProcesses.set(trainingSession._id.toString(), pythonProcess);
+
+    pythonProcess.on('close', (code) => {
+      activeTrainingProcesses.delete(trainingSession._id.toString());
+      console.log(`Training process for ${trainingSession._id} finished with code ${code}`);
+    });
+
     res.status(201).json({
       message: 'Training started successfully',
       sessionId: trainingSession._id,
@@ -139,25 +139,22 @@ router.get('/', async (req, res) => {
     if (!token) {
       return res.status(401).json({ error: 'No token provided' });
     }
-    
+
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key');
-    
+
     // Find user by ID
     const user = await User.findById(decoded.userId);
     if (!user) {
       return res.status(401).json({ error: 'Invalid token' });
     }
-    
-    // Get training sessions for this user from file storage
-    const userSessions = getUserTrainingSessions(user._id.toString());
-    
-    // In a real app, this would fetch from the TrainingSession model
-    // For now, returning user sessions with model details
-    const sessionsWithDetails = userSessions.map((session) => {
-      // Find the model associated with this session
-      const model = findModel(session.modelId);
-      
+
+    // Get training sessions for this user from DB
+    const userSessions = await TrainingSession.find({ userId: user._id.toString() });
+
+    const sessionsWithDetails = await Promise.all(userSessions.map(async (session) => {
+      const model = await Model.findById(session.modelId);
+
       return {
         id: session._id,
         modelId: session.modelId,
@@ -168,11 +165,11 @@ router.get('/', async (req, res) => {
         startTime: session.startTime,
         cost: session.cost,
         targetColumn: session.targetColumn,
-        parameters: session.parameters
+        parameters: session.parameters,
+        accuracy: session.accuracy
       };
-    });
-    
-    // Return the actual sessions (could be empty array if no sessions)
+    }));
+
     res.json(sessionsWithDetails);
   } catch (error) {
     console.error('Error fetching training history:', error);
@@ -187,23 +184,23 @@ router.delete('/:id', async (req, res) => {
     if (!token) {
       return res.status(401).json({ error: 'No token provided' });
     }
-    
+
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key');
-    
+
     // Find user by ID
     const user = await User.findById(decoded.userId);
     if (!user) {
       return res.status(401).json({ error: 'Invalid token' });
     }
-    
-    // Attempt to delete the training session
-    const deleted = deleteTrainingSession(req.params.id, user._id.toString());
-    
+
+    // Attempt to delete the training session from DB
+    const deleted = await TrainingSession.findOneAndDelete({ _id: req.params.id, userId: user._id.toString() });
+
     if (!deleted) {
       return res.status(404).json({ error: 'Training session not found' });
     }
-    
+
     res.json({ message: 'Training session deleted successfully' });
   } catch (error) {
     console.error('Error deleting training session:', error);

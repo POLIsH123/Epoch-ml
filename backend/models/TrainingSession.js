@@ -59,6 +59,10 @@ const trainingSessionSchema = new mongoose.Schema({
   cost: {
     type: Number,
     default: 10  // Default cost for training session
+  },
+  progress: {
+    type: Number,
+    default: 0
   }
 });
 

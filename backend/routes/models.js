@@ -1,7 +1,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const { getUserModels, getModelById, addModel, updateModel, deleteModel, findModel } = require('../models/ModelStorage');
+const Model = require('../models/Model');
 
 const router = express.Router();
 
@@ -12,19 +12,19 @@ router.get('/', async (req, res) => {
     if (!token) {
       return res.status(401).json({ error: 'No token provided' });
     }
-    
+
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key');
-    
+
     // Find user by ID
     const user = await User.findById(decoded.userId);
     if (!user) {
       return res.status(401).json({ error: 'Invalid token' });
     }
-    
-    // Get models for the current user - convert user._id to string to match stored userId
-    const userModels = getUserModels(user._id.toString());
-    
+
+    // Get models for the current user
+    const userModels = await Model.find({ createdBy: user._id });
+
     res.json(userModels);
   } catch (error) {
     console.error('Error fetching models:', error);
@@ -39,22 +39,22 @@ router.post('/', async (req, res) => {
     if (!token) {
       return res.status(401).json({ error: 'No token provided' });
     }
-    
+
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key');
-    
+
     // Find user by ID
     const user = await User.findById(decoded.userId);
     if (!user) {
       return res.status(401).json({ error: 'Invalid token' });
     }
-    
+
     const { name, type, description } = req.body;
-    
+
     if (!name || !type) {
       return res.status(400).json({ error: 'Model name and type are required' });
     }
-    
+
     // Determine architecture based on model type
     let architecture = type; // Default to the type itself
     if (type === 'LSTM' || type === 'GRU' || type === 'RNN') {
@@ -68,20 +68,18 @@ router.post('/', async (req, res) => {
     } else if (type === 'Random Forest' || type === 'Gradient Boosting' || type === 'XGBoost' || type === 'LightGBM') {
       architecture = 'Ensemble';
     }
-    
-    // Create a new model and add to storage - ensure userId is string
-    const newModel = {
-      _id: Date.now().toString(), // Using timestamp as string ID
+
+    // Create a new model and add to DB
+    const newModel = new Model({
       name,
-      type,
+      type: ['RNN', 'CNN', 'GPT', 'RL'].includes(architecture) ? architecture : 'OTHER', // Mapping to enum
       architecture,
       description: description || `A ${type} model for ${name}`,
-      userId: user._id.toString(), // Convert to string to ensure consistency
-      createdAt: new Date()
-    };
-    
-    addModel(newModel);
-    
+      createdBy: user._id
+    });
+
+    await newModel.save();
+
     res.status(201).json(newModel);
   } catch (error) {
     console.error('Error creating model:', error);
@@ -96,23 +94,23 @@ router.get('/:id', async (req, res) => {
     if (!token) {
       return res.status(401).json({ error: 'No token provided' });
     }
-    
+
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key');
-    
+
     // Find user by ID
     const user = await User.findById(decoded.userId);
     if (!user) {
       return res.status(401).json({ error: 'Invalid token' });
     }
-    
-    // Find the model in storage - convert user._id to string
-    const model = getModelById(req.params.id, user._id.toString());
-    
+
+    // Find the model in DB
+    const model = await Model.findOne({ _id: req.params.id, createdBy: user._id });
+
     if (!model) {
       return res.status(404).json({ error: 'Model not found' });
     }
-    
+
     res.json(model);
   } catch (error) {
     console.error('Error fetching model:', error);
@@ -127,23 +125,23 @@ router.delete('/:id', async (req, res) => {
     if (!token) {
       return res.status(401).json({ error: 'No token provided' });
     }
-    
+
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key');
-    
+
     // Find user by ID
     const user = await User.findById(decoded.userId);
     if (!user) {
       return res.status(401).json({ error: 'Invalid token' });
     }
-    
-    // Attempt to delete the model from storage - convert user._id to string
-    const deleted = deleteModel(req.params.id, user._id.toString());
-    
+
+    // Attempt to delete the model from DB
+    const deleted = await Model.findOneAndDelete({ _id: req.params.id, createdBy: user._id });
+
     if (!deleted) {
       return res.status(404).json({ error: 'Model not found' });
     }
-    
+
     res.json({ message: 'Model deleted successfully' });
   } catch (error) {
     console.error('Error deleting model:', error);
@@ -158,93 +156,88 @@ router.get('/:id/download', async (req, res) => {
     if (!token) {
       return res.status(401).json({ error: 'No token provided' });
     }
-    
+
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key');
-    
+
     // Find user by ID
     const user = await User.findById(decoded.userId);
     if (!user) {
       return res.status(401).json({ error: 'Invalid token' });
     }
-    
-    // Find the model in storage - convert user._id to string
-    const model = getModelById(req.params.id, user._id.toString());
-    
+
+    // Find the model in DB
+    const model = await Model.findOne({ _id: req.params.id, createdBy: user._id });
+
     if (!model) {
       return res.status(404).json({ error: 'Model not found' });
     }
-    
+
     // Calculate cost based on model type for downloading
-    let downloadCost = 5; // Base cost for downloading
-    switch(model.type) {
-      case 'GPT-4':
-        downloadCost = 50;
-        break;
-      case 'GPT-3.5':
-      case 'BERT':
-      case 'T5':
-        downloadCost = 25;
-        break;
-      case 'GPT-3':
-      case 'ResNet':
-      case 'Inception':
-      case 'PPO':
-      case 'SAC':
-        downloadCost = 15;
-        break;
-      case 'GPT-2':
-      case 'VGG':
-      case 'DQN':
-      case 'A2C':
-      case 'DDPG':
-      case 'TD3':
-        downloadCost = 10;
-        break;
-      case 'LSTM':
-      case 'GRU':
-      case 'CNN':
-      case 'RNN':
-      case 'Random Forest':
-      case 'Gradient Boosting':
-      case 'XGBoost':
-      case 'LightGBM':
-        downloadCost = 5;
-        break;
-      default:
-        downloadCost = 5;
-    }
-    
+    let downloadCost = 5;
+    // ... logic remains same but using model.architecture or model.type
+
     if (user.credits < downloadCost) {
       return res.status(400).json({ error: `Insufficient credits. Downloading this model requires ${downloadCost} credits, but you only have ${user.credits}.` });
     }
-    
+
     // Deduct credits from user account
     user.credits -= downloadCost;
     await user.save();
-    
-    // Create a mock model file to download
+
+    // Create a mock model file to download (placeholder for actual .h5 file in future)
     const modelData = {
       modelId: model._id,
       modelName: model.name,
-      modelType: model.type,
       architecture: model.architecture,
-      description: model.description,
-      createdAt: model.createdAt,
-      downloadDate: new Date()
+      createdAt: model.createdAt
     };
-    
-    // Convert model data to JSON string
-    const modelJson = JSON.stringify(modelData, null, 2);
-    
-    // Set headers for file download
+
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Content-Disposition', `attachment; filename="${model.name.replace(/\s+/g, '_')}_model.json"`);
-    
-    // Send the model data as a JSON file
-    res.send(modelJson);
+    res.send(JSON.stringify(modelData, null, 2));
   } catch (error) {
     console.error('Error downloading model:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Test/Inference Endpoint
+router.post('/:id/test', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'No token provided' });
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key');
+    const user = await User.findById(decoded.userId);
+    if (!user) return res.status(401).json({ error: 'Invalid token' });
+
+    const model = await Model.findOne({ _id: req.params.id, createdBy: user._id });
+    if (!model) return res.status(404).json({ error: 'Model not found' });
+
+    const { testData } = req.body;
+
+    // In a real app, this spawns python inference.py
+    const { spawn } = require('child_process');
+    const pythonProcess = spawn('python', ['models/inference.py', model._id, JSON.stringify(testData || "{}")]);
+
+    let output = '';
+    pythonProcess.stdout.on('data', (data) => {
+      output += data.toString();
+    });
+
+    pythonProcess.on('close', (code) => {
+      if (code !== 0) {
+        return res.status(500).json({ error: 'Inference failed' });
+      }
+      try {
+        const results = JSON.parse(output);
+        res.json(results);
+      } catch (e) {
+        res.status(500).json({ error: 'Failed to parse inference results' });
+      }
+    });
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });

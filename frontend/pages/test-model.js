@@ -19,58 +19,58 @@ export default function TestModel() {
   const [isTesting, setIsTesting] = useState(false);
   const router = useRouter();
   const toast = useToast();
-  
+
   const bg = useColorModeValue('gray.50', 'gray.900');
   const cardBg = useColorModeValue('white', 'gray.800');
-  
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
       router.push('/login');
       return;
     }
-    
+
     // Fetch user profile, models, and datasets
     Promise.all([
       fetch('http://localhost:5001/api/auth/profile', {
         headers: { 'Authorization': `Bearer ${token}` }
       }).then(res => res.json()),
-      
+
       fetch('http://localhost:5001/api/models', {
         headers: { 'Authorization': `Bearer ${token}` }
       }).then(res => res.json()),
-      
+
       fetch('http://localhost:5001/api/resources/datasets', {
         headers: { 'Authorization': `Bearer ${token}` }
       }).then(res => res.json())
     ])
-    .then(([userData, modelData, datasetData]) => {
-      setUser(userData);
-      // Filter out GPT/BERT models and RL models for regular testing
-      const filteredModels = modelData.filter(model => 
-        !['GPT-2', 'GPT-3', 'GPT-3.5', 'GPT-4', 'BERT', 'T5', 'DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(model.type)
-      );
-      setModels(filteredModels);
-      setDatasets(datasetData);
-      setLoading(false);
-    })
-    .catch(err => {
-      console.error('Error fetching data:', err);
-      localStorage.removeItem('token');
-      router.push('/login');
-    });
+      .then(([userData, modelData, datasetData]) => {
+        setUser(userData);
+        // Filter out GPT/BERT models and RL models for regular testing
+        const filteredModels = modelData.filter(model =>
+          !['GPT-2', 'GPT-3', 'GPT-3.5', 'GPT-4', 'BERT', 'T5', 'DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(model.type)
+        );
+        setModels(filteredModels);
+        setDatasets(datasetData);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Error fetching data:', err);
+        localStorage.removeItem('token');
+        router.push('/login');
+      });
   }, [router]);
-  
+
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
   };
-  
+
   const handleTestModel = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.modelId || (!formData.datasetId && !formData.testData)) {
       toast({
         title: 'Missing required fields',
@@ -81,47 +81,46 @@ export default function TestModel() {
       });
       return;
     }
-    
+
     setIsTesting(true);
-    
+
     try {
-      // Simulate model testing
-      // In a real application, this would make an API call to a backend endpoint
-      // that runs the model on the provided data
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate processing time
-      
-      // Generate mock test results based on model type
-      const selectedModel = models.find(m => m._id === formData.modelId);
-      let results;
-      
-      if (selectedModel) {
-        results = {
-          model: selectedModel.name,
-          type: selectedModel.type,
-          predictions: [
-            { input: 'Sample input 1', prediction: 'Sample prediction 1', confidence: 0.85 },
-            { input: 'Sample input 2', prediction: 'Sample prediction 2', confidence: 0.92 },
-            { input: 'Sample input 3', prediction: 'Sample prediction 3', confidence: 0.78 }
-          ],
-          accuracy: Math.random() * 0.3 + 0.7, // Random accuracy between 0.7 and 1.0
-          processingTime: '2.3s',
-          totalPredictions: 3
-        };
-      }
-      
-      setTestResults(results);
-      
-      toast({
-        title: 'Testing completed',
-        description: `Model ${selectedModel?.name} has been tested successfully`,
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5001/api/models/${formData.modelId}/test`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          testData: formData.testData,
+          datasetId: formData.datasetId
+        })
       });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setTestResults({
+          ...data,
+          model: models.find(m => m._id === formData.modelId)?.name,
+          type: models.find(m => m._id === formData.modelId)?.type
+        });
+
+        toast({
+          title: 'Testing completed',
+          description: 'Model has been tested successfully',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+      } else {
+        throw new Error(data.error || 'Testing failed');
+      }
     } catch (err) {
       toast({
         title: 'Testing failed',
-        description: 'Could not test the model',
+        description: err.message,
         status: 'error',
         duration: 3000,
         isClosable: true,
@@ -130,7 +129,7 @@ export default function TestModel() {
       setIsTesting(false);
     }
   };
-  
+
   if (loading) {
     return (
       <Flex minH="100vh" align="center" justify="center" bg={bg}>
@@ -138,7 +137,7 @@ export default function TestModel() {
       </Flex>
     );
   }
-  
+
   return (
     <Box minH="100vh" bg={bg}>
       <Sidebar user={user} />
@@ -165,7 +164,7 @@ export default function TestModel() {
               </Flex>
             </Flex>
           </motion.div>
-          
+
           {/* Test Configuration */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -183,8 +182,8 @@ export default function TestModel() {
                 <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6}>
                   <FormControl id="modelId" isRequired>
                     <FormLabel>Model</FormLabel>
-                    <Select 
-                      value={formData.modelId} 
+                    <Select
+                      value={formData.modelId}
                       onChange={(e) => handleInputChange('modelId', e.target.value)}
                     >
                       <option value="">Select a model</option>
@@ -195,11 +194,11 @@ export default function TestModel() {
                       ))}
                     </Select>
                   </FormControl>
-                  
+
                   <FormControl id="datasetId">
                     <FormLabel>Dataset (Optional)</FormLabel>
-                    <Select 
-                      value={formData.datasetId} 
+                    <Select
+                      value={formData.datasetId}
                       onChange={(e) => handleInputChange('datasetId', e.target.value)}
                     >
                       <option value="">Select a dataset (or enter test data below)</option>
@@ -211,21 +210,21 @@ export default function TestModel() {
                     </Select>
                   </FormControl>
                 </Grid>
-                
+
                 <FormControl id="testData" mt={4}>
                   <FormLabel>Test Data (Optional)</FormLabel>
-                  <Textarea 
-                    value={formData.testData} 
+                  <Textarea
+                    value={formData.testData}
                     onChange={(e) => handleInputChange('testData', e.target.value)}
                     placeholder="Enter test data here, one input per line, or select a dataset above"
                     rows={4}
                     resize="vertical"
                   />
                 </FormControl>
-                
+
                 <Flex justify="flex-end" mt={6}>
-                  <Button 
-                    colorScheme="teal" 
+                  <Button
+                    colorScheme="teal"
                     leftIcon={<FiPlay />}
                     onClick={handleTestModel}
                     isLoading={isTesting}
@@ -236,7 +235,7 @@ export default function TestModel() {
               </CardBody>
             </Card>
           </motion.div>
-          
+
           {/* Test Results */}
           {testResults && (
             <motion.div
@@ -259,7 +258,7 @@ export default function TestModel() {
                       <Text><strong>Accuracy:</strong> {(testResults.accuracy * 100).toFixed(2)}%</Text>
                       <Text><strong>Processing Time:</strong> {testResults.processingTime}</Text>
                     </Flex>
-                    
+
                     <Heading as="h4" size="sm">Predictions:</Heading>
                     <Grid templateColumns={{ base: '1fr' }} gap={3}>
                       {testResults.predictions.map((prediction, index) => (
