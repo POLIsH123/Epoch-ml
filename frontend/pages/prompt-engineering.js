@@ -284,7 +284,8 @@ export default function PromptEngineering() {
                   <Button
                     colorScheme="teal"
                     leftIcon={<FiPlay />}
-                    onClick={handleTestPrompt}
+                    onClick={handleRunTest}
+                    isLoading={testing}
                   >
                     Test Prompt
                   </Button>
@@ -339,7 +340,8 @@ export default function PromptEngineering() {
                   <Button
                     colorScheme="green"
                     leftIcon={<FiPlay />}
-                    onClick={handleTestPrompt}
+                    onClick={handleRunTest}
+                    isLoading={testing}
                   >
                     Run Test
                   </Button>
