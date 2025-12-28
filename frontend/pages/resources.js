@@ -53,23 +53,49 @@ export default function Resources() {
   const handlePurchase = async (credits, cost) => {
     setPurchasing(true);
 
-    // Simulate payment processing
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      const response = await fetch('http://localhost:5001/api/resources/purchase-credits', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ credits })
+      });
 
-    // In a real implementation, this would connect to a payment processor
-    // For now, we'll just show a success message
-    toast({
-      title: 'Purchase successful',
-      description: `${credits} credits have been added to your account`,
-      status: 'success',
-      duration: 3000,
-      isClosable: true,
-    });
+      const data = await response.json();
 
-    // Update user credits locally (in a real app, we'd fetch updated profile)
-    setUser(prev => ({ ...prev, credits: (prev.credits || 0) + credits }));
+      if (response.ok) {
+        toast({
+          title: 'Purchase successful',
+          description: `${credits} credits have been added to your account`,
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
 
-    setPurchasing(false);
+        // Update user credits with the response from server
+        setUser(prev => ({ ...prev, credits: data.credits }));
+      } else {
+        toast({
+          title: 'Purchase failed',
+          description: data.error || 'Could not complete purchase',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Network error',
+        description: 'Please check your connection and try again',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setPurchasing(false);
+    }
   };
 
   if (loading) {
