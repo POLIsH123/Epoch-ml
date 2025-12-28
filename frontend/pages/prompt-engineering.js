@@ -33,6 +33,8 @@ export default function PromptEngineering() {
   const [modelType, setModelType] = useState('GPT-3.5');
   const [testInput, setTestInput] = useState('');
   const [testOutput, setTestOutput] = useState('');
+  const [testReasoning, setTestReasoning] = useState('');
+  const [testMetadata, setTestMetadata] = useState(null);
   const [savedPrompts, setSavedPrompts] = useState([]);
   const [testing, setTesting] = useState(false);
   const router = useRouter();

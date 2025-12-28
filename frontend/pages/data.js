@@ -1,4 +1,4 @@
-import { Box, Heading, Text, Button, VStack, Container, Card, CardHeader, CardBody, Flex, Icon, useColorModeValue, useToast, Grid, Stat, StatLabel, StatNumber, StatHelpText, StatGroup, FormControl, FormLabel, Input, Select, Textarea } from '@chakra-ui/react';
+import { Box, Heading, Text, Button, VStack, HStack, Container, Card, CardHeader, CardBody, Flex, Icon, useColorModeValue, useToast, Grid, SimpleGrid, Stat, StatLabel, StatNumber, StatHelpText, StatGroup, FormControl, FormLabel, Input, Select, Textarea, Badge } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { FiDatabase, FiUpload, FiFile, FiBarChart2, FiCpu, FiZap, FiDollarSign, FiCheckCircle, FiXCircle, FiInfo } from 'react-icons/fi';
