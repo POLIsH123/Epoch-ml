@@ -17,47 +17,47 @@ export default function Data() {
   });
   const router = useRouter();
   const toast = useToast();
-  
+
   const bg = useColorModeValue('gray.50', 'gray.900');
   const cardBg = useColorModeValue('white', 'gray.800');
-  
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
       router.push('/login');
       return;
     }
-    
+
     // Verify token is valid by making a simple API call
     fetch('http://localhost:5001/api/auth/profile', {
       headers: {
         'Authorization': `Bearer ${token}`
       }
     })
-    .then(res => {
-      if (res.status === 401) {
-        // Token is invalid, redirect to login
+      .then(res => {
+        if (res.status === 401) {
+          // Token is invalid, redirect to login
+          localStorage.removeItem('token');
+          router.push('/login');
+          return;
+        }
+        return res.json();
+      })
+      .then(data => {
+        if (data) {
+          setUser(data);
+          // Load user datasets
+          loadDatasets();
+          setLoading(false);
+        }
+      })
+      .catch(err => {
+        console.error('Error fetching user data:', err);
         localStorage.removeItem('token');
         router.push('/login');
-        return;
-      }
-      return res.json();
-    })
-    .then(data => {
-      if (data) {
-        setUser(data);
-        // Load user datasets
-        loadDatasets();
-        setLoading(false);
-      }
-    })
-    .catch(err => {
-      console.error('Error fetching user data:', err);
-      localStorage.removeItem('token');
-      router.push('/login');
-    });
+      });
   }, [router]);
-  
+
   const loadDatasets = () => {
     // Load datasets from the backend
     const token = localStorage.getItem('token');
@@ -66,26 +66,26 @@ export default function Data() {
         'Authorization': `Bearer ${token}`
       }
     })
-    .then(res => res.json())
-    .then(data => {
-      setDatasets(Array.isArray(data) ? data : []);
-    })
-    .catch(err => {
-      console.error('Error loading datasets:', err);
-      setDatasets([]); // Ensure it's always an array
-      toast({
-        title: 'Error loading datasets',
-        description: 'Could not load your datasets. Please try again.',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
+      .then(res => res.json())
+      .then(data => {
+        setDatasets(Array.isArray(data) ? data : []);
+      })
+      .catch(err => {
+        console.error('Error loading datasets:', err);
+        setDatasets([]); // Ensure it's always an array
+        toast({
+          title: 'Error loading datasets',
+          description: 'Could not load your datasets. Please try again.',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
       });
-    });
   };
-  
+
   const handleCreateDataset = async (e) => {
     e.preventDefault();
-    
+
     if (!newDataset.name) {
       toast({
         title: 'Dataset name required',
@@ -96,7 +96,7 @@ export default function Data() {
       });
       return;
     }
-    
+
     const token = localStorage.getItem('token');
     try {
       const response = await fetch('http://localhost:5001/api/resources/datasets', {
@@ -111,14 +111,14 @@ export default function Data() {
           type: newDataset.type
         })
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok) {
         // Add the new dataset to the list
         setDatasets(prev => Array.isArray(prev) ? [...prev, data] : [data]);
         setNewDataset({ name: '', description: '', type: 'csv', size: 0 });
-        
+
         toast({
           title: 'Dataset created',
           description: `Dataset "${newDataset.name}" has been created successfully`,
@@ -145,7 +145,7 @@ export default function Data() {
       });
     }
   };
-  
+
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -157,7 +157,7 @@ export default function Data() {
       }));
     }
   };
-  
+
   if (loading) {
     return (
       <Flex minH="100vh" align="center" justify="center" bg={bg}>
@@ -165,12 +165,12 @@ export default function Data() {
       </Flex>
     );
   }
-  
+
   return (
     <Box minH="100vh" bg={bg}>
       <Sidebar user={user} />
-      <Box ml="250px" p={6}>
-        <VStack spacing={8} align="stretch">
+      <Box ml="250px" p={8}>
+        <VStack spacing={10} align="stretch">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -178,230 +178,219 @@ export default function Data() {
             transition={{ duration: 0.5 }}
           >
             <Flex justify="space-between" align="center">
-              <VStack align="start" spacing={2}>
-                <Heading as="h1" size="lg">Data Management</Heading>
-                <Text color="gray.500">Upload, manage, and prepare your datasets</Text>
+              <VStack align="start" spacing={1}>
+                <Heading as="h1" size="xl" bgGradient="linear(to-r, teal.300, blue.400)" bgClip="text">
+                  Neural Data Repository
+                </Heading>
+                <Text color="gray.500" fontSize="lg">Management terminal for training payloads and data schemas.</Text>
               </VStack>
-              <Flex align="center" gap={4}>
-                <Box p={3} bg="teal.100" borderRadius="md">
-                  <Flex align="center" gap={2}>
-                    <Icon as={FiDatabase} color="teal.500" />
-                    <Text fontWeight="bold">{datasets.length} datasets</Text>
-                  </Flex>
-                </Box>
-              </Flex>
+              <Box className="glass" px={6} py={3}>
+                <HStack spacing={3}>
+                  <Icon as={FiDatabase} color="blue.400" />
+                  <Text fontWeight="bold" color="blue.300">{datasets.length} PAYLOADS ONLINE</Text>
+                </HStack>
+              </Box>
             </Flex>
           </motion.div>
-          
+
           {/* Stats Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-          >
-            <StatGroup>
-              <Stat>
-                <StatLabel>Total Datasets</StatLabel>
-                <StatNumber>{datasets.length}</StatNumber>
-                <StatHelpText>Number of datasets uploaded</StatHelpText>
-              </Stat>
-              
-              <Stat>
-                <StatLabel>Storage Used</StatLabel>
-                <StatNumber>{Array.isArray(datasets) ? datasets.reduce((total, dataset) => {
-                  // Convert size to MB for calculation (simplified)
-                  const sizeValue = parseFloat(dataset.size);
-                  return total + (isNaN(sizeValue) ? 0 : sizeValue);
-                }, 0) : 0} MB</StatNumber>
-                <StatHelpText>Of 10 GB available</StatHelpText>
-              </Stat>
-              
-              <Stat>
-                <StatLabel>Ready to Use</StatLabel>
-                <StatNumber>{Array.isArray(datasets) ? datasets.filter(d => d.status === 'ready').length : 0}</StatNumber>
-                <StatHelpText>Datasets ready for training</StatHelpText>
-              </Stat>
-            </StatGroup>
-          </motion.div>
-          
-          {/* Upload Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <Card bg={cardBg}>
-              <CardHeader>
-                <Flex align="center">
-                  <Icon as={FiUpload} w={6} h={6} color="teal.500" mr={3} />
-                  <Heading as="h3" size="md">Upload New Dataset</Heading>
-                </Flex>
-              </CardHeader>
-              <CardBody>
-                <form onSubmit={handleCreateDataset}>
-                  <VStack spacing={4} align="stretch">
-                    <FormControl id="name" isRequired>
-                      <FormLabel>Dataset Name</FormLabel>
-                      <Input 
-                        value={newDataset.name}
-                        onChange={(e) => setNewDataset(prev => ({...prev, name: e.target.value}))}
-                        placeholder="Enter dataset name"
-                      />
-                    </FormControl>
-                    
-                    <FormControl id="description">
-                      <FormLabel>Description</FormLabel>
-                      <Textarea 
-                        value={newDataset.description}
-                        onChange={(e) => setNewDataset(prev => ({...prev, description: e.target.value}))}
-                        placeholder="Describe your dataset"
-                        rows={3}
-                      />
-                    </FormControl>
-                    
-                    <FormControl id="type" isRequired>
-                      <FormLabel>Dataset Type</FormLabel>
-                      <Select
-                        value={newDataset.type}
-                        onChange={(e) => setNewDataset(prev => ({...prev, type: e.target.value}))}
-                      >
-                        <option value="csv">CSV (Tabular Data)</option>
-                        <option value="json">JSON</option>
-                        <option value="image">Image Dataset</option>
-                        <option value="text">Text Dataset</option>
-                        <option value="audio">Audio Dataset</option>
-                      </Select>
-                    </FormControl>
-                    
-                    <FormControl id="file">
-                      <FormLabel>Upload File</FormLabel>
-                      <Input 
-                        type="file" 
-                        onChange={handleFileUpload}
-                        accept=".csv,.json,.txt,.jpg,.jpeg,.png,.mp3,.wav"
-                      />
-                    </FormControl>
-                    
-                    <Button 
-                      type="submit" 
-                      colorScheme="teal" 
-                      leftIcon={<FiUpload />}
-                      width="full"
-                    >
-                      Create Dataset
-                    </Button>
-                  </VStack>
-                </form>
-              </CardBody>
-            </Card>
-          </motion.div>
-          
-          {/* Datasets List */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-          >
-            <Card bg={cardBg}>
-              <CardHeader>
-                <Flex align="center">
-                  <Icon as={FiFile} w={6} h={6} color="teal.500" mr={3} />
-                  <Heading as="h3" size="md">Your Datasets</Heading>
-                </Flex>
-              </CardHeader>
-              <CardBody>
-                {Array.isArray(datasets) && datasets.length > 0 ? (
-                  <Grid templateColumns={{ base: '1fr' }} gap={4}>
-                    {datasets.map(dataset => (
-                      <Card key={dataset.id} bg={useColorModeValue('gray.50', 'gray.700')}>
-                        <CardBody>
-                          <Flex justify="space-between" align="center">
-                            <VStack align="start" spacing={1}>
-                              <Flex align="center" gap={2}>
-                                <Heading as="h4" size="sm">{dataset.name}</Heading>
-                                <Icon 
-                                  as={dataset.status === 'ready' ? FiCheckCircle : FiXCircle} 
-                                  color={dataset.status === 'ready' ? 'green.500' : 'yellow.500'} 
-                                />
-                              </Flex>
-                              <Text fontSize="sm" color="gray.500">{dataset.description}</Text>
-                              <Flex gap={4} mt={2}>
-                                <Text fontSize="xs" bg="gray.200" px={2} py={1} borderRadius="md">
-                                  {dataset.type.toUpperCase()}
-                                </Text>
-                                <Text fontSize="xs" bg="gray.200" px={2} py={1} borderRadius="md">
-                                  {dataset.size}
-                                </Text>
-                              </Flex>
-                            </VStack>
-                            <Flex gap={2}>
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                colorScheme="teal"
-                                onClick={() => router.push(`/train?dataset=${dataset.id}`)}
-                              >
-                                Use for Training
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                colorScheme="gray"
-                                leftIcon={<FiInfo />}
-                                onClick={() => {
-                                  toast({
-                                    title: `${dataset.name} Details`,
-                                    description: `Type: ${dataset.type}\nStatus: ${dataset.status}\nSize: ${dataset.size}`,
-                                    status: 'info',
-                                    duration: 5000,
-                                    isClosable: true,
-                                  });
-                                }}
-                              >
-                                Details
-                              </Button>
-                            </Flex>
-                          </Flex>
-                        </CardBody>
-                      </Card>
-                    ))}
-                  </Grid>
-                ) : (
-                  <Flex justify="center" align="center" py={12} color="gray.500">
-                    <VStack spacing={4}>
-                      <Icon as={FiDatabase} w={16} h={16} />
-                      <Heading as="h3" size="md">No datasets yet</Heading>
-                      <Text>Upload your first dataset to get started</Text>
-                    </VStack>
+          <SimpleGrid columns={{ base: 1, md: 3 }} spacing={8}>
+            <Box className="glass" p={6}>
+              <VStack align="start" spacing={1}>
+                <Text fontSize="xs" color="gray.500" textTransform="uppercase">Total Payloads</Text>
+                <Heading size="lg" color="white">{datasets.length}</Heading>
+                <Text fontSize="xs" color="gray.600">Registered neural sources</Text>
+              </VStack>
+            </Box>
+
+            <Box className="glass" p={6}>
+              <VStack align="start" spacing={1}>
+                <Text fontSize="xs" color="gray.500" textTransform="uppercase">Telemetry Volume</Text>
+                <Heading size="lg" color="teal.300">
+                  {Array.isArray(datasets) ? datasets.reduce((total, d) => total + parseFloat(d.size || 0), 0).toFixed(2) : 0} MB
+                </Heading>
+                <Text fontSize="xs" color="gray.600">Of 10 GB limit</Text>
+              </VStack>
+            </Box>
+
+            <Box className="glass" p={6}>
+              <VStack align="start" spacing={1}>
+                <Text fontSize="xs" color="gray.500" textTransform="uppercase">Integrity Status</Text>
+                <Heading size="lg" color="green.300">
+                  {Array.isArray(datasets) ? datasets.filter(d => d.status === 'ready').length : 0} VALID
+                </Heading>
+                <Text fontSize="xs" color="gray.600">Datasets verified for training</Text>
+              </VStack>
+            </Box>
+          </SimpleGrid>
+
+          <Grid templateColumns={{ base: '1fr', lg: '1fr 1.5fr' }} gap={8}>
+            {/* Upload Panel */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <Box className="glass" p={8}>
+                <VStack spacing={6} align="stretch">
+                  <Flex align="center" gap={3}>
+                    <Icon as={FiUpload} color="teal.400" />
+                    <Heading size="md" color="teal.300">Provision Payload</Heading>
                   </Flex>
-                )}
-              </CardBody>
-            </Card>
-          </motion.div>
-          
-          {/* Data Preparation Tips */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-          >
-            <Card bg={cardBg}>
-              <CardHeader>
-                <Flex align="center">
-                  <Icon as={FiInfo} w={6} h={6} color="blue.500" mr={3} />
-                  <Heading as="h3" size="md">Data Preparation Tips</Heading>
-                </Flex>
-              </CardHeader>
-              <CardBody>
-                <VStack align="start" spacing={3}>
-                  <Text><strong>For RNN Models:</strong> Ensure sequential data is properly formatted with time steps</Text>
-                  <Text><strong>For CNN Models:</strong> Images should be normalized and consistently sized</Text>
-                  <Text><strong>For GPT Models:</strong> Text data should be tokenized and formatted as sequences</Text>
-                  <Text><strong>For RL Models:</strong> Environment data should follow OpenAI Gym format</Text>
+
+                  <form onSubmit={handleCreateDataset}>
+                    <VStack spacing={5} align="stretch">
+                      <FormControl id="name" isRequired>
+                        <FormLabel fontSize="sm">Payload Identifier</FormLabel>
+                        <Input
+                          value={newDataset.name}
+                          onChange={(e) => setNewDataset(prev => ({ ...prev, name: e.target.value }))}
+                          bg="rgba(0,0,0,0.2)"
+                          border="none"
+                          _focus={{ ring: '1px solid', ringColor: 'teal.400' }}
+                          placeholder="e.g., Sentiment-Dataset-Alpha"
+                        />
+                      </FormControl>
+
+                      <FormControl id="description">
+                        <FormLabel fontSize="sm">Schema Context</FormLabel>
+                        <Textarea
+                          value={newDataset.description}
+                          onChange={(e) => setNewDataset(prev => ({ ...prev, description: e.target.value }))}
+                          bg="rgba(0,0,0,0.1)"
+                          border="none"
+                          placeholder="Describe the data landscape..."
+                          rows={3}
+                        />
+                      </FormControl>
+
+                      <FormControl id="type" isRequired>
+                        <FormLabel fontSize="sm">Payload Topology</FormLabel>
+                        <Select
+                          value={newDataset.type}
+                          onChange={(e) => setNewDataset(prev => ({ ...prev, type: e.target.value }))}
+                          bg="rgba(0,0,0,0.2)"
+                          border="none"
+                        >
+                          <option value="csv">Tabular Core (CSV)</option>
+                          <option value="json">Neural JSON</option>
+                          <option value="image">Visual Tensor (Images)</option>
+                          <option value="text">Linguistic Stream (Text)</option>
+                        </Select>
+                      </FormControl>
+
+                      <FormControl id="file">
+                        <FormLabel fontSize="sm">Source File</FormLabel>
+                        <Input
+                          type="file"
+                          onChange={handleFileUpload}
+                          className="glass"
+                          pt={1}
+                          height="auto"
+                          pb={1}
+                          border="none"
+                        />
+                      </FormControl>
+
+                      <Button
+                        type="submit"
+                        colorScheme="teal"
+                        size="lg"
+                        leftIcon={<FiZap />}
+                        borderRadius="full"
+                        bgGradient="linear(to-r, teal.400, blue.500)"
+                        _hover={{ bgGradient: 'linear(to-r, teal.500, blue.600)', transform: 'translateY(-2px)' }}
+                      >
+                        Ingest Dataset
+                      </Button>
+                    </VStack>
+                  </form>
                 </VStack>
-              </CardBody>
-            </Card>
-          </motion.div>
+              </Box>
+            </motion.div>
+
+            {/* List Panel */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
+              <Box className="glass" p={8} h="full">
+                <Flex align="center" gap={3} mb={8}>
+                  <Icon as={FiFile} color="blue.400" />
+                  <Heading size="md" color="blue.300">Active Payloads</Heading>
+                </Flex>
+
+                <VStack spacing={4} align="stretch" maxH="600px" overflowY="auto" pr={2}>
+                  {Array.isArray(datasets) && datasets.length > 0 ? (
+                    datasets.map((dataset, idx) => (
+                      <Box
+                        key={dataset.id || idx}
+                        p={6}
+                        bg="rgba(255,255,255,0.02)"
+                        borderRadius="2xl"
+                        border="1px solid"
+                        borderColor="whiteAlpha.100"
+                        transition="all 0.2s"
+                        _hover={{ bg: 'rgba(255,255,255,0.05)', borderColor: 'teal.500' }}
+                      >
+                        <Flex justify="space-between" align="center">
+                          <VStack align="start" spacing={1}>
+                            <HStack>
+                              <Heading size="sm" color="white">{dataset.name}</Heading>
+                              <Badge colorScheme={dataset.status === 'ready' ? 'green' : 'orange'} borderRadius="full" variant="subtle">
+                                {dataset.status || 'INGESTING'}
+                              </Badge>
+                            </HStack>
+                            <Text fontSize="xs" color="gray.500" noOfLines={1}>{dataset.description || 'No context provided'}</Text>
+                            <HStack spacing={2} pt={2}>
+                              <Badge colorScheme="blue" variant="outline" fontSize="2xs">{dataset.type.toUpperCase()}</Badge>
+                              <Badge colorScheme="gray" variant="outline" fontSize="2xs">{dataset.size}</Badge>
+                            </HStack>
+                          </VStack>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            colorScheme="teal"
+                            onClick={() => router.push(`/train?dataset=${dataset.id}`)}
+                            borderRadius="full"
+                          >
+                            Synchronize
+                          </Button>
+                        </Flex>
+                      </Box>
+                    ))
+                  ) : (
+                    <Flex direction="column" align="center" justify="center" py={20} color="gray.600">
+                      <Icon as={FiDatabase} w={12} h={12} mb={4} opacity={0.5} />
+                      <Text>No payloads detected in mainframe.</Text>
+                    </Flex>
+                  )}
+                </VStack>
+              </Box>
+            </motion.div>
+          </Grid>
+
+          {/* Tips Section */}
+          <Box className="glass" p={8}>
+            <Flex align="center" gap={3} mb={6}>
+              <Icon as={FiInfo} color="orange.300" />
+              <Heading size="md">Neural Integrity Protocol</Heading>
+            </Flex>
+            <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6}>
+              {[
+                { label: 'RNN Models', tip: 'Sequential structure required.' },
+                { label: 'CNN Models', tip: 'Normalized visual tensors.' },
+                { label: 'GPT Models', tip: 'Tokenized linguistic streams.' },
+                { label: 'RL Models', tip: 'Formatted state trajectories.' }
+              ].map((item, idx) => (
+                <VStack key={idx} align="start" p={4} bg="rgba(0,0,0,0.2)" borderRadius="xl">
+                  <Text fontWeight="bold" color="teal.300" fontSize="sm">{item.label}</Text>
+                  <Text fontSize="xs" color="gray.500">{item.tip}</Text>
+                </VStack>
+              ))}
+            </SimpleGrid>
+          </Box>
         </VStack>
       </Box>
     </Box>

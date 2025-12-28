@@ -106,269 +106,125 @@ export default function Dashboard() {
   return (
     <Box minH="100vh" bg={bg}>
       <Sidebar user={user} />
-      <Box ml="250px" p={6}>
-        <VStack spacing={8} align="stretch">
+      <Box ml="250px" p={8}>
+        <VStack spacing={10} align="stretch">
           {/* Welcome Section */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <Flex justify="space-between" align="center" mb={6}>
-              <VStack align="start" spacing={2}>
-                <Heading as="h1" size="lg">Welcome back, {user?.username}!</Heading>
-                <Text color="gray.500">Ready to build the next breakthrough model?</Text>
+            <Flex justify="space-between" align="center">
+              <VStack align="start" spacing={1}>
+                <Heading as="h1" size="xl" bgGradient="linear(to-r, teal.300, blue.400)" bgClip="text">
+                  Welcome back, {user?.username}
+                </Heading>
+                <Text color="gray.500" fontSize="lg">Neural systems are operational and awaiting instructions.</Text>
               </VStack>
-              <Flex align="center" gap={4}>
-                <Box p={3} bg="teal.100" borderRadius="md">
-                  <Flex align="center" gap={2}>
-                    <Icon as={FiDollarSign} color="teal.500" />
-                    <Text fontWeight="bold">{user?.credits || 100} credits</Text>
-                  </Flex>
+              <HStack spacing={4}>
+                <Box className="glass" px={6} py={3}>
+                  <HStack spacing={3}>
+                    <Icon as={FiDollarSign} color="teal.400" w={5} h={5} />
+                    <VStack align="start" spacing={0}>
+                      <Text fontSize="xs" color="gray.500" textTransform="uppercase">Balance</Text>
+                      <Text fontWeight="bold" color="teal.300">{(user?.credits || 0).toLocaleString()} CR</Text>
+                    </VStack>
+                  </HStack>
                 </Box>
-                <Box p={3} bg="blue.100" borderRadius="md">
-                  <Flex align="center" gap={2}>
-                    <Icon as={FiActivity} color="blue.500" />
-                    <Text fontWeight="bold">Active</Text>
-                  </Flex>
-                </Box>
-              </Flex>
+              </HStack>
             </Flex>
           </motion.div>
 
-          {/* Stats Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-          >
-            <SimpleGrid columns={{ base: 1, md: 4 }} spacing={6}>
-              <Card bg={cardBg} borderRadius="xl" borderTop="4px solid" borderTopColor="teal.400">
-                <CardBody>
-                  <Stat>
-                    <StatLabel color="gray.500">Available Credits</StatLabel>
-                    <StatNumber fontSize="2xl">{user?.credits || 0}</StatNumber>
-                    <StatHelpText>
-                      <Icon as={stats.activityTrend >= 0 ? FiTrendingUp : FiActivity} color={stats.activityTrend >= 0 ? "green.500" : "red.500"} />
-                      {stats.activityTrend >= 0 ? ` +${stats.activityTrend}%` : ` ${stats.activityTrend}%`} vs Prev 24h
-                    </StatHelpText>
-                  </Stat>
-                </CardBody>
-              </Card>
-              <Card bg={cardBg} borderRadius="xl" borderTop="4px solid" borderTopColor="blue.400">
-                <CardBody>
-                  <Stat>
-                    <StatLabel color="gray.500">Model Success Rate</StatLabel>
-                    <StatNumber fontSize="2xl">{stats.successRate}%</StatNumber>
-                    <StatHelpText><Icon as={FiCheckCircle} color="blue.500" /> {stats.completedSessions} / {stats.totalSessions} sessions</StatHelpText>
-                  </Stat>
-                </CardBody>
-              </Card>
-              <Card bg={cardBg} borderRadius="xl" borderTop="4px solid" borderTopColor="purple.400">
-                <CardBody>
-                  <Stat>
-                    <StatLabel color="gray.500">Active Nodes</StatLabel>
-                    <StatNumber fontSize="2xl">{stats.activeNodes.toLocaleString()}</StatNumber>
-                    <StatHelpText>Global Network Distributed</StatHelpText>
-                  </Stat>
-                </CardBody>
-              </Card>
-              <Card bg={cardBg} borderRadius="xl" borderTop="4px solid" borderTopColor="orange.400">
-                <CardBody>
-                  <Stat>
-                    <StatLabel color="gray.500">Compute Latency</StatLabel>
-                    <StatNumber fontSize="2xl">{stats.latency}ms</StatNumber>
-                    <StatHelpText><Icon as={FiZap} color="orange.400" /> Edge Optimized</StatHelpText>
-                  </Stat>
-                </CardBody>
-              </Card>
-            </SimpleGrid>
-          </motion.div>
-
-          {/* AI Insights & Recommendation */}
-          <Grid templateColumns={{ base: '1fr', lg: '2fr 1fr' }} gap={6}>
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
-              <Card bg={cardBg} h="full">
-                <CardHeader>
-                  <Flex align="center">
-                    <Icon as={FiZap} w={6} h={6} color="orange.400" mr={3} />
-                    <Heading as="h3" size="md">Epoch-ML Intelligent Insights</Heading>
-                  </Flex>
-                </CardHeader>
-                <CardBody>
-                  <VStack align="stretch" spacing={4}>
-                    <Box p={4} bg="orange.50" borderRadius="lg" borderLeft="4px solid" borderLeftColor="orange.400">
-                      <Flex align="start" gap={3}>
-                        <Icon as={FiInfo} color="orange.400" mt={1} />
-                        <Box>
-                          <Text fontWeight="bold">Optimization Tip</Text>
-                          <Text fontSize="sm">Your recent CNN training could benefit from a higher batch size (64) to utilize GPU nodes more efficiently.</Text>
-                        </Box>
-                      </Flex>
-                    </Box>
-                    <Box p={4} bg="blue.50" borderRadius="lg" borderLeft="4px solid" borderLeftColor="blue.400">
-                      <Flex align="start" gap={3}>
-                        <Icon as={FiCpu} color="blue.400" mt={1} />
-                        <Box>
-                          <Text fontWeight="bold">Architecture Suggestion</Text>
-                          <Text fontSize="sm">Based on the Boston Housing dataset, trying an **XGBoost** model usually yields 12% lower MAE than traditional RNNs.</Text>
-                        </Box>
-                      </Flex>
-                    </Box>
-                  </VStack>
-                </CardBody>
-              </Card>
+          {/* Stats Grid */}
+          <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={8}>
+            <motion.div whileHover={{ y: -5 }} transition={{ duration: 0.2 }}>
+              <Box className="glass" p={6}>
+                <Flex align="center" gap={4}>
+                  <Icon as={FiBarChart2} w={8} h={8} color="teal.400" />
+                  <Box>
+                    <Text fontSize="sm" color="gray.500">Inference Load</Text>
+                    <Heading size="lg">{stats.totalSessions || 0}</Heading>
+                  </Box>
+                </Flex>
+              </Box>
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-            >
-              <Card bg={cardBg} h="full">
-                <CardHeader>
-                  <Flex align="center">
-                    <Icon as={FiTrendingUp} w={6} h={6} color="green.400" mr={3} />
-                    <Heading as="h3" size="md">Trending</Heading>
-                  </Flex>
-                </CardHeader>
-                <CardBody>
-                  <VStack align="stretch" spacing={4}>
-                    <Flex justify="space-between" align="center">
-                      <Text fontWeight="medium" fontSize="sm">GPT-4 Turbo</Text>
-                      <Badge colorScheme="green">HOT</Badge>
-                    </Flex>
-                    <Flex justify="space-between" align="center">
-                      <Text fontWeight="medium" fontSize="sm">Stable Diffusion XL</Text>
-                      <Badge colorScheme="blue">NEW</Badge>
-                    </Flex>
-                    <Flex justify="space-between" align="center">
-                      <Text fontWeight="medium" fontSize="sm">Llama-3 70B</Text>
-                      <Badge colorScheme="purple">POPULAR</Badge>
-                    </Flex>
-                  </VStack>
-                </CardBody>
-              </Card>
+            <motion.div whileHover={{ y: -5 }} transition={{ duration: 0.2 }}>
+              <Box className="glass" p={6}>
+                <Flex align="center" gap={4}>
+                  <Icon as={FiZap} w={8} h={8} color="purple.400" />
+                  <Box>
+                    <Text fontSize="sm" color="gray.500">System Accuracy</Text>
+                    <Heading size="lg">{stats.successRate || 0}%</Heading>
+                  </Box>
+                </Flex>
+              </Box>
             </motion.div>
+
+            <motion.div whileHover={{ y: -5 }} transition={{ duration: 0.2 }}>
+              <Box className="glass" p={6}>
+                <Flex align="center" gap={4}>
+                  <Icon as={FiActivity} w={8} h={8} color="orange.400" />
+                  <Box>
+                    <Text fontSize="sm" color="gray.500">Cluster Latency</Text>
+                    <Heading size="lg">{stats.latency || 12}ms</Heading>
+                  </Box>
+                </Flex>
+              </Box>
+            </motion.div>
+
+            <motion.div whileHover={{ y: -5 }} transition={{ duration: 0.2 }}>
+              <Box className="glass" p={6}>
+                <Flex align="center" gap={4}>
+                  <Icon as={FiCpu} w={8} h={8} color="blue.400" />
+                  <Box>
+                    <Text fontSize="sm" color="gray.500">Active Nodes</Text>
+                    <Heading size="lg">{stats.activeNodes || 1204}</Heading>
+                  </Box>
+                </Flex>
+              </Box>
+            </motion.div>
+          </SimpleGrid>
+
+          {/* Activity and Systems */}
+          <Grid templateColumns={{ base: '1fr', lg: '2fr 1fr' }} gap={8}>
+            <Box className="glass" p={8}>
+              <Heading size="md" mb={6} color="teal.400">Neural Activity Stream</Heading>
+              <VStack align="stretch" spacing={4}>
+                {recentActivity.length > 0 ? (
+                  recentActivity.map((activity, index) => (
+                    <Flex key={index} justify="space-between" align="center" py={4} borderBottom="1px solid" borderColor="rgba(255,255,255,0.05)">
+                      <HStack spacing={4}>
+                        <Icon as={FiCheckCircle} color="teal.300" />
+                        <Text fontWeight="medium" color="gray.200">{activity.action}</Text>
+                      </HStack>
+                      <Text fontSize="sm" color="gray.500">{activity.time}</Text>
+                    </Flex>
+                  ))
+                ) : (
+                  <Text color="gray.600">No recent activity detected in the cluster.</Text>
+                )}
+              </VStack>
+            </Box>
+
+            <Box className="glass" p={8}>
+              <Heading size="md" mb={6} color="blue.400">Environment Status</Heading>
+              <VStack align="stretch" spacing={6}>
+                <Flex justify="space-between" align="center">
+                  <Text color="gray.400">Hugging Face Cluster</Text>
+                  <Badge colorScheme="green" variant="subtle" px={2} borderRadius="sm">STABLE</Badge>
+                </Flex>
+                <Flex justify="space-between" align="center">
+                  <Text color="gray.400">Epoch Training V2</Text>
+                  <Badge colorScheme="green" variant="subtle" px={2} borderRadius="sm">READY</Badge>
+                </Flex>
+                <Flex justify="space-between" align="center">
+                  <Text color="gray.400">Inference Gateway</Text>
+                  <Text color="teal.300" fontWeight="bold">ONLINE</Text>
+                </Flex>
+              </VStack>
+            </Box>
           </Grid>
-
-          {/* Quick Actions */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <Card bg={cardBg}>
-              <CardHeader>
-                <Flex align="center">
-                  <Icon as={FiZap} w={6} h={6} color="teal.500" mr={3} />
-                  <Heading as="h3" size="md">Quick Actions</Heading>
-                </Flex>
-              </CardHeader>
-              <CardBody>
-                <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
-                  <Button
-                    colorScheme="teal"
-                    onClick={() => router.push('/train')}
-                    leftIcon={<FiCpu />}
-                    size="lg"
-                  >
-                    Train New Model
-                  </Button>
-                  <Button
-                    variant="outline"
-                    colorScheme="teal"
-                    onClick={() => router.push('/models')}
-                    leftIcon={<FiBarChart2 />}
-                    size="lg"
-                  >
-                    Browse Models
-                  </Button>
-                  <Button
-                    variant="outline"
-                    colorScheme="teal"
-                    onClick={() => router.push('/training-history')}
-                    leftIcon={<FiClock />}
-                    size="lg"
-                  >
-                    Training History
-                  </Button>
-                </SimpleGrid>
-              </CardBody>
-            </Card>
-          </motion.div>
-
-          {/* Model Types */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-          >
-            <Card bg={cardBg}>
-              <CardHeader>
-                <Flex align="center">
-                  <Icon as={FiDatabase} w={6} h={6} color="blue.500" mr={3} />
-                  <Heading as="h3" size="md">Supported Model Types</Heading>
-                </Flex>
-              </CardHeader>
-              <CardBody>
-                <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6}>
-                  <Flex align="center" gap={3}>
-                    <Icon as={FiCheckCircle} color="green.500" />
-                    <Text>RNN, LSTM, GRU</Text>
-                  </Flex>
-                  <Flex align="center" gap={3}>
-                    <Icon as={FiCheckCircle} color="green.500" />
-                    <Text>CNN, ResNet, Inception</Text>
-                  </Flex>
-                  <Flex align="center" gap={3}>
-                    <Icon as={FiCheckCircle} color="green.500" />
-                    <Text>GPT, BERT, T5 Transformers</Text>
-                  </Flex>
-                  <Flex align="center" gap={3}>
-                    <Icon as={FiCheckCircle} color="green.500" />
-                    <Text>DQN, PPO, A2C, SAC, TD3 (RL)</Text>
-                  </Flex>
-                </Grid>
-              </CardBody>
-            </Card>
-          </motion.div>
-
-          {/* Recent Activity */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-          >
-            <Card bg={cardBg}>
-              <CardHeader>
-                <Flex align="center">
-                  <Icon as={FiUsers} w={6} h={6} color="purple.500" mr={3} />
-                  <Heading as="h3" size="md">Recent Activity</Heading>
-                </Flex>
-              </CardHeader>
-              <CardBody>
-                <VStack align="stretch" spacing={4}>
-                  {recentActivity.length > 0 ? (
-                    recentActivity.map((activity, index) => (
-                      <Flex key={index} justify="space-between" p={3} bg="gray.100" borderRadius="md">
-                        <Text>{activity.action}</Text>
-                        <Text color="gray.500" fontSize="sm">{activity.time}</Text>
-                      </Flex>
-                    ))
-                  ) : (
-                    <Flex justify="center" p={6} color="gray.500">
-                      <Text>No recent activity yet. Start training your first model!</Text>
-                    </Flex>
-                  )}
-                </VStack>
-              </CardBody>
-            </Card>
-          </motion.div>
         </VStack>
       </Box>
     </Box>

@@ -8,15 +8,27 @@ import { io } from 'socket.io-client';
 // Define custom theme
 const theme = extendTheme({
   config: {
-    initialColorMode: 'system',
+    initialColorMode: 'dark', // Switching to dark by default for premium feel
     useSystemColorMode: false,
   },
   styles: {
     global: (props) => ({
       body: {
-        bg: mode('gray.50', 'gray.900')(props),
+        bg: mode('gray.50', '#0a0b10')(props),
         color: mode('gray.800', 'white')(props),
+        backgroundImage: mode(
+          'none',
+          'radial-gradient(circle at 20% 30%, rgba(45, 212, 191, 0.05) 0%, transparent 40%), radial-gradient(circle at 80% 70%, rgba(99, 102, 241, 0.05) 0%, transparent 40%)'
+        )(props),
       },
+      '.glass': {
+        background: mode('rgba(255, 255, 255, 0.8)', 'rgba(16, 20, 30, 0.6)')(props),
+        backdropFilter: 'blur(12px)',
+        border: '1px solid',
+        borderColor: mode('rgba(200, 200, 200, 0.3)', 'rgba(255, 255, 255, 0.1)')(props),
+        borderRadius: 'xl',
+        boxShadow: 'xl',
+      }
     }),
   },
 });

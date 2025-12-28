@@ -24,6 +24,7 @@ export default function TrainModel() {
   });
   const [columns, setColumns] = useState([]);
   const [trainingCost, setTrainingCost] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const toast = useToast();
 
@@ -177,6 +178,7 @@ export default function TrainModel() {
       return;
     }
 
+    setIsLoading(true);
     try {
       const response = await fetch('http://localhost:5001/api/training/start', {
         method: 'POST',
@@ -237,6 +239,8 @@ export default function TrainModel() {
         duration: 5000,
         isClosable: true,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -261,14 +265,14 @@ export default function TrainModel() {
           >
             <Flex justify="space-between" align="center">
               <VStack align="start" spacing={2}>
-                <Heading as="h1" size="lg">Train Model</Heading>
-                <Text color="gray.500">Configure and start training your machine learning model</Text>
+                <Heading as="h1" size="lg">Train Architecture</Heading>
+                <Text color="gray.500">Initialize new neural processing sessions</Text>
               </VStack>
               <Flex align="center" gap={4}>
-                <Box p={3} bg="teal.100" borderRadius="md">
+                <Box p={3} className="glass" px={6}>
                   <Flex align="center" gap={2}>
-                    <Icon as={FiDollarSign} color="teal.500" />
-                    <Text fontWeight="bold">{user?.credits || 0} credits</Text>
+                    <Icon as={FiDollarSign} color="teal.400" />
+                    <Text fontWeight="bold" color="teal.400">{(user?.credits || 0).toLocaleString()} Credits</Text>
                   </Flex>
                 </Box>
               </Flex>
@@ -281,162 +285,128 @@ export default function TrainModel() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            <Card bg={cardBg}>
-              <CardHeader>
-                <Flex align="center">
-                  <Icon as={FiZap} w={6} h={6} color="teal.500" mr={3} />
-                  <Heading as="h3" size="md">Training Configuration</Heading>
-                </Flex>
-              </CardHeader>
-              <CardBody>
-                <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6}>
-                  <FormControl id="modelId" isRequired>
-                    <FormLabel>Model</FormLabel>
-                    <Select
-                      value={formData.modelId}
-                      onChange={(e) => handleInputChange('modelId', e.target.value)}
-                    >
-                      <option value="">Select a model</option>
-                      {models.map(model => (
-                        <option key={model._id} value={model._id}>
-                          {model.name} ({model.type})
-                        </option>
-                      ))}
-                    </Select>
-                  </FormControl>
+            <Box className="glass" p={8}>
+              <form onSubmit={handleSubmit}>
+                <VStack spacing={8} align="stretch">
+                  <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={8}>
+                    <FormControl id="modelId" isRequired>
+                      <FormLabel fontWeight="bold" color="teal.400">Target Architecture</FormLabel>
+                      <Select
+                        value={formData.modelId}
+                        onChange={(e) => handleInputChange('modelId', e.target.value)}
+                        placeholder="Choose a model..."
+                        bg="rgba(0,0,0,0.1)"
+                      >
+                        {models.map(model => (
+                          <option key={model._id} value={model._id}>
+                            {model.name} ({model.type})
+                          </option>
+                        ))}
+                      </Select>
+                    </FormControl>
 
-                  <FormControl id="datasetId" isRequired>
-                    <FormLabel>Dataset</FormLabel>
-                    <Select
-                      value={formData.datasetId}
-                      onChange={(e) => handleInputChange('datasetId', e.target.value)}
-                    >
-                      <option value="">Select a dataset</option>
-                      {datasets.map(dataset => (
-                        <option key={dataset.id} value={dataset.id}>
-                          {dataset.name} ({dataset.size})
-                        </option>
-                      ))}
-                    </Select>
-                  </FormControl>
+                    <FormControl id="datasetId" isRequired>
+                      <FormLabel fontWeight="bold" color="teal.400">Payload Source</FormLabel>
+                      <Select
+                        value={formData.datasetId}
+                        onChange={(e) => handleInputChange('datasetId', e.target.value)}
+                        placeholder="Select a dataset..."
+                        bg="rgba(0,0,0,0.1)"
+                      >
+                        {datasets.map(dataset => (
+                          <option key={dataset.id} value={dataset.id}>
+                            {dataset.name} ({dataset.size})
+                          </option>
+                        ))}
+                      </Select>
+                    </FormControl>
 
-                  <FormControl id="targetColumn">
-                    <FormLabel>Target Column</FormLabel>
-                    <Select
-                      value={formData.targetColumn}
-                      onChange={(e) => handleInputChange('targetColumn', e.target.value)}
-                    >
-                      <option value="">Select target column</option>
-                      {columns.map(column => (
-                        <option key={column} value={column}>
-                          {column}
-                        </option>
-                      ))}
-                    </Select>
-                  </FormControl>
+                    <FormControl id="targetColumn">
+                      <FormLabel fontWeight="bold" color="teal.400">Prediction Target</FormLabel>
+                      <Select
+                        value={formData.targetColumn}
+                        onChange={(e) => handleInputChange('targetColumn', e.target.value)}
+                        placeholder="Select target..."
+                        bg="rgba(0,0,0,0.1)"
+                      >
+                        {columns.map(column => (
+                          <option key={column} value={column}>
+                            {column}
+                          </option>
+                        ))}
+                      </Select>
+                    </FormControl>
 
-                  <FormControl id="trainingCost">
-                    <FormLabel>Training Cost</FormLabel>
-                    <Input
-                      value={`${trainingCost} credits`}
-                      isDisabled
-                      bg="gray.100"
-                    />
-                  </FormControl>
-                </Grid>
+                    <FormControl id="trainingCost">
+                      <FormLabel fontWeight="bold" color="teal.400">Resource Estimation</FormLabel>
+                      <Input
+                        value={`${trainingCost} Credits Required`}
+                        isDisabled
+                        bg="rgba(0,0,0,0.1)"
+                        color="teal.200"
+                        fontWeight="bold"
+                      />
+                    </FormControl>
+                  </Grid>
 
-                {/* Parameters based on model type */}
-                {models.find(m => m._id === formData.modelId) && (
-                  <Box mt={6}>
-                    <Heading as="h4" size="sm" mb={4}>Training Parameters</Heading>
-                    <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }} gap={4}>
-                      <FormControl id="epochs">
-                        <FormLabel>Epochs (Full Passes)</FormLabel>
-                        <Input
-                          type="number"
-                          value={formData.parameters.epochs}
-                          onChange={(e) => handleInputChange('parameters.epochs', parseInt(e.target.value))}
-                        />
-                      </FormControl>
+                  {/* Parameters based on model type */}
+                  {formData.modelId && (
+                    <Box mt={6}>
+                      <Heading as="h4" size="md" mb={6} color="teal.300">Hyperparameters</Heading>
+                      <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }} gap={6}>
+                        <FormControl id="epochs">
+                          <FormLabel>Optimization Epochs</FormLabel>
+                          <Input
+                            type="number"
+                            value={formData.parameters.epochs}
+                            onChange={(e) => handleInputChange('parameters.epochs', parseInt(e.target.value))}
+                            bg="rgba(0,0,0,0.1)"
+                          />
+                        </FormControl>
 
-                      <FormControl id="batchSize">
-                        <FormLabel>Batch Size (Samples/Step)</FormLabel>
-                        <Input
-                          type="number"
-                          value={formData.parameters.batchSize}
-                          onChange={(e) => handleInputChange('parameters.batchSize', parseInt(e.target.value))}
-                        />
-                      </FormControl>
-                    </Grid>
-
-                    <Box mt={6} p={4} bg="gray.50" borderRadius="md" border="1px dashed" borderColor="gray.300">
-                      <Heading size="xs" mb={4} color="gray.600">Advanced Parameters</Heading>
-                      <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6}>
-                        {['RNN', 'LSTM', 'GRU'].includes(models.find(m => m._id === formData.modelId)?.type) && (
-                          <FormControl id="timesteps">
-                            <FormLabel fontSize="sm">Timesteps (Historical Window)</FormLabel>
-                            <Input
-                              type="number"
-                              value={formData.parameters.timesteps}
-                              onChange={(e) => handleInputChange('parameters.timesteps', parseInt(e.target.value))}
-                            />
-                          </FormControl>
-                        )}
+                        <FormControl id="batchSize">
+                          <FormLabel>Inference Batch Size</FormLabel>
+                          <Input
+                            type="number"
+                            value={formData.parameters.batchSize}
+                            onChange={(e) => handleInputChange('parameters.batchSize', parseInt(e.target.value))}
+                            bg="rgba(0,0,0,0.1)"
+                          />
+                        </FormControl>
 
                         <FormControl id="learningRate">
-                          <FormLabel fontSize="sm">Learning Rate (Step Size)</FormLabel>
+                          <FormLabel>Learning Rate</FormLabel>
                           <Input
                             type="number"
                             step="0.0001"
                             value={formData.parameters.learningRate}
                             onChange={(e) => handleInputChange('parameters.learningRate', parseFloat(e.target.value))}
+                            bg="rgba(0,0,0,0.1)"
                           />
                         </FormControl>
                       </Grid>
                     </Box>
+                  )}
 
-                    {['GPT-4', 'GPT-3.5', 'GPT-3', 'BERT', 'T5'].includes(models.find(m => m._id === formData.modelId)?.type) && (
-                      <FormControl id="systemPrompt" mt={4}>
-                        <FormLabel>System Prompt</FormLabel>
-                        <Textarea
-                          value={formData.parameters.systemPrompt}
-                          onChange={(e) => handleInputChange('parameters.systemPrompt', e.target.value)}
-                          placeholder="You are a helpful assistant..."
-                          rows={3}
-                        />
-                      </FormControl>
-                    )}
-
-                    {['DQN', 'PPO', 'SAC', 'A2C', 'DDPG', 'TD3'].includes(models.find(m => m._id === formData.modelId)?.type) && (
-                      <Box mt={6}>
-                        <Heading size="xs" mb={4} color="gray.600">Reinforcement Learning Settings</Heading>
-                        <FormControl id="environment">
-                          <FormLabel>Environment</FormLabel>
-                          <Select
-                            value={formData.parameters.environment}
-                            onChange={(e) => handleInputChange('parameters.environment', e.target.value)}
-                          >
-                            <option value="CartPole-v1">CartPole-v1</option>
-                            <option value="LunarLander-v2">LunarLander-v2</option>
-                            <option value="MountainCar-v0">MountainCar-v0</option>
-                          </Select>
-                        </FormControl>
-                      </Box>
-                    )}
-                  </Box>
-                )}
-
-                <Flex justify="flex-end" mt={6}>
-                  <Button
-                    colorScheme="teal"
-                    leftIcon={<FiBarChart2 />}
-                    onClick={handleSubmit}
-                  >
-                    Start Training
-                  </Button>
-                </Flex>
-              </CardBody>
-            </Card>
+                  <Flex justify="flex-end" pt={4}>
+                    <Button
+                      type="submit"
+                      size="lg"
+                      leftIcon={<FiZap />}
+                      isLoading={isLoading}
+                      loadingText="Initializing Engine..."
+                      px={12}
+                      borderRadius="full"
+                      bgGradient="linear(to-r, teal.400, blue.500)"
+                      _hover={{ bgGradient: 'linear(to-r, teal.500, blue.600)', transform: 'translateY(-2px)' }}
+                      boxShadow="0 4px 15px rgba(45, 212, 191, 0.3)"
+                    >
+                      Commence Training
+                    </Button>
+                  </Flex>
+                </VStack>
+              </form>
+            </Box>
           </motion.div>
 
           {/* Model Information */}
@@ -446,38 +416,33 @@ export default function TrainModel() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
-              <Card bg={cardBg}>
-                <CardHeader>
-                  <Flex align="center">
-                    <Icon as={FiCpu} w={6} h={6} color="blue.500" mr={3} />
-                    <Heading as="h3" size="md">Model Information</Heading>
-                  </Flex>
-                </CardHeader>
-                <CardBody>
-                  {(() => {
-                    const model = models.find(m => m._id === formData.modelId);
-                    if (!model) return null;
-
-                    return (
-                      <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6}>
-                        <VStack align="start" spacing={2}>
-                          <Text><strong>Name:</strong> {model.name}</Text>
-                          <Text><strong>Type:</strong> {model.type}</Text>
-                          <Text><strong>Architecture:</strong> {model.architecture}</Text>
-                        </VStack>
-                        <VStack align="start" spacing={2}>
-                          <Text><strong>Description:</strong> {model.description}</Text>
-                          <Text><strong>Created:</strong> {new Date(model.createdAt).toLocaleDateString()}</Text>
-                        </VStack>
-                      </Grid>
-                    );
-                  })()}
-                </CardBody>
-              </Card>
+              <Box className="glass" p={6}>
+                <Flex align="center" mb={4}>
+                  <Icon as={FiCpu} w={6} h={6} color="blue.400" mr={3} />
+                  <Heading as="h3" size="md">Architecture Details</Heading>
+                </Flex>
+                {(() => {
+                  const model = models.find(m => m._id === formData.modelId);
+                  if (!model) return null;
+                  return (
+                    <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={8}>
+                      <VStack align="start" spacing={3}>
+                        <Text><strong>Classification:</strong> {model.name}</Text>
+                        <Text><strong>Core Model:</strong> {model.type}</Text>
+                        <Text><strong>Structural Layer:</strong> {model.architecture}</Text>
+                      </VStack>
+                      <VStack align="start" spacing={3}>
+                        <Text><strong>Description:</strong> {model.description}</Text>
+                        <Text><strong>Deployment Date:</strong> {new Date(model.createdAt).toLocaleDateString()}</Text>
+                      </VStack>
+                    </Grid>
+                  );
+                })()}
+              </Box>
             </motion.div>
           )}
         </VStack>
       </Box>
-    </Box >
+    </Box>
   );
 }

@@ -1,7 +1,7 @@
 import { Box, Heading, Text, Button, VStack, Container, Card, CardHeader, CardBody, Grid, FormControl, FormLabel, Select, Input, useColorModeValue, useToast, Flex, Icon, Spinner } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { FiPlus, FiCpu, FiDatabase, FiLayers, FiBarChart2, FiDownload } from 'react-icons/fi';
+import { FiPlus, FiCpu, FiDatabase, FiLayers, FiBarChart2, FiDownload, FiPlay, FiTrash2 } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import Sidebar from '../components/Sidebar';
 
@@ -272,8 +272,8 @@ export default function Models() {
   return (
     <Box minH="100vh" bg={bg}>
       <Sidebar user={user} />
-      <Box ml="250px" p={6}>
-        <VStack spacing={8} align="stretch">
+      <Box ml="250px" p={8}>
+        <VStack spacing={10} align="stretch">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -281,169 +281,155 @@ export default function Models() {
             transition={{ duration: 0.5 }}
           >
             <Flex justify="space-between" align="center">
-              <VStack align="start" spacing={2}>
-                <Heading as="h1" size="lg">Models</Heading>
-                <Text color="gray.500">Create and manage your machine learning models</Text>
+              <VStack align="start" spacing={1}>
+                <Heading as="h1" size="xl" bgGradient="linear(to-r, teal.300, blue.400)" bgClip="text">
+                  Neural Architectures
+                </Heading>
+                <Text color="gray.500" fontSize="lg">Management terminal for your deployed models.</Text>
               </VStack>
-              <Flex align="center" gap={4}>
-                <Box p={3} bg="teal.100" borderRadius="md">
-                  <Flex align="center" gap={2}>
-                    <Icon as={FiCpu} color="teal.500" />
-                    <Text fontWeight="bold">{models.length} models</Text>
-                  </Flex>
-                </Box>
-              </Flex>
+              <Button
+                leftIcon={<FiPlus />}
+                onClick={() => setCreating(!creating)}
+                borderRadius="full"
+                className="glass"
+                colorScheme="teal"
+                variant="outline"
+                px={8}
+              >
+                {creating ? 'Dismiss Terminal' : 'Initialize New Core'}
+              </Button>
             </Flex>
           </motion.div>
 
-          {/* Create Model Form */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-          >
-            <Card bg={cardBg}>
-              <CardHeader>
-                <Flex align="center">
-                  <Icon as={FiPlus} w={6} h={6} color="teal.500" mr={3} />
-                  <Heading as="h3" size="md">Create New Model</Heading>
-                </Flex>
-              </CardHeader>
-              <CardBody>
-                <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6}>
-                  <FormControl id="name" isRequired>
-                    <FormLabel>Model Name</FormLabel>
-                    <Input
-                      value={formData.name}
-                      onChange={(e) => handleInputChange('name', e.target.value)}
-                      placeholder="Enter model name"
-                    />
-                  </FormControl>
+          {creating && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Box className="glass" p={8}>
+                <VStack spacing={6} align="stretch">
+                  <Heading size="md" color="teal.300">Model Configuration</Heading>
+                  <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6}>
+                    <FormControl id="name" isRequired>
+                      <FormLabel>Architecture Identifier</FormLabel>
+                      <Input
+                        value={formData.name}
+                        onChange={(e) => handleInputChange('name', e.target.value)}
+                        bg="rgba(0,0,0,0.1)"
+                        border="none"
+                        _focus={{ ring: '1px solid', ringColor: 'teal.400' }}
+                        placeholder="e.g., Alpha-Inference-V1"
+                      />
+                    </FormControl>
 
-                  <FormControl id="type" isRequired>
-                    <FormLabel>Model Type</FormLabel>
-                    <Select
-                      value={formData.type}
-                      onChange={(e) => handleInputChange('type', e.target.value)}
-                    >
-                      <option value="">Select model type</option>
-                      {modelTypes.map(type => (
-                        <option key={type.value} value={type.value}>
-                          {type.label}
-                        </option>
-                      ))}
-                    </Select>
-                  </FormControl>
+                    <FormControl id="type" isRequired>
+                      <FormLabel>Base Neural Type</FormLabel>
+                      <Select
+                        value={formData.type}
+                        onChange={(e) => handleInputChange('type', e.target.value)}
+                        bg="rgba(0,0,0,0.2)"
+                        border="none"
+                      >
+                        <option value="">Select Architecture...</option>
+                        <option value="LSTM">Long Short-Term Memory (LSTM)</option>
+                        <option value="GRU">Gated Recurrent Unit (GRU)</option>
+                        <option value="CNN">Convolutional Neural Network (CNN)</option>
+                        <option value="Transformer">Transformer Core</option>
+                      </Select>
+                    </FormControl>
+                  </Grid>
 
                   <FormControl id="description">
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel>Functional Description</FormLabel>
                     <Input
                       value={formData.description}
                       onChange={(e) => handleInputChange('description', e.target.value)}
-                      placeholder="Enter model description"
+                      bg="rgba(0,0,0,0.1)"
+                      border="none"
+                      placeholder="Neural behavioral mission parameters..."
                     />
                   </FormControl>
-                </Grid>
 
-                <Flex justify="flex-end" mt={6}>
                   <Button
-                    colorScheme="teal"
-                    leftIcon={<FiPlus />}
                     onClick={handleCreateModel}
-                    isLoading={creating}
+                    colorScheme="teal"
+                    borderRadius="full"
+                    bgGradient="linear(to-r, teal.400, blue.500)"
+                    _hover={{ bgGradient: 'linear(to-r, teal.500, blue.600)' }}
+                    alignSelf="flex-end"
+                    px={12}
                   >
-                    Create Model
+                    Deploy Architecture
                   </Button>
-                </Flex>
-              </CardBody>
-            </Card>
-          </motion.div>
-
-          {/* Models List */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            {models.length === 0 ? (
-              <Card bg={cardBg} textAlign="center" py={12}>
-                <VStack spacing={4}>
-                  <Icon as={FiCpu} w={16} h={16} color="gray.400" />
-                  <Heading as="h2" size="md">No models yet</Heading>
-                  <Text color="gray.500">Create your first model to get started</Text>
                 </VStack>
-              </Card>
-            ) : (
-              <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }} gap={6}>
-                {models.filter(model => model).map(model => (
-                  <motion.div
-                    key={model._id}
-                    whileHover={{ y: -5 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <Card bg={cardBg}>
-                      <CardHeader>
-                        <Flex justify="space-between" align="center">
-                          <Flex align="center" gap={3}>
-                            <Icon as={FiCpu} color="teal.500" />
-                            <Heading as="h3" size="md">{model.name}</Heading>
-                          </Flex>
-                        </Flex>
-                      </CardHeader>
-                      <CardBody>
-                        <VStack align="start" spacing={3}>
-                          <Text><strong>Type:</strong> {model.type}</Text>
-                          <Text><strong>Architecture:</strong> {model.architecture}</Text>
-                          <Text><strong>Description:</strong> {model.description}</Text>
-                          <Text><strong>Created:</strong> {new Date(model.createdAt).toLocaleDateString()}</Text>
+              </Box>
+            </motion.div>
+          )}
 
-                          <Flex justify="space-between" align="center" width="100%" mt={4} gap={2} flexWrap="wrap">
-                            <Button
-                              variant="outline"
-                              colorScheme="red"
-                              size="xs"
-                              onClick={() => {
-                                if (window.confirm('Are you sure you want to delete this model? This action cannot be undone.')) {
-                                  handleDeleteModel(model._id);
-                                }
-                              }}
-                            >
-                              Delete
-                            </Button>
-                            <Button
-                              colorScheme="teal"
-                              size="xs"
-                              leftIcon={<FiCpu />}
-                              onClick={() => router.push('/train')}
-                            >
-                              Train
-                            </Button>
-                            <Button
-                              colorScheme="orange"
-                              size="xs"
-                              leftIcon={<FiPlay />}
-                              onClick={() => router.push('/test-model')}
-                            >
-                              Test
-                            </Button>
-                            <Button
-                              variant="outline"
-                              colorScheme="blue"
-                              size="xs"
-                              leftIcon={<FiDownload />}
-                              onClick={() => handleDownloadModel(model._id, model.name)}
-                            >
-                              Download
-                            </Button>
-                          </Flex>
-                        </VStack>
-                      </CardBody>
-                    </Card>
-                  </motion.div>
-                ))}
-              </Grid>
-            )}
-          </motion.div>
+          {/* Models Grid */}
+          {loading ? (
+            <Flex justify="center" p={20}><Spinner size="xl" /></Flex>
+          ) : models.length === 0 ? (
+            <Box className="glass" p={20} textAlign="center">
+              <Icon as={FiCpu} w={12} h={12} color="gray.600" mb={4} />
+              <Text color="gray.500">No architectures currently deployed.</Text>
+            </Box>
+          ) : (
+            <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={8}>
+              {models.map((model, index) => (
+                <motion.div
+                  key={model.id || model._id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                >
+                  <Box className="glass" p={6} position="relative" overflow="hidden">
+                    <Flex justify="space-between" align="start" mb={4}>
+                      <VStack align="start" spacing={0}>
+                        <Heading size="md" color="teal.300" noOfLines={1}>{model.name}</Heading>
+                        <Text fontSize="xs" color="gray.500" textTransform="uppercase">{model.type}</Text>
+                      </VStack>
+                      <Icon as={FiLayers} w={6} h={6} color="blue.400" />
+                    </Flex>
+
+                    <Text fontSize="sm" color="gray.400" mb={6} noOfLines={2}>
+                      {model.description || 'No description available for this architecture.'}
+                    </Text>
+
+                    <Divider borderColor="whiteAlpha.100" mb={6} />
+
+                    <Flex justify="space-between" align="center">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        colorScheme="blue"
+                        leftIcon={<FiPlay />}
+                        onClick={() => router.push(`/models/${model.id || model._id}`)}
+                        borderRadius="full"
+                      >
+                        Synchronize
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        colorScheme="red"
+                        leftIcon={<FiTrash2 />}
+                        onClick={() => {
+                          if (window.confirm('Purge this architecture from the mainframe?')) {
+                            handleDeleteModel(model.id || model._id);
+                          }
+                        }}
+                        borderRadius="full"
+                      >
+                        Purge
+                      </Button>
+                    </Flex>
+                  </Box>
+                </motion.div>
+              ))}
+            </SimpleGrid>
+          )}
         </VStack>
       </Box>
     </Box>

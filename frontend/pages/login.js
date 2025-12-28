@@ -1,7 +1,8 @@
-import { Box, Heading, FormControl, FormLabel, Input, Button, VStack, Container, Text, Link, useColorModeValue, useToast, Flex } from '@chakra-ui/react';
+import { Box, Heading, FormControl, FormLabel, Input, Button, VStack, HStack, Container, Text, Link, useColorModeValue, useToast, Flex } from '@chakra-ui/react';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { FiUser, FiLock, FiLogIn, FiBarChart2 } from 'react-icons/fi';
+import { motion } from 'framer-motion';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -10,15 +11,15 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const toast = useToast();
-  
+
   const bg = useColorModeValue('gray.50', 'gray.900');
   const cardBg = useColorModeValue('white', 'gray.800');
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
+
     try {
       const response = await fetch('http://localhost:5001/api/auth/login', {
         method: 'POST',
@@ -27,9 +28,9 @@ export default function Login() {
         },
         body: JSON.stringify({ email, password }),
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok) {
         // Store token in localStorage
         localStorage.setItem('token', data.token);
@@ -64,70 +65,102 @@ export default function Login() {
       setLoading(false);
     }
   };
-  
+
   return (
-    <Flex minH="100vh" bg={bg} align="center" justify="center">
-      <Box w="full" maxW="container.md" p={8}>
-        <Flex direction="column" align="center" mb={8}>
-          <Box p={4} bg="teal.500" borderRadius="full" mb={4}>
-            <FiBarChart2 color="white" size={30} />
-          </Box>
-          <Heading as="h1" size="xl">Welcome to Epoch-ml</Heading>
-          <Text color="gray.500" mt={2}>Sign in to your account</Text>
-        </Flex>
-        
-        <Box p={8} shadow="xl" borderWidth="1px" borderRadius="lg" bg={cardBg}>
-          <form onSubmit={handleSubmit}>
-            <VStack spacing={6}>
-              {error && (
-                <Text color="red.500" textAlign="center">{error}</Text>
-              )}
-              
-              <FormControl id="email" isRequired>
-                <FormLabel>Email</FormLabel>
-                <Input 
-                  type="email" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  leftIcon={<FiUser />}
-                  placeholder="your@email.com"
-                  isDisabled={loading}
-                />
-              </FormControl>
-              
-              <FormControl id="password" isRequired>
-                <FormLabel>Password</FormLabel>
-                <Input 
-                  type="password" 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  leftIcon={<FiLock />}
-                  placeholder="••••••••"
-                  isDisabled={loading}
-                />
-              </FormControl>
-              
-              <Button 
-                type="submit" 
-                colorScheme="teal" 
-                width="full"
-                size="lg"
-                rightIcon={<FiLogIn />}
-                isLoading={loading}
-              >
-                Sign In
-              </Button>
+    <Flex minH="100vh" bg={bg} align="center" justify="center" p={4}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Box
+          className="glass"
+          p={10}
+          w="full"
+          maxW="450px"
+          textAlign="center"
+          boxShadow="0 0 40px rgba(45, 212, 191, 0.15)"
+        >
+          <VStack spacing={8}>
+            <Box
+              p={4}
+              bgGradient="linear(to-tr, teal.400, blue.500)"
+              borderRadius="2xl"
+              boxShadow="0 10px 20px rgba(0,0,0,0.3)"
+            >
+              <FiBarChart2 color="white" size={40} />
+            </Box>
+
+            <VStack spacing={2}>
+              <Heading as="h1" size="xl" bgGradient="linear(to-r, teal.300, blue.400)" bgClip="text">
+                EPOCH
+              </Heading>
+              <Text color="gray.500" fontSize="lg">Neural Gateway Initialization</Text>
             </VStack>
-          </form>
-          
-          <Text textAlign="center" mt={6}>
-            Don't have an account?{' '}
-            <Link color="teal.500" href="/register" fontWeight="bold">
-              Sign up here
-            </Link>
-          </Text>
+
+            <form onSubmit={handleSubmit} style={{ width: '100%' }}>
+              <VStack spacing={5}>
+                {error && (
+                  <Box p={3} bg="red.900" borderRadius="md" w="100%">
+                    <Text color="red.200" fontSize="sm">{error}</Text>
+                  </Box>
+                )}
+
+                <FormControl id="email" isRequired>
+                  <FormLabel fontSize="xs" fontWeight="bold" color="teal.400" textTransform="uppercase">Comm Link (Email)</FormLabel>
+                  <Input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    bg="rgba(0,0,0,0.2)"
+                    border="none"
+                    _focus={{ ring: '1px solid', ringColor: 'teal.400' }}
+                    placeholder="architect@epoch.ai"
+                    isDisabled={loading}
+                  />
+                </FormControl>
+
+                <FormControl id="password" isRequired>
+                  <FormLabel fontSize="xs" fontWeight="bold" color="teal.400" textTransform="uppercase">Neural Key (Password)</FormLabel>
+                  <Input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    bg="rgba(0,0,0,0.2)"
+                    border="none"
+                    _focus={{ ring: '1px solid', ringColor: 'teal.400' }}
+                    placeholder="••••••••"
+                    isDisabled={loading}
+                  />
+                </FormControl>
+
+                <Button
+                  type="submit"
+                  colorScheme="teal"
+                  w="full"
+                  size="lg"
+                  isLoading={loading}
+                  loadingText="Synchronizing..."
+                  leftIcon={<FiLogIn />}
+                  borderRadius="full"
+                  bgGradient="linear(to-r, teal.400, blue.500)"
+                  _hover={{ bgGradient: 'linear(to-r, teal.500, blue.600)', transform: 'translateY(-2px)' }}
+                  mt={4}
+                >
+                  Authorize Access
+                </Button>
+              </VStack>
+            </form>
+
+            <HStack spacing={1}>
+              <Text color="gray.500">New Architect?</Text>
+              <Link color="teal.300" fontWeight="bold" onClick={() => router.push('/register')}>
+                Initialize Account
+              </Link>
+            </HStack>
+          </VStack>
         </Box>
-      </Box>
+      </motion.div>
     </Flex>
   );
 }

@@ -144,8 +144,8 @@ export default function TrainingHistory() {
   return (
     <Box minH="100vh" bg={bg}>
       <Sidebar user={user} />
-      <Box ml="250px" p={6}>
-        <VStack spacing={8} align="stretch">
+      <Box ml="250px" p={8}>
+        <VStack spacing={10} align="stretch">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -153,134 +153,126 @@ export default function TrainingHistory() {
             transition={{ duration: 0.5 }}
           >
             <Flex justify="space-between" align="center">
-              <VStack align="start" spacing={2}>
-                <Heading as="h1" size="lg">Training History</Heading>
-                <Text color="gray.500">View and manage your model training sessions</Text>
+              <VStack align="start" spacing={1}>
+                <Heading as="h1" size="xl" bgGradient="linear(to-r, teal.300, blue.400)" bgClip="text">
+                  Neural History
+                </Heading>
+                <Text color="gray.500" fontSize="lg">Review and manage past training architectures.</Text>
               </VStack>
-              <Flex align="center" gap={4}>
-                <Box p={3} bg="teal.100" borderRadius="md">
-                  <Flex align="center" gap={2}>
-                    <Icon as={FiBarChart2} color="teal.500" />
-                    <Text fontWeight="bold">{sessions.length} sessions</Text>
-                  </Flex>
-                </Box>
-              </Flex>
+              <Box className="glass" px={6} py={3}>
+                <HStack spacing={3}>
+                  <Icon as={FiClock} color="teal.400" />
+                  <Text fontWeight="bold" color="gray.200">{sessions.length} RECORDED SESSIONS</Text>
+                </HStack>
+              </Box>
             </Flex>
           </motion.div>
 
-          {/* Training Sessions Grid */}
+          {/* History List */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            {sessions.length === 0 ? (
-              <Card bg={cardBg} textAlign="center" py={12}>
-                <VStack spacing={4}>
-                  <Icon as={FiBarChart2} w={16} h={16} color="gray.400" />
-                  <Heading as="h2" size="md">No training sessions yet</Heading>
-                  <Text color="gray.500">You haven't started any model training sessions yet</Text>
+            <Box className="glass" p={0} overflow="hidden">
+              {sessions.length === 0 ? (
+                <Flex direction="column" align="center" justify="center" p={20}>
+                  <Icon as={FiAlertTriangle} w={12} h={12} color="gray.600" mb={4} />
+                  <Text color="gray.500" fontSize="lg">No neural logs found in the archives.</Text>
                   <Button
+                    mt={6}
                     colorScheme="teal"
                     onClick={() => router.push('/train')}
-                    size="lg"
+                    borderRadius="full"
+                    px={8}
                   >
-                    Start Training
+                    Initiate First Session
                   </Button>
-                </VStack>
-              </Card>
-            ) : (
-              <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }} gap={6}>
-                {sessions.map(session => {
-                  const StatusIcon = getStatusIcon(session.status);
-
-                  return (
-                    <motion.div
-                      key={session.id}
-                      whileHover={{ y: -5 }}
-                      transition={{ duration: 0.2 }}
+                </Flex>
+              ) : (
+                <VStack align="stretch" spacing={0}>
+                  <Grid
+                    templateColumns="2fr 1.5fr 1fr 1.2fr auto"
+                    gap={6}
+                    p={6}
+                    bg="rgba(255,255,255,0.02)"
+                    borderBottom="1px solid"
+                    borderColor="whiteAlpha.100"
+                    fontWeight="bold"
+                    color="teal.300"
+                    fontSize="xs"
+                    textTransform="uppercase"
+                    letterSpacing="wider"
+                  >
+                    <Text>Architecture</Text>
+                    <Text>Payload Source</Text>
+                    <Text>Status</Text>
+                    <Text>Synchronization</Text>
+                    <Text textAlign="center">Actions</Text>
+                  </Grid>
+                  {sessions.map((session, index) => (
+                    <Grid
+                      key={session.id || session._id}
+                      templateColumns="2fr 1.5fr 1fr 1.2fr auto"
+                      gap={6}
+                      p={6}
+                      borderBottom={index === sessions.length - 1 ? "none" : "1px solid"}
+                      borderColor="whiteAlpha.100"
+                      alignItems="center"
+                      _hover={{ bg: 'rgba(255,255,255,0.02)' }}
+                      transition="background 0.2s"
                     >
-                      <Card bg={cardBg} h="full">
-                        <CardHeader>
-                          <Flex justify="space-between" align="center">
-                            <Flex align="center" gap={3}>
-                              <Icon as={StatusIcon} color={`${getStatusColor(session.status)}.500`} />
-                              <Heading as="h3" size="md">{session.modelName || 'Unknown Model'}</Heading>
-                            </Flex>
-                            <Badge colorScheme={getStatusColor(session.status)}>
-                              {session.status}
-                            </Badge>
-                          </Flex>
-                        </CardHeader>
-                        <CardBody>
-                          <VStack align="start" spacing={3}>
-                            <Text><strong>Model:</strong> {session.modelType || 'Unknown'}</Text>
-                            <Text><strong>Dataset:</strong> {session.datasetId || 'Unknown'}</Text>
-                            <Text><strong>Status:</strong> {session.status}</Text>
-                            <Text><strong>Cost:</strong> {session.cost} credits</Text>
-                            <Text><strong>Start Time:</strong> {new Date(session.startTime).toLocaleString()}</Text>
-
-                            {session.endTime && (
-                              <Text><strong>End Time:</strong> {new Date(session.endTime).toLocaleString()}</Text>
-                            )}
-
-                            {session.accuracy !== undefined && (
-                              <Flex align="center" gap={2}>
-                                <Text>
-                                  <strong>{
-                                    session.metricName || (['dataset-9', 'dataset-13'].includes(session.datasetId) ? 'MAE' : 'Accuracy')
-                                  }:</strong> {
-                                    (session.metricName === 'MAE' || session.accuracy > 1.1 || ['dataset-9', 'dataset-13'].includes(session.datasetId))
-                                      ? session.accuracy.toFixed(4)
-                                      : (session.accuracy * 100).toFixed(2) + '%'
-                                  }
-                                </Text>
-                                {session.accuracyPercent !== undefined && (
-                                  <Badge colorScheme="green">{session.accuracyPercent.toFixed(1)}% Acc</Badge>
-                                )}
-                              </Flex>
-                            )}
-
-                            {session.loss !== undefined && (
-                              <Flex align="center" gap={2}>
-                                <Text><strong>Loss:</strong> {session.loss.toFixed(4)}</Text>
-                                {session.lossPercent !== undefined && (
-                                  <Badge colorScheme="orange">{session.lossPercent.toFixed(1)}% Loss</Badge>
-                                )}
-                              </Flex>
-                            )}
-
-                            {session.totalEpochs > 0 && (
-                              <Flex align="center" gap={2}>
-                                <Text><strong>Epoch Progress:</strong></Text>
-                                <Badge colorScheme="blue">
-                                  {session.currentEpoch} / {session.totalEpochs}
-                                </Badge>
-                              </Flex>
-                            )}
-
-                            <Flex justify="space-between" align="center" width="100%" mt={4}>
-                              <Button
-                                variant="outline"
-                                colorScheme="red"
-                                leftIcon={<FiTrash2 />}
-                                onClick={() => {
-                                  if (window.confirm(`Are you sure you want to delete this training session? This action cannot be undone.`)) {
-                                    handleDeleteSession(session.id, session.modelName || 'Unknown Model');
-                                  }
-                                }}
-                              >
-                                Delete
-                              </Button>
-                            </Flex>
-                          </VStack>
-                        </CardBody>
-                      </Card>
-                    </motion.div>
-                  );
-                })}
-              </Grid>
-            )}
+                      <VStack align="start" spacing={0}>
+                        <Text fontWeight="bold" color="gray.100">{session.modelName}</Text>
+                        <Text fontSize="xs" color="gray.500">{session.modelType || 'Neural Core'}</Text>
+                      </VStack>
+                      <Text fontSize="sm" color="gray.400">{session.datasetId}</Text>
+                      <Box>
+                        <Badge
+                          colorScheme={session.status === 'completed' ? 'green' : session.status === 'failed' ? 'red' : 'blue'}
+                          variant="subtle"
+                          px={3}
+                          borderRadius="full"
+                          fontSize="xs"
+                        >
+                          {session.status.toUpperCase()}
+                        </Badge>
+                      </Box>
+                      <VStack align="start" spacing={0}>
+                        <Text fontSize="xs" color="gray.500">
+                          {new Date(session.startTime).toLocaleDateString()}
+                        </Text>
+                        <Text fontSize="xs" color="gray.600">
+                          {new Date(session.startTime).toLocaleTimeString()}
+                        </Text>
+                      </VStack>
+                      <Flex gap={2} justify="center">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          colorScheme="blue"
+                          leftIcon={<FiBarChart2 />}
+                          onClick={() => router.push(`/training-history/${session.id || session._id}`)}
+                          borderRadius="full"
+                        >
+                          Details
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          colorScheme="red"
+                          leftIcon={<FiTrash2 />}
+                          onClick={() => handleDeleteSession(session.id || session._id, session.modelName)}
+                          borderRadius="full"
+                        >
+                          Purge
+                        </Button>
+                      </Flex>
+                    </Grid>
+                  ))}
+                </VStack>
+              )}
+            </Box>
           </motion.div>
         </VStack>
       </Box>

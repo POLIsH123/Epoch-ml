@@ -150,45 +150,43 @@ export default function TestModel() {
             transition={{ duration: 0.5 }}
           >
             <Flex justify="space-between" align="center">
-              <VStack align="start" spacing={2}>
-                <Heading as="h1" size="lg">Test Model</Heading>
-                <Text color="gray.500">Test your trained models on custom data</Text>
+              <VStack align="start" spacing={1}>
+                <Heading as="h1" size="xl" bgGradient="linear(to-r, teal.300, blue.400)" bgClip="text">
+                  Neural Testing Suite
+                </Heading>
+                <Text color="gray.500" fontSize="lg">Validate and probe deployed neural cores.</Text>
               </VStack>
-              <Flex align="center" gap={4}>
-                <Box p={3} bg="teal.100" borderRadius="md">
-                  <Flex align="center" gap={2}>
-                    <Icon as={FiCpu} color="teal.500" />
-                    <Text fontWeight="bold">{models.length} models</Text>
-                  </Flex>
-                </Box>
-              </Flex>
+              <Box className="glass" px={6} py={3}>
+                <HStack spacing={3}>
+                  <Icon as={FiCpu} color="teal.400" />
+                  <Text fontWeight="bold" color="gray.200">{models.length} CORES ONLINE</Text>
+                </HStack>
+              </Box>
             </Flex>
           </motion.div>
 
-          {/* Test Configuration */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-          >
-            <Card bg={cardBg}>
-              <CardHeader>
-                <Flex align="center">
-                  <Icon as={FiPlay} w={6} h={6} color="teal.500" mr={3} />
-                  <Heading as="h3" size="md">Test Configuration</Heading>
-                </Flex>
-              </CardHeader>
-              <CardBody>
-                <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6}>
+          <Grid templateColumns={{ base: '1fr', lg: '1fr 1fr' }} gap={8}>
+            {/* Control Panel */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <Box className="glass" p={8}>
+                <VStack spacing={6} align="stretch">
+                  <Heading size="md" color="teal.300">Test Configuration</Heading>
+
                   <FormControl id="modelId" isRequired>
-                    <FormLabel>Model</FormLabel>
+                    <FormLabel>Target Core</FormLabel>
                     <Select
                       value={formData.modelId}
                       onChange={(e) => handleInputChange('modelId', e.target.value)}
+                      bg="rgba(0,0,0,0.2)"
+                      border="none"
+                      placeholder="Select target model..."
                     >
-                      <option value="">Select a model</option>
                       {models.map(model => (
-                        <option key={model._id} value={model._id}>
+                        <option key={model.id || model._id} value={model.id || model._id}>
                           {model.name} ({model.type})
                         </option>
                       ))}
@@ -196,12 +194,14 @@ export default function TestModel() {
                   </FormControl>
 
                   <FormControl id="datasetId">
-                    <FormLabel>Dataset (Optional)</FormLabel>
+                    <FormLabel>Payload Source (Optional)</FormLabel>
                     <Select
                       value={formData.datasetId}
                       onChange={(e) => handleInputChange('datasetId', e.target.value)}
+                      bg="rgba(0,0,0,0.2)"
+                      border="none"
+                      placeholder="Select verification dataset..."
                     >
-                      <option value="">Select a dataset (or enter test data below)</option>
                       {datasets.map(dataset => (
                         <option key={dataset.id} value={dataset.id}>
                           {dataset.name} ({dataset.size})
@@ -209,83 +209,107 @@ export default function TestModel() {
                       ))}
                     </Select>
                   </FormControl>
-                </Grid>
 
-                <FormControl id="testData" mt={4}>
-                  <FormLabel>Test Data (Optional)</FormLabel>
-                  <Textarea
-                    value={formData.testData}
-                    onChange={(e) => handleInputChange('testData', e.target.value)}
-                    placeholder="Enter test data here, one input per line, or select a dataset above"
-                    rows={4}
-                    resize="vertical"
-                  />
-                </FormControl>
+                  <FormControl id="testData">
+                    <FormLabel>Manual Neural Payload (JSON/CSV)</FormLabel>
+                    <Textarea
+                      value={formData.testData}
+                      onChange={(e) => handleInputChange('testData', e.target.value)}
+                      bg="rgba(0,0,0,0.1)"
+                      border="none"
+                      rows={6}
+                      placeholder="Enter raw neural vectors..."
+                      _focus={{ ring: '1px solid', ringColor: 'teal.400' }}
+                    />
+                  </FormControl>
 
-                <Flex justify="flex-end" mt={6}>
                   <Button
-                    colorScheme="teal"
-                    leftIcon={<FiPlay />}
                     onClick={handleTestModel}
+                    colorScheme="teal"
+                    w="full"
+                    size="lg"
                     isLoading={isTesting}
+                    loadingText="Probing Core..."
+                    leftIcon={<FiPlay />}
+                    borderRadius="full"
+                    bgGradient="linear(to-r, teal.400, blue.500)"
+                    _hover={{ bgGradient: 'linear(to-r, teal.500, blue.600)', transform: 'translateY(-2px)' }}
                   >
-                    Test Model
+                    Initiate Neural Probe
                   </Button>
-                </Flex>
-              </CardBody>
-            </Card>
-          </motion.div>
+                </VStack>
+              </Box>
+            </motion.div>
 
-          {/* Test Results */}
-          {testResults && (
+            {/* Results Panel */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
-              <Card bg={cardBg}>
-                <CardHeader>
-                  <Flex align="center">
-                    <Icon as={FiBarChart2} w={6} h={6} color="blue.500" mr={3} />
-                    <Heading as="h3" size="md">Test Results</Heading>
-                  </Flex>
-                </CardHeader>
-                <CardBody>
-                  <VStack align="start" spacing={4}>
-                    <Flex justify="space-between" width="100%" bg="gray.100" p={3} borderRadius="md">
-                      <Text><strong>Model:</strong> {testResults.model}</Text>
-                      <Text><strong>Type:</strong> {testResults.type}</Text>
-                      <Text><strong>{
-                        testResults.metricName || (['dataset-9', 'dataset-13'].includes(formData.datasetId) ? 'MAE' : 'Accuracy')
-                      }:</strong> {
-                          (testResults.metricName === 'MAE' || testResults.accuracy > 1.1 || ['dataset-9', 'dataset-13'].includes(formData.datasetId))
-                            ? testResults.accuracy.toFixed(4)
-                            : (testResults.accuracy * 100).toFixed(2) + '%'
-                        }</Text>
-                      <Text><strong>Processing Time:</strong> {testResults.processingTime}</Text>
-                    </Flex>
+              <Box className="glass" p={8} h="full">
+                <Heading size="md" color="blue.400" mb={6}>Probe Diagnostics</Heading>
 
-                    <Heading as="h4" size="sm">Predictions:</Heading>
-                    <Grid templateColumns={{ base: '1fr' }} gap={3}>
-                      {testResults.predictions && testResults.predictions.map((prediction, index) => (
-                        <Card key={index} variant="outline" p={3}>
-                          <Flex justify="space-between" align="center">
-                            <VStack align="start" spacing={1}>
-                              <Text><strong>Input:</strong> {prediction.input}</Text>
-                              <Text><strong>Prediction:</strong> {prediction.prediction}</Text>
-                            </VStack>
-                            <VStack align="end" spacing={1}>
-                              <Text><strong>Confidence:</strong> {(prediction.confidence * 100).toFixed(2)}%</Text>
-                            </VStack>
-                          </Flex>
-                        </Card>
-                      ))}
-                    </Grid>
+                {!testResults ? (
+                  <Flex direction="column" align="center" justify="center" h="80%" color="gray.600">
+                    <Icon as={FiBarChart2} w={16} h={16} mb={4} opacity={0.5} />
+                    <Text fontSize="lg">Awaiting diagnostic results...</Text>
+                  </Flex>
+                ) : (
+                  <VStack align="stretch" spacing={6}>
+                    <Box p={6} bg="rgba(45, 212, 191, 0.05)" borderRadius="xl" border="1px solid" borderColor="teal.500">
+                      <Flex justify="space-between" align="center">
+                        <VStack align="start" spacing={0}>
+                          <Text fontSize="xs" color="teal.400" fontWeight="bold">SYNCHRONIZATION CONFIDENCE</Text>
+                          <Heading size="2xl" color="white">
+                            {(testResults.accuracy * 100).toFixed(2)}%
+                          </Heading>
+                        </VStack>
+                        <Icon as={FiZap} w={10} h={10} color="teal.300" />
+                      </Flex>
+                    </Box>
+
+                    <SimpleGrid columns={2} spacing={4}>
+                      <Box p={4} bg="rgba(0,0,0,0.2)" borderRadius="lg">
+                        <Text fontSize="xs" color="gray.500">SYSTEM LOSS</Text>
+                        <Text fontWeight="bold" fontSize="lg">{testResults.loss.toFixed(6)}</Text>
+                      </Box>
+                      <Box p={4} bg="rgba(0,0,0,0.2)" borderRadius="lg">
+                        <Text fontSize="xs" color="gray.500">NODES ACTIVATED</Text>
+                        <Text fontWeight="bold" fontSize="lg">{testResults.nodesCount || 1024}</Text>
+                      </Box>
+                    </SimpleGrid>
+
+                    <Box>
+                      <Text fontSize="xs" color="gray.500" mb={2}>NEURAL OUTPUT VECTOR</Text>
+                      <Box
+                        p={4}
+                        bg="rgba(0,0,0,0.4)"
+                        borderRadius="md"
+                        fontFamily="mono"
+                        fontSize="xs"
+                        color="green.300"
+                        maxH="150px"
+                        overflowY="auto"
+                      >
+                        {JSON.stringify(testResults.predictions, null, 2)}
+                      </Box>
+                    </Box>
+
+                    <Button
+                      variant="ghost"
+                      colorScheme="blue"
+                      leftIcon={<FiDownload />}
+                      borderRadius="full"
+                      size="sm"
+                    >
+                      Export Diagnostic Report
+                    </Button>
                   </VStack>
-                </CardBody>
-              </Card>
+                )}
+              </Box>
             </motion.div>
-          )}
+          </Grid>
         </VStack>
       </Box>
     </Box>
