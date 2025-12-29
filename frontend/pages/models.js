@@ -9,6 +9,7 @@ export default function Models() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [models, setModels] = useState([]);
+  const [trainingSessions, setTrainingSessions] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
     type: '',
@@ -47,27 +48,38 @@ export default function Models() {
         if (userData) {
           setUser(userData);
 
-          // Get user's models
-          return fetch('http://localhost:5001/api/models', {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
+          // Get user's models and training sessions
+          return Promise.all([
+            fetch('http://localhost:5001/api/models', {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            }),
+            fetch('http://localhost:5001/api/training', {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            })
+          ]);
         }
       })
-      .then(res => res.json())
-      .then(data => {
+      .then(([modelsRes, sessionsRes]) => Promise.all([modelsRes.json(), sessionsRes.json()]))
+      .then(([modelsData, sessionsData]) => {
         // Filter out GPT/BERT models and RL models
-        const filteredModels = Array.isArray(data) ?
-          data.filter(model =>
+        const filteredModels = Array.isArray(modelsData) ?
+          modelsData.filter(model =>
             model &&
             !['GPT-2', 'GPT-3', 'GPT-3.5', 'GPT-4', 'BERT', 'T5', 'DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(model.type)
           ) : [];
         setModels(filteredModels);
+        
+        // Store training sessions
+        setTrainingSessions(Array.isArray(sessionsData) ? sessionsData : []);
+        
         setLoading(false);
       })
       .catch(err => {
-        console.error('Error fetching models:', err);
+        console.error('Error fetching models and sessions:', err);
         localStorage.removeItem('token');
         router.push('/login');
       });
@@ -246,6 +258,32 @@ export default function Models() {
     }
   };
 
+  const getModelStatus = (modelId) => {
+    const activeSession = trainingSessions.find(session => 
+      session.modelId === modelId && (session.status === 'running' || session.status === 'queued')
+    );
+    
+    if (activeSession) {
+      return { status: activeSession.status, session: activeSession };
+    }
+    
+    // Check if there are any completed/failed sessions for this model
+    const completedSession = trainingSessions.find(session => 
+      session.modelId === modelId
+    );
+    
+    if (completedSession) {
+      return { status: completedSession.status, session: completedSession };
+    }
+    
+    return { status: 'idle', session: null };
+  };
+
+  const handleViewMetrics = (modelId) => {
+    // Navigate to training history for this model
+    router.push(`/training-history/${modelId}`);
+  };
+
   // Define model types excluding GPT/BERT and RL models
   const modelTypes = [
     { value: 'LSTM', label: 'LSTM (Long Short-Term Memory)', category: 'RNN' },
@@ -393,9 +431,28 @@ export default function Models() {
                       <Icon as={FiLayers} w={6} h={6} color="blue.400" />
                     </Flex>
 
-                    <Text fontSize="sm" color="gray.400" mb={6} noOfLines={2}>
+                    <Text fontSize="sm" color="gray.400" mb={2} noOfLines={2}>
                       {model.description || 'No description available for this architecture.'}
                     </Text>
+                    
+                    {/* Model Status */}
+                    <Flex align="center" mb={4}>
+                      {getModelStatus(model.id || model._id).status !== 'idle' ? (
+                        <Flex align="center" gap={2}>
+                          <Box w={2} h={2} bg={getModelStatus(model.id || model._id).status === 'running' ? 'green.400' : 'yellow.400'} borderRadius="50%" />
+                          <Text fontSize="xs" textTransform="uppercase" color={getModelStatus(model.id || model._id).status === 'running' ? 'green.400' : 'yellow.400'}>
+                            {getModelStatus(model.id || model._id).status.toUpperCase()}
+                          </Text>
+                        </Flex>
+                      ) : (
+                        <Flex align="center" gap={2}>
+                          <Box w={2} h={2} bg="gray.400" borderRadius="50%" />
+                          <Text fontSize="xs" textTransform="uppercase" color="gray.400">
+                            IDLE
+                          </Text>
+                        </Flex>
+                      )}
+                    </Flex>
 
                     <Divider borderColor="whiteAlpha.100" mb={6} />
 
@@ -410,20 +467,33 @@ export default function Models() {
                       >
                         Synchronize
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        colorScheme="red"
-                        leftIcon={<FiTrash2 />}
-                        onClick={() => {
-                          if (window.confirm('Purge this architecture from the mainframe?')) {
-                            handleDeleteModel(model.id || model._id);
-                          }
-                        }}
-                        borderRadius="full"
-                      >
-                        Purge
-                      </Button>
+                      
+                      <Flex gap={2}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          colorScheme="teal"
+                          leftIcon={<FiBarChart2 />}
+                          onClick={() => handleViewMetrics(model.id || model._id)}
+                          borderRadius="full"
+                        >
+                          Metrics
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          colorScheme="red"
+                          leftIcon={<FiTrash2 />}
+                          onClick={() => {
+                            if (window.confirm('Purge this architecture from the mainframe?')) {
+                              handleDeleteModel(model.id || model._id);
+                            }
+                          }}
+                          borderRadius="full"
+                        >
+                          Purge
+                        </Button>
+                      </Flex>
                     </Flex>
                   </Box>
                 </motion.div>

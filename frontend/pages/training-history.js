@@ -192,7 +192,7 @@ export default function TrainingHistory() {
               ) : (
                 <VStack align="stretch" spacing={0}>
                   <Grid
-                    templateColumns="2fr 1.5fr 1fr 1.2fr auto"
+                    templateColumns="2fr 1fr 1fr 1fr 1fr 1fr auto"
                     gap={6}
                     p={6}
                     bg="rgba(255,255,255,0.02)"
@@ -205,15 +205,17 @@ export default function TrainingHistory() {
                     letterSpacing="wider"
                   >
                     <Text>Architecture</Text>
-                    <Text>Payload Source</Text>
                     <Text>Status</Text>
-                    <Text>Synchronization</Text>
+                    <Text>Loss %</Text>
+                    <Text>Accuracy %</Text>
+                    <Text>Epochs</Text>
+                    <Text>Time</Text>
                     <Text textAlign="center">Actions</Text>
                   </Grid>
                   {sessions.map((session, index) => (
                     <Grid
                       key={session.id || session._id}
-                      templateColumns="2fr 1.5fr 1fr 1.2fr auto"
+                      templateColumns="2fr 1fr 1fr 1fr 1fr 1fr auto"
                       gap={6}
                       p={6}
                       borderBottom={index === sessions.length - 1 ? "none" : "1px solid"}
@@ -226,10 +228,9 @@ export default function TrainingHistory() {
                         <Text fontWeight="bold" color="gray.100">{session.modelName}</Text>
                         <Text fontSize="xs" color="gray.500">{session.modelType || 'Neural Core'}</Text>
                       </VStack>
-                      <Text fontSize="sm" color="gray.400">{session.datasetId}</Text>
                       <Box>
                         <Badge
-                          colorScheme={session.status === 'completed' ? 'green' : session.status === 'failed' ? 'red' : 'blue'}
+                          colorScheme={session.status === 'completed' ? 'green' : session.status === 'failed' ? 'red' : session.status === 'running' ? 'blue' : 'yellow'}
                           variant="subtle"
                           px={3}
                           borderRadius="full"
@@ -238,6 +239,16 @@ export default function TrainingHistory() {
                           {session.status.toUpperCase()}
                         </Badge>
                       </Box>
+                      <Text fontSize="sm" color="gray.400">
+                        {session.metrics && session.metrics.loss ? (session.metrics.loss * 100).toFixed(2) + '%' : 'N/A'}
+                      </Text>
+                      <Text fontSize="sm" color="gray.400">
+                        {session.metrics && session.metrics.accuracy ? (session.metrics.accuracy * 100).toFixed(2) + '%' : 'N/A'}
+                      </Text>
+                      <Text fontSize="sm" color="gray.400">
+                        {session.metrics && session.metrics.epochsCompleted ? session.metrics.epochsCompleted : '0'} / 
+                        {session.params && session.params.epochs ? session.params.epochs : 'N/A'}
+                      </Text>
                       <VStack align="start" spacing={0}>
                         <Text fontSize="xs" color="gray.500">
                           {new Date(session.startTime).toLocaleDateString()}
