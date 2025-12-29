@@ -252,7 +252,7 @@ export default function TrainingHistory() {
                           variant="ghost"
                           colorScheme="blue"
                           leftIcon={<FiBarChart2 />}
-                          onClick={() => router.push('/train')}
+                          onClick={() => router.push(`/training-history/${session.id || session._id}`)}
                           borderRadius="full"
                         >
                           Details

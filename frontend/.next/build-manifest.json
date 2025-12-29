@@ -12,6 +12,11 @@
   ],
   "rootMainFiles": [],
   "pages": {
+    "/404": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/404.js"
+    ],
     "/_app": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
@@ -22,10 +27,25 @@
       "static/chunks/main.js",
       "static/chunks/pages/_error.js"
     ],
-    "/prompt-engineering": [
+    "/data": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/prompt-engineering.js"
+      "static/chunks/pages/data.js"
+    ],
+    "/models": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/models.js"
+    ],
+    "/train": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/train.js"
+    ],
+    "/training-history": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/training-history.js"
     ]
   },
   "ampFirstPages": []
