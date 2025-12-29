@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { FiArrowLeft, FiBarChart2, FiClock, FiCheckCircle, FiXCircle, FiAlertTriangle, FiCpu, FiDatabase } from 'react-icons/fi';
 import { motion } from 'framer-motion';
-import Sidebar from '../../../components/Sidebar';
+import Sidebar from '../../components/Sidebar';
 
 export default function TrainingSessionDetail() {
   const router = useRouter();
