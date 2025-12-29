@@ -31,7 +31,7 @@ app.use('/api/models', require('./routes/models'));
 app.use('/api/training', require('./routes/training'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/resources', require('./routes/resources')); // For profile and datasets
-app.use('/api/playground', require('./routes/ai-playground'));
+app.use('/api/playground', require('./routes/playground'));
 
 const fs = require('fs');
 

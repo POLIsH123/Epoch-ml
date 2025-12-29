@@ -1,4 +1,4 @@
-import { Box, Heading, Text, Button, VStack, Container, Grid, Card, CardHeader, CardBody, Flex, Icon, useColorModeValue, useToast, Spinner, Badge } from '@chakra-ui/react';
+import { Box, Heading, Text, Button, VStack, Container, Grid, Card, CardHeader, CardBody, Flex, Icon, useColorModeValue, useToast, Spinner, Badge, HStack } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { FiBarChart2, FiClock, FiCheckCircle, FiXCircle, FiAlertTriangle, FiTrash2 } from 'react-icons/fi';
@@ -252,7 +252,7 @@ export default function TrainingHistory() {
                           variant="ghost"
                           colorScheme="blue"
                           leftIcon={<FiBarChart2 />}
-                          onClick={() => router.push(`/training-history/${session.id || session._id}`)}
+                          onClick={() => router.push('/train')}
                           borderRadius="full"
                         >
                           Details
