@@ -22,20 +22,15 @@
       "static/chunks/main.js",
       "static/chunks/pages/_error.js"
     ],
-    "/dashboard": [
+    "/models": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/dashboard.js"
+      "static/chunks/pages/models.js"
     ],
-    "/model-builder": [
+    "/train": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/model-builder.js"
-    ],
-    "/prompt-engineering": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/prompt-engineering.js"
+      "static/chunks/pages/train.js"
     ]
   },
   "ampFirstPages": []

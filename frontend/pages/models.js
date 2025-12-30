@@ -66,12 +66,12 @@ export default function Models() {
       })
       .then(([modelsRes, sessionsRes]) => Promise.all([modelsRes.json(), sessionsRes.json()]))
       .then(([modelsData, sessionsData]) => {
-        // Filter out GPT/BERT models and RL models, and ensure no undefined/null models
+        // Filter out GPT/BERT models, Transformer models and RL models, and ensure no undefined/null models
         const filteredModels = Array.isArray(modelsData) ?
           modelsData.filter(model =>
             model &&
             model.name &&
-            !['GPT-2', 'GPT-3', 'GPT-3.5', 'GPT-4', 'BERT', 'T5', 'DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(model.type)
+            !['GPT-2', 'GPT-3', 'GPT-3.5', 'GPT-4', 'BERT', 'T5', 'Transformer', 'DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(model.type)
           ) : [];
         setModels(filteredModels);
         
@@ -390,7 +390,7 @@ export default function Models() {
                         <option value="LSTM">Long Short-Term Memory (LSTM)</option>
                         <option value="GRU">Gated Recurrent Unit (GRU)</option>
                         <option value="CNN">Convolutional Neural Network (CNN)</option>
-                        <option value="Transformer">Transformer Core</option>
+                        <option value="RNN">Recurrent Neural Network (RNN)</option>
                       </Select>
                     </FormControl>
                   </Grid>

@@ -10,6 +10,7 @@ export default function TrainModel() {
   const [loading, setLoading] = useState(true);
   const [models, setModels] = useState([]);
   const [datasets, setDatasets] = useState([]);
+  const [hasActiveTraining, setHasActiveTraining] = useState(false);
   const [formData, setFormData] = useState({
     modelId: '',
     datasetId: '',
@@ -66,9 +67,9 @@ export default function TrainModel() {
         const trainingData = await trainingRes.json();
 
         setUser(userData);
-        // Filter out GPT/BERT models and RL models
+        // Filter out GPT/BERT models, Transformer models and RL models
         const filteredModels = modelData.filter(model =>
-          !['GPT-2', 'GPT-3', 'GPT-3.5', 'GPT-4', 'BERT', 'T5', 'DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(model.type)
+          !['GPT-2', 'GPT-3', 'GPT-3.5', 'GPT-4', 'BERT', 'T5', 'Transformer', 'DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(model.type)
         );
         setModels(filteredModels);
         setDatasets(datasetData);
@@ -76,6 +77,8 @@ export default function TrainModel() {
         // Check if user has any active training sessions
         const activeSession = Array.isArray(trainingData) ? 
           trainingData.some(session => session.status === 'running' || session.status === 'queued') : false;
+        
+        setHasActiveTraining(activeSession);
         
         if (activeSession) {
           toast({
@@ -174,6 +177,17 @@ export default function TrainModel() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (hasActiveTraining) {
+      toast({
+        title: 'Training already in progress',
+        description: 'You already have an active training session. Please wait for it to complete before starting another.',
+        status: 'warning',
+        duration: 5000,
+        isClosable: true,
+      });
+      return;
+    }
 
     if (!formData.modelId || !formData.datasetId) {
       toast({
@@ -430,8 +444,9 @@ export default function TrainModel() {
                       bgGradient="linear(to-r, teal.400, blue.500)"
                       _hover={{ bgGradient: 'linear(to-r, teal.500, blue.600)', transform: 'translateY(-2px)' }}
                       boxShadow="0 4px 15px rgba(45, 212, 191, 0.3)"
+                      isDisabled={hasActiveTraining}
                     >
-                      Commence Training
+                      {hasActiveTraining ? 'Queue Full - Wait for Active Training' : 'Commence Training'}
                     </Button>
                   </Flex>
                 </VStack>

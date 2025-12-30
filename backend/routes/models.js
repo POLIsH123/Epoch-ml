@@ -73,10 +73,20 @@ router.post('/', async (req, res) => {
       modelArchitecture = architecture || 'Multi-Layer';
     }
 
+    // Determine the enum type for the database
+    let modelType = type;
+    if (['RNN', 'CNN', 'GPT', 'RL', 'Transformer'].includes(modelArchitecture)) {
+      modelType = modelArchitecture;
+    } else if (modelArchitecture === 'Reinforcement Learning') {
+      modelType = 'RL';
+    } else if (['Ensemble', 'Multi-Layer'].includes(modelArchitecture)) {
+      modelType = 'OTHER';
+    }
+
     // Create a new model and add to DB
     const newModel = new Model({
       name,
-      type: ['RNN', 'CNN', 'GPT', 'RL'].includes(modelArchitecture) ? modelArchitecture : type,
+      type: modelType,
       architecture: modelArchitecture,
       description: description || `A ${type} model for ${name}`,
       createdBy: user._id,
@@ -147,7 +157,10 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Model not found' });
     }
 
-    res.json({ message: 'Model deleted successfully' });
+    // Also delete any associated training sessions for this model
+    await TrainingSession.deleteMany({ modelId: req.params.id, userId: user._id });
+    
+    res.json({ message: 'Model and associated training sessions deleted successfully' });
   } catch (error) {
     console.error('Error deleting model:', error);
     res.status(500).json({ error: error.message });
