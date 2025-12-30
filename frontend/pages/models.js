@@ -479,10 +479,23 @@ export default function Models() {
                         variant="ghost"
                         colorScheme="blue"
                         leftIcon={<FiPlay />}
-                        onClick={() => router.push(`/models/${model.id || model._id}`)}
+                        onClick={() => {
+                          if (hasActiveTraining) {
+                            toast({
+                              title: 'Training already in progress',
+                              description: 'You already have an active training session. Please wait for it to complete before starting another.',
+                              status: 'warning',
+                              duration: 5000,
+                              isClosable: true,
+                            });
+                            return;
+                          }
+                          router.push(`/models/${model.id || model._id}`);
+                        }}
+                        isDisabled={hasActiveTraining}
                         borderRadius="full"
                       >
-                        Synchronize
+                        {hasActiveTraining ? 'Queue Full' : 'Synchronize'}
                       </Button>
                       
                       <Flex gap={2}>

@@ -38,7 +38,7 @@ export default function TrainModel() {
       return;
     }
 
-    // Fetch user profile, models, and datasets
+    // Fetch user profile, models, datasets, and training sessions
     Promise.all([
       fetch('http://localhost:5001/api/auth/profile', {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -48,10 +48,13 @@ export default function TrainModel() {
       }),
       fetch('http://localhost:5001/api/resources/datasets', {
         headers: { 'Authorization': `Bearer ${token}` }
+      }),
+      fetch('http://localhost:5001/api/training', {
+        headers: { 'Authorization': `Bearer ${token}` }
       })
     ])
-      .then(async ([profileRes, modelsRes, datasetsRes]) => {
-        if (profileRes.status === 401 || modelsRes.status === 401 || datasetsRes.status === 401) {
+      .then(async ([profileRes, modelsRes, datasetsRes, trainingRes]) => {
+        if (profileRes.status === 401 || modelsRes.status === 401 || datasetsRes.status === 401 || trainingRes.status === 401) {
           localStorage.removeItem('token');
           router.push('/login');
           return;
@@ -60,6 +63,7 @@ export default function TrainModel() {
         const userData = await profileRes.json();
         const modelData = await modelsRes.json();
         const datasetData = await datasetsRes.json();
+        const trainingData = await trainingRes.json();
 
         setUser(userData);
         // Filter out GPT/BERT models and RL models
@@ -68,6 +72,21 @@ export default function TrainModel() {
         );
         setModels(filteredModels);
         setDatasets(datasetData);
+        
+        // Check if user has any active training sessions
+        const activeSession = Array.isArray(trainingData) ? 
+          trainingData.some(session => session.status === 'running' || session.status === 'queued') : false;
+        
+        if (activeSession) {
+          toast({
+            title: 'Training already in progress',
+            description: 'You already have an active training session. Please wait for it to complete before starting another.',
+            status: 'warning',
+            duration: 7000,
+            isClosable: true,
+          });
+        }
+        
         setLoading(false);
       })
       .catch(err => {
