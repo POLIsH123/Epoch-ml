@@ -419,7 +419,7 @@ export default function Models() {
             </Box>
           ) : (
             <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={8}>
-              {models.map((model, index) => (
+              {models.filter(model => model && model.name).map((model, index) => (
                 <motion.div
                   key={model.id || model._id}
                   initial={{ opacity: 0, y: 20 }}
