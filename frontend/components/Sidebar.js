@@ -36,6 +36,7 @@ export default function Sidebar({ user }) {
       zIndex={10}
       borderRight="1px solid"
       borderColor={useColorModeValue('gray.200', 'gray.600')}
+      overflowY="auto"
     >
       <VStack align="stretch" spacing={1} p={4} mt={16}>
         <Box mb={6} p={4}>
