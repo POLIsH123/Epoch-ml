@@ -157,7 +157,24 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Model not found' });
     }
 
-    // Also delete any associated training sessions for this model
+    // Find and terminate any associated active training processes
+    const activeSessions = await TrainingSession.find({ modelId: req.params.id, userId: user._id, status: { $in: ['queued', 'running'] } });
+    
+    // Terminate any active training processes
+    if (activeSessions.length > 0) {
+      const { activeTrainingProcesses } = require('../utils/trainingProcesses'); // Import the active processes map
+      
+      activeSessions.forEach(session => {
+        const processId = session._id.toString();
+        const process = activeTrainingProcesses.get(processId);
+        if (process) {
+          process.kill(); // Terminate the process
+          activeTrainingProcesses.delete(processId); // Remove from map
+        }
+      });
+    }
+    
+    // Delete any associated training sessions for this model
     await TrainingSession.deleteMany({ modelId: req.params.id, userId: user._id });
     
     res.json({ message: 'Model and associated training sessions deleted successfully' });

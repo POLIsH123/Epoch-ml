@@ -6,8 +6,7 @@ const Model = require('../models/Model');
 const { spawn } = require('child_process');
 const path = require('path');
 
-// Helper to manage training processes (mock for now, but integration ready)
-const activeTrainingProcesses = new Map();
+const { activeTrainingProcesses } = require('../utils/trainingProcesses');
 
 const router = express.Router();
 
