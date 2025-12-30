@@ -402,6 +402,8 @@ export default function TrainModel() {
                           <FormLabel>Optimization Epochs</FormLabel>
                           <Input
                             type="number"
+                            min="1"
+                            max="150"
                             value={formData.parameters.epochs}
                             onChange={(e) => handleInputChange('parameters.epochs', parseInt(e.target.value))}
                             bg="rgba(0,0,0,0.1)"
