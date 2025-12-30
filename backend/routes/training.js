@@ -45,6 +45,18 @@ router.post('/start', async (req, res) => {
       return res.status(403).json({ error: 'Model does not belong to user' });
     }
 
+    // Check if user already has an active training session
+    const activeSession = await TrainingSession.findOne({
+      userId: user._id.toString(),
+      status: { $in: ['queued', 'running'] }
+    });
+    
+    if (activeSession) {
+      return res.status(400).json({ 
+        error: 'You already have an active training session. Please wait for it to complete before starting another.' 
+      });
+    }
+    
     // Calculate cost based on model type
     let modelTrainingCost = 10; // Base cost
     switch (model.type) {

@@ -223,13 +223,24 @@ export default function TrainModel() {
           }
         });
       } else {
-        toast({
-          title: 'Training failed',
-          description: data.error || 'Could not start training',
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
+        // Check if the error is due to active training session
+        if (data.error && data.error.includes('already have an active training session')) {
+          toast({
+            title: 'Training already in progress',
+            description: data.error,
+            status: 'warning',
+            duration: 7000,
+            isClosable: true,
+          });
+        } else {
+          toast({
+            title: 'Training failed',
+            description: data.error || 'Could not start training',
+            status: 'error',
+            duration: 5000,
+            isClosable: true,
+          });
+        }
       }
     } catch (err) {
       toast({

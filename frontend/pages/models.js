@@ -10,6 +10,7 @@ export default function Models() {
   const [loading, setLoading] = useState(true);
   const [models, setModels] = useState([]);
   const [trainingSessions, setTrainingSessions] = useState([]);
+  const [hasActiveTraining, setHasActiveTraining] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     type: '',
@@ -76,6 +77,11 @@ export default function Models() {
         
         // Store training sessions
         setTrainingSessions(Array.isArray(sessionsData) ? sessionsData : []);
+        
+        // Check if user has any active training sessions
+        const activeSession = Array.isArray(sessionsData) ? 
+          sessionsData.some(session => session.status === 'running' || session.status === 'queued') : false;
+        setHasActiveTraining(activeSession);
         
         setLoading(false);
       })
