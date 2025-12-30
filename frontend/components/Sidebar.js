@@ -12,9 +12,11 @@ export default function Sidebar({ user }) {
   const menuItems = [
     { name: 'Dashboard', icon: FiHome, path: '/dashboard' },
     { name: 'AI Playground', icon: FiMessageSquare, path: '/prompt-engineering' },
+    { name: 'Model Builder', icon: FiLayers, path: '/model-builder' },
     { name: 'Train Model', icon: FiCpu, path: '/train' },
     { name: 'Test Model', icon: FiPlay, path: '/test-model' },
     { name: 'Models', icon: FiDatabase, path: '/models' },
+    { name: 'Model Comparison', icon: FiGrid, path: '/model-comparison' },
     { name: 'Data', icon: FiUpload, path: '/data' },
     { name: 'Training History', icon: FiClock, path: '/training-history' },
     { name: 'Resources', icon: FiDollarSign, path: '/resources' },

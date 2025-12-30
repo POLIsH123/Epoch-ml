@@ -147,6 +147,8 @@ export default function Dashboard() {
               </HStack>
             </Flex>
           </motion.div>
+          
+          <Tutorial isOpen={showTutorial} onClose={() => setShowTutorial(false)} />
 
           {/* Stats Grid */}
           <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={8}>
