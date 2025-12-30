@@ -46,10 +46,30 @@ export default function Sidebar({ user }) {
           <Text fontSize="sm" color="gray.500" mt={1}>Machine Learning Platform</Text>
         </Box>
 
-        {menuItems.map((item, index) => (
+        {menuItems.map((item, index) => {
+          // Map menu names to tutorial IDs
+          const tutorialIdMap = {
+            'Dashboard': 'dashboard-link',
+            'Data': 'data-link',
+            'Models': 'models-link',
+            'Train Model': 'train-link',
+            'Test Model': 'test-model-link',
+            'Model Builder': 'model-builder-link',
+            'Model Comparison': 'model-comparison-link',
+            'Training History': 'training-history-link',
+            'AI Playground': 'ai-playground-link',
+            'Resources': 'resources-link',
+            'Profile': 'profile-link',
+            'Settings': 'settings-link'
+          };
+          
+          const tutorialId = tutorialIdMap[item.name];
+          
+          return (
           <Link key={index} href={item.path} passHref>
             <Box
               as="a"
+              id={tutorialId}
               p={3}
               borderRadius="md"
               bg={router.pathname === item.path ? activeBg : 'transparent'}
@@ -63,7 +83,7 @@ export default function Sidebar({ user }) {
               </Flex>
             </Box>
           </Link>
-        ))}
+        );})}
       </VStack>
 
       {user && (
