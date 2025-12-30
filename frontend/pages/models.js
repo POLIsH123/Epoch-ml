@@ -185,7 +185,7 @@ export default function Models() {
       const data = await response.json();
 
       if (response.ok) {
-        setModels(prev => prev.filter(model => model && model._id !== modelId));
+        setModels(prev => prev.filter(model => model && model._id && model._id !== modelId));
         toast({
           title: 'Model deleted',
           description: 'Your model has been deleted successfully',
