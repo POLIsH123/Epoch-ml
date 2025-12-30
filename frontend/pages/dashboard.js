@@ -144,7 +144,7 @@ export default function Dashboard() {
   return (
     <Flex minH="100vh" bg={bg}>
       <Sidebar user={user} />
-      <Box flex={1} p={8} overflowY="auto">
+      <Box flex={1} ml="250px" p={8} overflowY="auto">
         <VStack spacing={10} align="stretch">
           {/* Welcome Section */}
           <motion.div
