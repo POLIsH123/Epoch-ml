@@ -1,138 +1,81 @@
-import { Box, Heading, Text, Button, VStack, Container, Card, CardHeader, CardBody, Flex, Icon, useColorModeValue, useToast, Grid, FormControl, FormLabel, Input, Switch, Select, Modal, ModalOverlay, ModalContent, ModalHeader, ModalFooter, ModalBody, ModalCloseButton, useDisclosure } from '@chakra-ui/react';
-import { useState, useEffect } from 'react';
+import { Box, Heading, Text, Button, VStack, Container, Card, CardBody, Flex, Icon, useColorMode, useColorModeValue, useToast, Switch, FormControl, FormLabel } from '@chakra-ui/react';
+import { useState } from 'react';
 import { useRouter } from 'next/router';
-import { FiUser, FiMail, FiLock, FiBell, FiGlobe, FiSun, FiMoon, FiHardDrive, FiZap, FiDatabase } from 'react-icons/fi';
+import { FiSun, FiMoon, FiUserX, FiShield, FiLogOut } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import Sidebar from '../components/Sidebar';
 
 export default function Settings() {
+  const { colorMode, toggleColorMode } = useColorMode();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [settings, setSettings] = useState({
-    notifications: true,
-    darkMode: true,
-    autoSave: true,
-    performanceMode: 'balanced',
-    storageLimit: '10GB'
-  });
   const router = useRouter();
   const toast = useToast();
-  const { isOpen: isDeleteModalOpen, onOpen: onDeleteModalOpen, onClose: onDeleteModalClose } = useDisclosure();
-  
+
   const bg = useColorModeValue('gray.50', 'gray.900');
   const cardBg = useColorModeValue('white', 'gray.800');
-  
-  useEffect(() => {
+
+  // Load user data
+  useState(() => {
     const token = localStorage.getItem('token');
     if (!token) {
       router.push('/login');
       return;
     }
-    
-    // Verify token is valid by making a simple API call
+
     fetch('http://localhost:5001/api/auth/profile', {
       headers: {
         'Authorization': `Bearer ${token}`
       }
     })
-    .then(res => {
-      if (res.status === 401) {
-        // Token is invalid, redirect to login
+      .then(res => {
+        if (res.status === 401) {
+          localStorage.removeItem('token');
+          router.push('/login');
+          return;
+        }
+        return res.json();
+      })
+      .then(userData => {
+        if (userData) {
+          setUser(userData);
+          setLoading(false);
+        }
+      })
+      .catch(err => {
+        console.error('Error fetching user data:', err);
         localStorage.removeItem('token');
         router.push('/login');
-        return;
-      }
-      return res.json();
-    })
-    .then(data => {
-      if (data) {
-        setUser(data);
-        setLoading(false);
-      }
-    })
-    .catch(err => {
-      console.error('Error fetching user data:', err);
-      localStorage.removeItem('token');
-      router.push('/login');
-    });
-  }, [router]);
-  
-  const handleSettingChange = (setting, value) => {
-    setSettings(prev => ({
-      ...prev,
-      [setting]: value
-    }));
-  };
-  
-  const handleSaveSettings = () => {
-    toast({
-      title: 'Settings saved',
-      description: 'Your preferences have been updated successfully',
-      status: 'success',
-      duration: 3000,
-      isClosable: true,
-    });
-  };
-  
-  const handleChangePassword = () => {
-    toast({
-      title: 'Feature coming soon',
-      description: 'Password change functionality will be available in a future update',
-      status: 'info',
-      duration: 3000,
-      isClosable: true,
-    });
-  };
-  
-  const handleUpdateProfile = () => {
-    router.push('/profile');
-  };
-  
-  const handleClearData = () => {
-    toast({
-      title: 'Feature coming soon',
-      description: 'Data clearing functionality will be available in a future update',
-      status: 'info',
-      duration: 3000,
-      isClosable: true,
-    });
-  };
-  
-  const handleResetAccount = () => {
-    toast({
-      title: 'Feature coming soon',
-      description: 'Account reset functionality will be available in a future update',
-      status: 'info',
-      duration: 3000,
-      isClosable: true,
-    });
-  };
-  
+      });
+  });
+
   const handleDeleteAccount = async () => {
+    if (!window.confirm('Are you sure you want to delete your account? This action cannot be undone and will permanently remove all your data.')) {
+      return;
+    }
+
     try {
-      const response = await fetch('http://localhost:5001/api/auth/delete-account', {
+      const response = await fetch(`http://localhost:5001/api/users/${user._id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
-      
-      const data = await response.json();
-      
+
       if (response.ok) {
-        // Clear token and redirect to login
         localStorage.removeItem('token');
-        router.push('/login');
         toast({
           title: 'Account deleted',
-          description: 'Your account has been deleted successfully',
+          description: 'Your account has been permanently deleted.',
           status: 'success',
           duration: 5000,
           isClosable: true,
         });
+        router.push('/register');
       } else {
+        const data = await response.json();
         toast({
-          title: 'Delete failed',
+          title: 'Deletion failed',
           description: data.error || 'Could not delete account',
           status: 'error',
           duration: 5000,
@@ -149,7 +92,12 @@ export default function Settings() {
       });
     }
   };
-  
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    router.push('/login');
+  };
+
   if (loading) {
     return (
       <Flex minH="100vh" align="center" justify="center" bg={bg}>
@@ -157,12 +105,12 @@ export default function Settings() {
       </Flex>
     );
   }
-  
+
   return (
     <Box minH="100vh" bg={bg}>
       <Sidebar user={user} />
-      <Box ml="250px" p={6}>
-        <VStack spacing={8} align="stretch">
+      <Box ml="250px" p={8}>
+        <VStack spacing={10} align="stretch">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -170,215 +118,123 @@ export default function Settings() {
             transition={{ duration: 0.5 }}
           >
             <Flex justify="space-between" align="center">
-              <VStack align="start" spacing={2}>
-                <Heading as="h1" size="lg">Settings</Heading>
-                <Text color="gray.500">Manage your account and application preferences</Text>
+              <VStack align="start" spacing={1}>
+                <Heading as="h1" size="xl" bgGradient="linear(to-r, teal.300, blue.400)" bgClip="text">
+                  Account Settings
+                </Heading>
+                <Text color="gray.500" fontSize="lg">Manage your account preferences and security.</Text>
               </VStack>
-              <Flex align="center" gap={4}>
-                <Box p={3} bg="teal.100" borderRadius="md">
-                  <Flex align="center" gap={2}>
-                    <Icon as={FiUser} color="teal.500" />
-                    <Text fontWeight="bold">{user?.username}</Text>
-                  </Flex>
-                </Box>
-              </Flex>
             </Flex>
           </motion.div>
-          
-          {/* Account Settings */}
+
+          {/* Theme Settings */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            <Card bg={cardBg}>
-              <CardHeader>
-                <Flex align="center">
-                  <Icon as={FiUser} w={6} h={6} color="teal.500" mr={3} />
-                  <Heading as="h3" size="md">Account Settings</Heading>
-                </Flex>
-              </CardHeader>
+            <Card className="glass" bg={cardBg}>
               <CardBody>
-                <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6}>
-                  <FormControl id="username">
-                    <FormLabel>Username</FormLabel>
-                    <Input value={user?.username || ''} isDisabled />
-                  </FormControl>
+                <VStack align="stretch" spacing={6}>
+                  <Heading size="md" color="teal.300">Appearance</Heading>
                   
-                  <FormControl id="email">
-                    <FormLabel>Email</FormLabel>
-                    <Input value={user?.email || ''} isDisabled />
+                  <FormControl display="flex" alignItems="center" justifyContent="space-between">
+                    <Flex align="center">
+                      <Icon as={colorMode === 'light' ? FiSun : FiMoon} w={5} h={5} mr={3} color={colorMode === 'light' ? 'yellow.400' : 'purple.400'} />
+                      <FormLabel htmlFor="theme-switch" mb="0">
+                        <Text fontWeight="medium">Dark Mode</Text>
+                        <Text fontSize="sm" color="gray.500">Toggle between light and dark themes</Text>
+                      </FormLabel>
+                    </Flex>
+                    <Switch 
+                      id="theme-switch" 
+                      size="lg"
+                      isChecked={colorMode === 'dark'}
+                      onChange={toggleColorMode}
+                      colorScheme="teal"
+                    />
                   </FormControl>
-                  
-                  <FormControl id="role">
-                    <FormLabel>Role</FormLabel>
-                    <Input value={user?.role || ''} isDisabled />
-                  </FormControl>
-                  
-                  <FormControl id="createdAt">
-                    <FormLabel>Member Since</FormLabel>
-                    <Input value={new Date(user?.createdAt).toLocaleDateString() || ''} isDisabled />
-                  </FormControl>
-                </Grid>
-                
-                <Flex justify="flex-end" mt={6} gap={3}>
-                  <Button colorScheme="gray" variant="outline" onClick={handleChangePassword}>
-                    Change Password
-                  </Button>
-                  <Button colorScheme="teal" leftIcon={<FiUser />} onClick={handleUpdateProfile}>
-                    Update Profile
-                  </Button>
-                </Flex>
+                </VStack>
               </CardBody>
             </Card>
           </motion.div>
-          
-          {/* Notification Settings */}
+
+          {/* Account Management */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <Card bg={cardBg}>
-              <CardHeader>
-                <Flex align="center">
-                  <Icon as={FiBell} w={6} h={6} color="purple.500" mr={3} />
-                  <Heading as="h3" size="md">Notification Settings</Heading>
-                </Flex>
-              </CardHeader>
+            <Card className="glass" bg={cardBg}>
               <CardBody>
-                <VStack spacing={4} align="stretch">
-                  <Flex justify="space-between" align="center">
-                    <VStack align="start" spacing={1}>
-                      <Text fontWeight="medium">Enable Notifications</Text>
-                      <Text fontSize="sm" color="gray.500">Receive updates about your training sessions</Text>
-                    </VStack>
-                    <Switch 
-                      isChecked={settings.notifications} 
-                      onChange={(e) => handleSettingChange('notifications', e.target.checked)}
-                      colorScheme="teal"
-                    />
+                <VStack align="stretch" spacing={6}>
+                  <Heading size="md" color="teal.300">Account Management</Heading>
+                  
+                  <Flex justify="space-between" align="center" p={4} bg="rgba(255, 0, 0, 0.05)" borderRadius="md" border="1px solid" borderColor="red.500">
+                    <Flex align="center">
+                      <Icon as={FiUserX} w={6} h={6} mr={3} color="red.400" />
+                      <VStack align="start" spacing={0}>
+                        <Text fontWeight="bold" color="red.400">Delete Account</Text>
+                        <Text fontSize="sm" color="gray.500">Permanently remove your account and all data</Text>
+                      </VStack>
+                    </Flex>
+                    <Button
+                      colorScheme="red"
+                      variant="outline"
+                      onClick={handleDeleteAccount}
+                      leftIcon={<FiUserX />}
+                    >
+                      Delete Account
+                    </Button>
                   </Flex>
                   
-                  <Flex justify="space-between" align="center">
-                    <VStack align="start" spacing={1}>
-                      <Text fontWeight="medium">Email Notifications</Text>
-                      <Text fontSize="sm" color="gray.500">Get email updates when training completes</Text>
-                    </VStack>
-                    <Switch 
-                      isChecked={settings.notifications} 
-                      onChange={(e) => handleSettingChange('notifications', e.target.checked)}
-                      colorScheme="teal"
-                    />
+                  <Flex justify="space-between" align="center" p={4} bg="rgba(255, 165, 0, 0.05)" borderRadius="md" border="1px solid" borderColor="orange.500">
+                    <Flex align="center">
+                      <Icon as={FiLogOut} w={6} h={6} mr={3} color="orange.400" />
+                      <VStack align="start" spacing={0}>
+                        <Text fontWeight="bold" color="orange.400">Sign Out</Text>
+                        <Text fontSize="sm" color="gray.500">End your current session</Text>
+                      </VStack>
+                    </Flex>
+                    <Button
+                      colorScheme="orange"
+                      variant="outline"
+                      onClick={handleLogout}
+                      leftIcon={<FiLogOut />}
+                    >
+                      Sign Out
+                    </Button>
                   </Flex>
                 </VStack>
               </CardBody>
             </Card>
           </motion.div>
-          
-          {/* Application Settings */}
+
+          {/* Security */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
-            <Card bg={cardBg}>
-              <CardHeader>
-                <Flex align="center">
-                  <Icon as={FiGlobe} w={6} h={6} color="blue.500" mr={3} />
-                  <Heading as="h3" size="md">Application Settings</Heading>
-                </Flex>
-              </CardHeader>
+            <Card className="glass" bg={cardBg}>
               <CardBody>
-                <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6}>
-                  <FormControl id="theme">
-                    <FormLabel>Theme</FormLabel>
-                    <Select 
-                      value={settings.darkMode ? 'dark' : 'light'} 
-                      onChange={(e) => handleSettingChange('darkMode', e.target.value === 'dark')}
+                <VStack align="stretch" spacing={6}>
+                  <Heading size="md" color="teal.300">Security</Heading>
+                  
+                  <Flex justify="space-between" align="center" p={4} bg="rgba(0, 255, 0, 0.05)" borderRadius="md" border="1px solid" borderColor="green.500">
+                    <Flex align="center">
+                      <Icon as={FiShield} w={6} h={6} mr={3} color="green.400" />
+                      <VStack align="start" spacing={0}>
+                        <Text fontWeight="bold" color="green.400">Password Change</Text>
+                        <Text fontSize="sm" color="gray.500">Update your account password</Text>
+                      </VStack>
+                    </Flex>
+                    <Button
+                      colorScheme="green"
+                      variant="outline"
+                      isDisabled // Feature not implemented yet
                     >
-                      <option value="light">Light Theme</option>
-                      <option value="dark">Dark Theme</option>
-                    </Select>
-                  </FormControl>
-                  
-                  <FormControl id="performance">
-                    <FormLabel>Performance Mode</FormLabel>
-                    <Select 
-                      value={settings.performanceMode} 
-                      onChange={(e) => handleSettingChange('performanceMode', e.target.value)}
-                    >
-                      <option value="balanced">Balanced</option>
-                      <option value="performance">High Performance</option>
-                      <option value="power">Power Saving</option>
-                    </Select>
-                  </FormControl>
-                  
-                  <FormControl id="storage">
-                    <FormLabel>Storage Limit</FormLabel>
-                    <Select 
-                      value={settings.storageLimit} 
-                      onChange={(e) => handleSettingChange('storageLimit', e.target.value)}
-                    >
-                      <option value="1GB">1 GB</option>
-                      <option value="5GB">5 GB</option>
-                      <option value="10GB">10 GB</option>
-                      <option value="50GB">50 GB</option>
-                      <option value="100GB">100 GB</option>
-                    </Select>
-                  </FormControl>
-                  
-                  <FormControl id="autoSave">
-                    <FormLabel>Auto Save</FormLabel>
-                    <Switch 
-                      isChecked={settings.autoSave} 
-                      onChange={(e) => handleSettingChange('autoSave', e.target.checked)}
-                      colorScheme="teal"
-                    />
-                  </FormControl>
-                </Grid>
-                
-                <Flex justify="flex-end" mt={6}>
-                  <Button 
-                    colorScheme="teal" 
-                    leftIcon={<FiZap />}
-                    onClick={handleSaveSettings}
-                  >
-                    Save Settings
-                  </Button>
-                </Flex>
-              </CardBody>
-            </Card>
-          </motion.div>
-          
-          {/* Danger Zone */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-          >
-            <Card bg={useColorModeValue('red.50', 'red.900')}>
-              <CardHeader>
-                <Flex align="center">
-                  <Icon as={FiDatabase} w={6} h={6} color="red.500" mr={3} />
-                  <Heading as="h3" size="md">Danger Zone</Heading>
-                </Flex>
-              </CardHeader>
-              <CardBody>
-                <VStack spacing={4} align="stretch">
-                  <Text color={useColorModeValue('red.700', 'red.300')}>
-                    These actions are irreversible. Please be careful when performing these operations.
-                  </Text>
-                  
-                  <Flex gap={3} justify="flex-end">
-                    <Button colorScheme="red" variant="outline" onClick={handleClearData}>
-                      Clear All Data
-                    </Button>
-                    <Button colorScheme="red" variant="outline" onClick={handleResetAccount}>
-                      Reset Account
-                    </Button>
-                    <Button colorScheme="red" leftIcon={<FiDatabase />} onClick={onDeleteModalOpen}>
-                      Delete Account
+                      Change Password
                     </Button>
                   </Flex>
                 </VStack>
@@ -387,42 +243,6 @@ export default function Settings() {
           </motion.div>
         </VStack>
       </Box>
-      
-      {/* Delete Account Confirmation Modal */}
-      <Modal isOpen={isDeleteModalOpen} onClose={onDeleteModalClose}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Confirm Account Deletion</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <Text mb={3}>
-              Are you sure you want to delete your account? This action is irreversible and will permanently remove all your data including:
-            </Text>
-            <ul style={{ paddingLeft: '20px', marginBottom: '15px' }}>
-              <li>Your models and training sessions</li>
-              <li>Your datasets and configurations</li>
-              <li>Your account information and settings</li>
-            </ul>
-            <Text fontWeight="bold" color="red.500">
-              This action cannot be undone. Please type "DELETE" to confirm.
-            </Text>
-          </ModalBody>
-          <ModalFooter>
-            <Button colorScheme="gray" mr={3} onClick={onDeleteModalClose}>
-              Cancel
-            </Button>
-            <Button 
-              colorScheme="red" 
-              onClick={() => {
-                handleDeleteAccount();
-                onDeleteModalClose();
-              }}
-            >
-              Delete Account
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
     </Box>
   );
 }
