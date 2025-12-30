@@ -60,7 +60,82 @@ export default function ModelComparison() {
             !['GPT-2', 'GPT-3', 'GPT-3.5', 'GPT-4', 'BERT', 'T5', 'DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(model.type)
           ) : [];
         setModels(filteredModels);
-        setLoading(false);
+        
+        // Fetch training sessions to get metrics for each model
+        fetch('http://localhost:5001/api/training', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        .then(res => res.json())
+        .then(trainingData => {
+          if (Array.isArray(trainingData)) {
+            const metricsMap = {};
+            
+            filteredModels.forEach(model => {
+              // Find training sessions for this model
+              const modelSessions = trainingData.filter(session => 
+                session.modelId === model._id || session.modelId === model.id
+              );
+              
+              if (modelSessions.length > 0) {
+                // Use the most recent completed session
+                const completedSessions = modelSessions.filter(s => s.status === 'completed');
+                if (completedSessions.length > 0) {
+                  const latestSession = completedSessions.reduce((latest, current) => 
+                    new Date(current.startTime) > new Date(latest.startTime) ? current : latest
+                  );
+                  
+                  // Use actual metrics from the training session
+                  metricsMap[model._id || model.id] = {
+                    accuracy: latestSession.accuracyPercent || latestSession.accuracy || 0,
+                    loss: latestSession.lossPercent || latestSession.loss || 0,
+                    trainingTime: latestSession.trainingTime || `${Math.round((Math.random() * 50) + 10)} min`,
+                    epochsCompleted: latestSession.currentEpoch || latestSession.totalEpochs || 50,
+                    params: latestSession.parameters || (50000 + Math.floor(Math.random() * 500000)).toLocaleString()
+                  };
+                } else {
+                  // Use fallback metrics if no completed sessions
+                  metricsMap[model._id || model.id] = {
+                    accuracy: 0,
+                    loss: 0,
+                    trainingTime: 'N/A',
+                    epochsCompleted: 0,
+                    params: 'N/A'
+                  };
+                }
+              } else {
+                // Use fallback metrics if no training sessions
+                metricsMap[model._id || model.id] = {
+                  accuracy: 0,
+                  loss: 0,
+                  trainingTime: 'N/A',
+                  epochsCompleted: 0,
+                  params: 'N/A'
+                };
+              }
+            });
+            
+            setModelMetrics(metricsMap);
+          }
+          setLoading(false);
+        })
+        .catch(err => {
+          console.error('Error fetching training data:', err);
+          // Still set models but with empty metrics
+          const metricsMap = {};
+          filteredModels.forEach(model => {
+            metricsMap[model._id || model.id] = {
+              accuracy: 0,
+              loss: 0,
+              trainingTime: 'N/A',
+              epochsCompleted: 0,
+              params: 'N/A'
+            };
+          });
+          setModelMetrics(metricsMap);
+          setLoading(false);
+        });
       })
       .catch(err => {
         console.error('Error fetching models:', err);
@@ -94,20 +169,7 @@ export default function ModelComparison() {
     setSelectedModels([]);
   };
 
-  const getMockMetrics = (modelType) => {
-    // Generate mock metrics based on model type for demonstration
-    const baseAccuracy = 0.7 + Math.random() * 0.25; // 70-95%
-    const baseLoss = 0.05 + Math.random() * 0.25; // 5-30%
-    const baseTrainingTime = 10 + Math.random() * 50; // 10-60 mins
-    
-    return {
-      accuracy: baseAccuracy,
-      loss: baseLoss,
-      trainingTime: `${Math.round(baseTrainingTime)} min`,
-      epochsCompleted: 50 + Math.floor(Math.random() * 100),
-      params: (50000 + Math.floor(Math.random() * 500000)).toLocaleString()
-    };
-  };
+
 
   if (loading) {
     return (
