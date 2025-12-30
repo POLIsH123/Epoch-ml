@@ -2,6 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Model = require('../models/Model');
+const TrainingSession = require('../models/TrainingSession');
 const { spawn } = require('child_process');
 const path = require('path');
 
