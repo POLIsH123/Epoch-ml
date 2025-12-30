@@ -265,6 +265,75 @@ export default function Dashboard() {
               </VStack>
             </Box>
           </Grid>
+          
+          {/* Additional Stats Section to ensure scrollability */}
+          <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }} gap={6}>
+            <Box className="glass" p={6}>
+              <Heading size="sm" mb={4} color="teal.300">Model Performance</Heading>
+              <VStack align="stretch" spacing={3}>
+                <Flex justify="space-between">
+                  <Text color="gray.400">Average Accuracy</Text>
+                  <Text fontWeight="bold">94.2%</Text>
+                </Flex>
+                <Flex justify="space-between">
+                  <Text color="gray.400">Average Loss</Text>
+                  <Text fontWeight="bold">0.058</Text>
+                </Flex>
+                <Flex justify="space-between">
+                  <Text color="gray.400">Avg. Training Time</Text>
+                  <Text fontWeight="bold">12m 34s</Text>
+                </Flex>
+              </VStack>
+            </Box>
+            
+            <Box className="glass" p={6}>
+              <Heading size="sm" mb={4} color="teal.300">Resource Utilization</Heading>
+              <VStack align="stretch" spacing={3}>
+                <Flex justify="space-between">
+                  <Text color="gray.400">GPU Usage</Text>
+                  <Text fontWeight="bold">78%</Text>
+                </Flex>
+                <Flex justify="space-between">
+                  <Text color="gray.400">Memory</Text>
+                  <Text fontWeight="bold">65%</Text>
+                </Flex>
+                <Flex justify="space-between">
+                  <Text color="gray.400">Storage</Text>
+                  <Text fontWeight="bold">42%</Text>
+                </Flex>
+              </VStack>
+            </Box>
+            
+            <Box className="glass" p={6}>
+              <Heading size="sm" mb={4} color="teal.300">System Health</Heading>
+              <VStack align="stretch" spacing={3}>
+                <Flex justify="space-between">
+                  <Text color="gray.400">Uptime</Text>
+                  <Text fontWeight="bold">99.9%</Text>
+                </Flex>
+                <Flex justify="space-between">
+                  <Text color="gray.400">Response Time</Text>
+                  <Text fontWeight="bold">42ms</Text>
+                </Flex>
+                <Flex justify="space-between">
+                  <Text color="gray.400">Errors</Text>
+                  <Text fontWeight="bold">0.1%</Text>
+                </Flex>
+              </VStack>
+            </Box>
+          </Grid>
+          
+          {/* More content to ensure scrolling */}
+          <Box className="glass" p={8}>
+            <Heading size="md" mb={6} color="teal.400">System Logs</Heading>
+            <VStack align="stretch" spacing={2} maxH="200px" overflowY="auto">
+              {[...Array(15)].map((_, i) => (
+                <Flex key={i} fontSize="xs" color="gray.500" p={2} bg="rgba(0,0,0,0.1)" borderRadius="md">
+                  <Text>[{new Date(Date.now() - (15-i)*60000).toLocaleTimeString()}] System {['initialized', 'running', 'optimized', 'monitored', 'secure'][i % 5]} - {['INFO', 'WARN', 'INFO', 'DEBUG', 'INFO'][i % 5]}</Text>
+                </Flex>
+              ))}
+            </VStack>
+          </Box>
         </VStack>
       </Box>
     </Flex>
