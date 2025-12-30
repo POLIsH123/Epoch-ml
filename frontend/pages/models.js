@@ -65,10 +65,11 @@ export default function Models() {
       })
       .then(([modelsRes, sessionsRes]) => Promise.all([modelsRes.json(), sessionsRes.json()]))
       .then(([modelsData, sessionsData]) => {
-        // Filter out GPT/BERT models and RL models
+        // Filter out GPT/BERT models and RL models, and ensure no undefined/null models
         const filteredModels = Array.isArray(modelsData) ?
           modelsData.filter(model =>
             model &&
+            model.name &&
             !['GPT-2', 'GPT-3', 'GPT-3.5', 'GPT-4', 'BERT', 'T5', 'DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(model.type)
           ) : [];
         setModels(filteredModels);
@@ -133,8 +134,11 @@ export default function Models() {
 
       const data = await response.json();
 
-      if (response.ok) {
-        setModels(prev => [...prev, data.model]);
+      if (response.ok && data) {
+        // Make sure we have a valid model in the response
+        if (data._id && data.name) {
+          setModels(prev => [...prev, data]);
+        }
         setFormData({
           name: '',
           type: '',
