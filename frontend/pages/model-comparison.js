@@ -331,9 +331,16 @@ export default function ModelComparison() {
                       </Thead>
                       <Tbody>
                         {selectedModels.map((model, index) => {
-                          const metrics = getMockMetrics(model.type);
+                          const modelId = model._id || model.id;
+                          const metrics = modelMetrics[modelId] || {
+                            accuracy: 0,
+                            loss: 0,
+                            trainingTime: 'N/A',
+                            epochsCompleted: 0,
+                            params: 'N/A'
+                          };
                           return (
-                            <Tr key={model.id || model._id}>
+                            <Tr key={modelId}>
                               <Td fontWeight="bold" color={index === 0 ? "teal.300" : index === 1 ? "blue.300" : index === 2 ? "purple.300" : "pink.300"}>
                                 {model.name}
                               </Td>
@@ -380,12 +387,24 @@ export default function ModelComparison() {
                       <StatLabel>Best Accuracy</StatLabel>
                       <StatNumber>
                         {selectedModels.length > 0 
-                          ? `${(Math.max(...selectedModels.map(m => getMockMetrics(m.type).accuracy)) * 100).toFixed(2)}%` 
+                          ? `${(Math.max(...selectedModels.map(m => {
+                              const modelId = m._id || m.id;
+                              const metrics = modelMetrics[modelId] || { accuracy: 0 };
+                              return metrics.accuracy;
+                            })) * 100).toFixed(2)}%` 
                           : 'N/A'}
                       </StatNumber>
                       <StatHelpText>
                         {selectedModels.length > 0 
-                          ? selectedModels.find(m => getMockMetrics(m.type).accuracy === Math.max(...selectedModels.map(m => getMockMetrics(m.type).accuracy)))?.name 
+                          ? selectedModels.find(m => {
+                              const modelId = m._id || m.id;
+                              const metrics = modelMetrics[modelId] || { accuracy: 0 };
+                              return metrics.accuracy === Math.max(...selectedModels.map(m2 => {
+                                const modelId2 = m2._id || m2.id;
+                                const metrics2 = modelMetrics[modelId2] || { accuracy: 0 };
+                                return metrics2.accuracy;
+                              }));
+                            })?.name 
                           : 'No models selected'}
                       </StatHelpText>
                     </Stat>

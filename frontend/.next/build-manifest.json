@@ -22,10 +22,10 @@
       "static/chunks/main.js",
       "static/chunks/pages/_error.js"
     ],
-    "/model-builder": [
+    "/model-comparison": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/model-builder.js"
+      "static/chunks/pages/model-comparison.js"
     ],
     "/models": [
       "static/chunks/webpack.js",
