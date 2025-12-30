@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { FiCpu, FiBarChart2, FiZap, FiDollarSign, FiDatabase, FiUsers, FiActivity, FiTrendingUp, FiClock, FiCheckCircle, FiInfo } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import Sidebar from '../components/Sidebar';
+import Tutorial from '../components/Tutorial';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -18,6 +19,7 @@ export default function Dashboard() {
     activeNodes: 1204,
     latency: 42
   });
+  const [showTutorial, setShowTutorial] = useState(false);
   const router = useRouter();
   const toast = useToast();
 
@@ -47,8 +49,11 @@ export default function Dashboard() {
         const userData = await profileRes.json();
         setUser(userData);
 
-        // Fetch other data in parallel
-        const [trainingRes, statsRes] = await Promise.all([
+        // Check if user is new (no models or training sessions)
+        const [modelsRes, trainingRes, statsRes] = await Promise.all([
+          fetch('http://localhost:5001/api/models', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          }),
           fetch('http://localhost:5001/api/training', {
             headers: { 'Authorization': `Bearer ${token}` }
           }),
@@ -56,6 +61,14 @@ export default function Dashboard() {
             headers: { 'Authorization': `Bearer ${token}` }
           })
         ]);
+
+        const [modelsData, trainingData] = await Promise.all([modelsRes.json(), trainingRes.json()]);
+
+        // Show tutorial if user has no models or training sessions
+        if ((Array.isArray(modelsData) && modelsData.length === 0) || 
+            (Array.isArray(trainingData) && trainingData.length === 0)) {
+          setShowTutorial(true);
+        }
 
         if (trainingRes.ok) {
           const sessions = await trainingRes.json();
