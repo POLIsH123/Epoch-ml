@@ -18,10 +18,10 @@ export default function Sidebar({ user }) {
     { name: 'Models', icon: FiDatabase, path: '/models' },
     { name: 'Model Comparison', icon: FiGrid, path: '/model-comparison' },
     { name: 'Data', icon: FiUpload, path: '/data' },
-    { name: 'Training History', icon: FiClock, path: '/training-history' },
     { name: 'Resources', icon: FiDollarSign, path: '/resources' },
     { name: 'Profile', icon: FiUser, path: '/profile' },
     { name: 'Settings', icon: FiSettings, path: '/settings' },
+    { name: 'Training History', icon: FiClock, path: '/training-history' }
   ];
 
   return (
@@ -38,7 +38,7 @@ export default function Sidebar({ user }) {
       borderColor={useColorModeValue('gray.200', 'gray.600')}
       overflowY="auto"
     >
-      <VStack align="stretch" spacing={1} p={4} mt={16}>
+      <VStack align="stretch" spacing={1} p={4} mt={16} pb="80px">
         <Box mb={6} p={4}>
           <Flex align="center">
             <Icon as={FiBarChart2} w={8} h={8} color="teal.500" mr={3} />
