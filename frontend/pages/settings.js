@@ -1,5 +1,5 @@
 import { Box, Heading, Text, Button, VStack, Container, Card, CardBody, Flex, Icon, useColorMode, useColorModeValue, useToast, Switch, FormControl, FormLabel } from '@chakra-ui/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { FiSun, FiMoon, FiUserX, FiShield, FiLogOut } from 'react-icons/fi';
 import { motion } from 'framer-motion';
@@ -16,7 +16,7 @@ export default function Settings() {
   const cardBg = useColorModeValue('white', 'gray.800');
 
   // Load user data
-  useState(() => {
+  useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
       router.push('/login');
@@ -47,7 +47,7 @@ export default function Settings() {
         localStorage.removeItem('token');
         router.push('/login');
       });
-  });
+  }, [router]);
 
   const handleDeleteAccount = async () => {
     if (!window.confirm('Are you sure you want to delete your account? This action cannot be undone and will permanently remove all your data.')) {

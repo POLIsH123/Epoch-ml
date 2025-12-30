@@ -22,15 +22,25 @@
       "static/chunks/main.js",
       "static/chunks/pages/_error.js"
     ],
-    "/model-comparison": [
+    "/dashboard": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/model-comparison.js"
+      "static/chunks/pages/dashboard.js"
+    ],
+    "/login": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/login.js"
     ],
     "/models": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
       "static/chunks/pages/models.js"
+    ],
+    "/training-history/[id]": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/training-history/[id].js"
     ]
   },
   "ampFirstPages": []
