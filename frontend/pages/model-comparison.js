@@ -413,12 +413,24 @@ export default function ModelComparison() {
                       <StatLabel>Best Loss</StatLabel>
                       <StatNumber>
                         {selectedModels.length > 0 
-                          ? Math.min(...selectedModels.map(m => getMockMetrics(m.type).loss)).toFixed(4) 
+                          ? Math.min(...selectedModels.map(m => {
+                              const modelId = m._id || m.id;
+                              const metrics = modelMetrics[modelId] || { loss: 0 };
+                              return metrics.loss;
+                            })).toFixed(4) 
                           : 'N/A'}
                       </StatNumber>
                       <StatHelpText>
                         {selectedModels.length > 0 
-                          ? selectedModels.find(m => getMockMetrics(m.type).loss === Math.min(...selectedModels.map(m => getMockMetrics(m.type).loss)))?.name 
+                          ? selectedModels.find(m => {
+                              const modelId = m._id || m.id;
+                              const metrics = modelMetrics[modelId] || { loss: 0 };
+                              return metrics.loss === Math.min(...selectedModels.map(m2 => {
+                                const modelId2 = m2._id || m2.id;
+                                const metrics2 = modelMetrics[modelId2] || { loss: 0 };
+                                return metrics2.loss;
+                              }));
+                            })?.name 
                           : 'No models selected'}
                       </StatHelpText>
                     </Stat>
@@ -427,7 +439,13 @@ export default function ModelComparison() {
                       <StatLabel>Average Training Time</StatLabel>
                       <StatNumber>
                         {selectedModels.length > 0 
-                          ? (selectedModels.reduce((sum, m) => sum + parseInt(getMockMetrics(m.type).trainingTime), 0) / selectedModels.length).toFixed(1) + ' min' 
+                          ? (selectedModels.reduce((sum, m) => {
+                              const modelId = m._id || m.id;
+                              const metrics = modelMetrics[modelId] || { trainingTime: '0 min' };
+                              // Extract number from training time string (e.g., '25 min' -> 25)
+                              const timeValue = parseFloat(metrics.trainingTime) || 0;
+                              return sum + timeValue;
+                            }, 0) / selectedModels.length).toFixed(1) + ' min' 
                           : 'N/A'}
                       </StatNumber>
                       <StatHelpText>Total: {selectedModels.length} models</StatHelpText>
