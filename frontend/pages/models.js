@@ -91,6 +91,13 @@ export default function Models() {
         router.push('/login');
       });
   }, [router]);
+  
+  // Update active training status when training sessions change
+  useEffect(() => {
+    const activeSession = Array.isArray(trainingSessions) ? 
+      trainingSessions.some(session => session.status === 'running' || session.status === 'queued') : false;
+    setHasActiveTraining(activeSession);
+  }, [trainingSessions]);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
