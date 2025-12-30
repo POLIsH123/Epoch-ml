@@ -10,6 +10,7 @@ export default function ModelComparison() {
   const [loading, setLoading] = useState(true);
   const [models, setModels] = useState([]);
   const [selectedModels, setSelectedModels] = useState([]);
+  const [modelMetrics, setModelMetrics] = useState({}); // Store metrics for each model
   const router = useRouter();
   const toast = useToast();
 

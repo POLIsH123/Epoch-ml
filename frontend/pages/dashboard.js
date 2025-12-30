@@ -59,6 +59,17 @@ export default function Dashboard() {
           })
         ]);
 
+        // Check if any of the responses failed
+        if (!modelsRes.ok) {
+          console.error('Models API error:', await modelsRes.text());
+          throw new Error('Models API failed');
+        }
+        
+        if (!trainingRes.ok) {
+          console.error('Training API error:', await trainingRes.text());
+          throw new Error('Training API failed');
+        }
+
         const [modelsData, trainingData] = await Promise.all([modelsRes.json(), trainingRes.json()]);
 
         // Show tutorial if user has no models or training sessions
@@ -67,24 +78,37 @@ export default function Dashboard() {
           setShowTutorial(true);
         }
 
-        if (trainingRes.ok) {
-          const sessions = await trainingRes.json();
-          if (sessions && sessions.length > 0) {
-            const sorted = sessions.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
-            setRecentActivity(sorted.slice(0, 3).map(s => ({
-              action: `Trained ${s.modelName} on ${s.datasetId}`,
-              time: new Date(s.startTime).toLocaleTimeString()
-            })));
-            
-            // Calculate stats from available data
-            const completedSessions = sessions.filter(s => s.status === 'completed');
-            const successRate = sessions.length > 0 ? Math.round((completedSessions.length / sessions.length) * 100) : 0;
-            setStats(prev => ({
-              ...prev,
-              totalSessions: sessions.length,
-              successRate: successRate
-            }));
+        if (Array.isArray(trainingData) && trainingData.length > 0) {
+          const sessions = trainingData;
+          const sorted = sessions.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
+          setRecentActivity(sorted.slice(0, 3).map(s => ({
+            action: `Trained ${s.modelName} on ${s.datasetId}`,
+            time: new Date(s.startTime).toLocaleTimeString()
+          })));
+          
+          // Calculate basic stats from available data
+          const completedSessions = sessions.filter(s => s.status === 'completed');
+          const successRate = sessions.length > 0 ? Math.round((completedSessions.length / sessions.length) * 100) : 0;
+          setStats(prev => ({
+            ...prev,
+            totalSessions: sessions.length,
+            successRate: successRate
+          }));
+        }
+        
+        // Try to fetch detailed stats separately to avoid blocking dashboard load
+        try {
+          const statsRes = await fetch('http://localhost:5001/api/training/stats', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          
+          if (statsRes.ok) {
+            const statsData = await statsRes.json();
+            setStats(statsData);
           }
+        } catch (statsError) {
+          console.error('Stats API failed, using calculated stats:', statsError);
+          // Stats will remain as calculated from training data
         }
 
         setLoading(false);

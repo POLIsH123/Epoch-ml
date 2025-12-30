@@ -51,33 +51,36 @@ router.post('/', async (req, res) => {
       return res.status(401).json({ error: 'Invalid token' });
     }
 
-    const { name, type, description } = req.body;
+    const { name, type, description, architecture, layers } = req.body;
 
     if (!name || !type) {
       return res.status(400).json({ error: 'Model name and type are required' });
     }
 
     // Determine architecture based on model type
-    let architecture = type; // Default to the type itself
+    let modelArchitecture = type; // Default to the type itself
     if (type === 'LSTM' || type === 'GRU' || type === 'RNN') {
-      architecture = 'RNN';
+      modelArchitecture = 'RNN';
     } else if (type === 'ResNet' || type === 'Inception' || type === 'VGG' || type === 'CNN') {
-      architecture = 'CNN';
+      modelArchitecture = 'CNN';
     } else if (type === 'GPT-2' || type === 'GPT-3' || type === 'GPT-3.5' || type === 'GPT-4' || type === 'BERT' || type === 'T5') {
-      architecture = 'Transformer';
+      modelArchitecture = 'Transformer';
     } else if (type === 'DQN' || type === 'A2C' || type === 'PPO' || type === 'SAC' || type === 'DDPG' || type === 'TD3') {
-      architecture = 'Reinforcement Learning';
+      modelArchitecture = 'Reinforcement Learning';
     } else if (type === 'Random Forest' || type === 'Gradient Boosting' || type === 'XGBoost' || type === 'LightGBM') {
-      architecture = 'Ensemble';
+      modelArchitecture = 'Ensemble';
+    } else if (type === 'Custom' || type === 'Multi-Layer') {
+      modelArchitecture = architecture || 'Multi-Layer';
     }
 
     // Create a new model and add to DB
     const newModel = new Model({
       name,
-      type: ['RNN', 'CNN', 'GPT', 'RL'].includes(architecture) ? architecture : 'OTHER', // Mapping to enum
-      architecture,
+      type: ['RNN', 'CNN', 'GPT', 'RL'].includes(modelArchitecture) ? modelArchitecture : type,
+      architecture: modelArchitecture,
       description: description || `A ${type} model for ${name}`,
-      createdBy: user._id
+      createdBy: user._id,
+      layers: layers || [] // Store the layers configuration
     });
 
     await newModel.save();

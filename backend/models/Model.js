@@ -31,6 +31,11 @@ const modelSchema = new mongoose.Schema({
     // Additional parameters specific to each model type
     additionalParams: mongoose.Schema.Types.Mixed
   },
+  layers: [{
+    id: Number,
+    type: String,
+    config: mongoose.Schema.Types.Mixed
+  }],
   isActive: {
     type: Boolean,
     default: true
