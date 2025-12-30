@@ -50,14 +50,11 @@ export default function Dashboard() {
         setUser(userData);
 
         // Check if user is new (no models or training sessions)
-        const [modelsRes, trainingRes, statsRes] = await Promise.all([
+        const [modelsRes, trainingRes] = await Promise.all([
           fetch('http://localhost:5001/api/models', {
             headers: { 'Authorization': `Bearer ${token}` }
           }),
           fetch('http://localhost:5001/api/training', {
-            headers: { 'Authorization': `Bearer ${token}` }
-          }),
-          fetch('http://localhost:5001/api/training/stats', {
             headers: { 'Authorization': `Bearer ${token}` }
           })
         ]);
@@ -78,12 +75,16 @@ export default function Dashboard() {
               action: `Trained ${s.modelName} on ${s.datasetId}`,
               time: new Date(s.startTime).toLocaleTimeString()
             })));
+            
+            // Calculate stats from available data
+            const completedSessions = sessions.filter(s => s.status === 'completed');
+            const successRate = sessions.length > 0 ? Math.round((completedSessions.length / sessions.length) * 100) : 0;
+            setStats(prev => ({
+              ...prev,
+              totalSessions: sessions.length,
+              successRate: successRate
+            }));
           }
-        }
-
-        if (statsRes.ok) {
-          const statsData = await statsRes.json();
-          setStats(statsData);
         }
 
         setLoading(false);
@@ -96,7 +97,7 @@ export default function Dashboard() {
     };
 
     fetchData();
-  }, [router]);
+  }, [router, setShowTutorial]);
 
   if (loading) {
     return (
