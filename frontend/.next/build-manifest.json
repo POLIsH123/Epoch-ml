@@ -22,20 +22,15 @@
       "static/chunks/main.js",
       "static/chunks/pages/_error.js"
     ],
-    "/ai-playground": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/ai-playground.js"
-    ],
     "/dashboard": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
       "static/chunks/pages/dashboard.js"
     ],
-    "/settings": [
+    "/test-model": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/settings.js"
+      "static/chunks/pages/test-model.js"
     ]
   },
   "ampFirstPages": []

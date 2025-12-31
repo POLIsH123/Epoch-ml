@@ -25,7 +25,7 @@ export default function Sidebar({ user }) {
   ];
 
   return (
-    <Box
+    <Flex
       w="250px"
       h="100vh"
       pos="fixed"
@@ -37,9 +37,11 @@ export default function Sidebar({ user }) {
       borderRight="1px solid"
       borderColor={useColorModeValue('gray.200', 'gray.600')}
       overflowY="auto"
+      flexDirection="column"
+      justifyContent="space-between"
     >
-      <VStack align="stretch" spacing={1} p={4} mt={16} pb="80px">
-        <Box mb={6} p={4}>
+      <Box>
+        <Box mb={6} p={4} mt={16}>
           <Flex align="center">
             <Icon as={FiBarChart2} w={8} h={8} color="teal.500" mr={3} />
             <Text fontSize="xl" fontWeight="bold">Epoch-ml</Text>
@@ -47,48 +49,49 @@ export default function Sidebar({ user }) {
           <Text fontSize="sm" color="gray.500" mt={1}>Machine Learning Platform</Text>
         </Box>
 
-        {menuItems.map((item, index) => {
-          // Map menu names to tutorial IDs
-          const tutorialIdMap = {
-            'Dashboard': 'dashboard-link',
-            'Data': 'data-link',
-            'Models': 'models-link',
-            'Train Model': 'train-link',
-            'Test Model': 'test-model-link',
-            'Model Builder': 'model-builder-link',
-            'Model Comparison': 'model-comparison-link',
-            'Training History': 'training-history-link',
-            'AI Playground': 'ai-playground-link',
-            'Resources': 'resources-link',
-            'Profile': 'profile-link',
-            'Settings': 'settings-link'
-          };
-          
-          const tutorialId = tutorialIdMap[item.name];
-          
-          return (
-          <Link key={index} href={item.path} passHref>
-            <Box
-              as="a"
-              id={tutorialId}
-              p={3}
-              borderRadius="md"
-              bg={router.pathname === item.path ? activeBg : 'transparent'}
-              color={router.pathname === item.path ? activeColor : 'inherit'}
-              _hover={{ bg: router.pathname !== item.path ? useColorModeValue('gray.200', 'gray.600') : activeBg }}
-              transition="all 0.2s"
-            >
-              <Flex align="center">
-                <Icon as={item.icon} w={5} h={5} mr={3} />
-                <Text fontWeight={router.pathname === item.path ? 'bold' : 'normal'}>{item.name}</Text>
-              </Flex>
-            </Box>
-          </Link>
-        );})}
-      </VStack>
+        <VStack align="stretch" spacing={1} p={4}>
+          {menuItems.map((item, index) => {
+            // Map menu names to tutorial IDs
+            const tutorialIdMap = {
+              'Dashboard': 'dashboard-link',
+              'Data': 'data-link',
+              'Models': 'models-link',
+              'Train Model': 'train-link',
+              'Test Model': 'test-model-link',
+              'Model Builder': 'model-builder-link',
+              'Model Comparison': 'model-comparison-link',
+              'Training History': 'training-history-link',
+              'AI Playground': 'ai-playground-link',
+              'Resources': 'resources-link',
+              'Profile': 'profile-link',
+              'Settings': 'settings-link'
+            };
+            
+            const tutorialId = tutorialIdMap[item.name];
+            
+            return (
+            <Link key={index} href={item.path}>
+              <Box
+                id={tutorialId}
+                p={3}
+                borderRadius="md"
+                bg={router.pathname === item.path ? activeBg : 'transparent'}
+                color={router.pathname === item.path ? activeColor : 'inherit'}
+                _hover={{ bg: router.pathname !== item.path ? useColorModeValue('gray.200', 'gray.600') : activeBg }}
+                transition="all 0.2s"
+              >
+                <Flex align="center">
+                  <Icon as={item.icon} w={5} h={5} mr={3} />
+                  <Text fontWeight={router.pathname === item.path ? 'bold' : 'normal'}>{item.name}</Text>
+                </Flex>
+              </Box>
+            </Link>
+          );})}
+        </VStack>
+      </Box>
 
       {user && (
-        <Box pos="absolute" bottom={4} left={4} right={4}>
+        <Box p={4}>
           <Flex align="center" p={3} bg={useColorModeValue('gray.200', 'gray.600')} borderRadius="md">
             <Box w={10} h={10} borderRadius="full" bg="teal.500" mr={3} display="flex" align="center" justify="center">
               <Icon as={FiUser} color="white" />
@@ -100,6 +103,6 @@ export default function Sidebar({ user }) {
           </Flex>
         </Box>
       )}
-    </Box>
+    </Flex>
   );
 }

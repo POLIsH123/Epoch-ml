@@ -187,7 +187,6 @@ def train(session_id, dataset_id, params_json):
                 # Calculate loss percent (improvement compared to start)
                 loss_pct = (current_loss / initial_loss[0] * 100) if initial_loss[0] != 0 else 0
                 
-                
                 # Ensure metrics are native Python floats and not None or NaN
                 acc = float(acc) if acc is not None and np.isfinite(acc) else 0.0
                 current_loss = float(current_loss) if current_loss is not None and np.isfinite(current_loss) else 0.0

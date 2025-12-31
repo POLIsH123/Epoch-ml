@@ -44,6 +44,7 @@ def predict(model_id, input_data_json, dataset_id):
         results = {
             "predictions": [],
             "accuracy": 0.0, # Placeholder or from some test run
+            "loss": 0.0, # Placeholder
             "metricName": "Accuracy" if dataset_id in ['dataset-1', 'dataset-2'] else "MAE",
             "processingTime": "0.1s"
         }
