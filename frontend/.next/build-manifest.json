@@ -32,6 +32,16 @@
       "static/chunks/main.js",
       "static/chunks/pages/prompt-engineering.js"
     ],
+    "/settings": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/settings.js"
+    ],
+    "/train": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/train.js"
+    ],
     "/training-history": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",

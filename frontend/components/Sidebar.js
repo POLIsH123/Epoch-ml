@@ -11,7 +11,7 @@ export default function Sidebar({ user }) {
 
   const menuItems = [
     { name: 'Dashboard', icon: FiHome, path: '/dashboard' },
-    { name: 'AI Playground', icon: FiMessageSquare, path: '/prompt-engineering' },
+    { name: 'AI Playground', icon: FiMessageSquare, path: '/ai-playground' },
     { name: 'Model Builder', icon: FiLayers, path: '/model-builder' },
     { name: 'Train Model', icon: FiCpu, path: '/train' },
     { name: 'Test Model', icon: FiPlay, path: '/test-model' },
