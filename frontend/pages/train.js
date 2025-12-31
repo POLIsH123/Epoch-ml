@@ -337,7 +337,7 @@ LEARNING_RATE = ${parameters.learningRate || 0.001}
       if (response.ok) {
         toast({
           title: 'Training started',
-          description: `Your ${models.find(m => m._id === formData.modelId)?.name} model is now training!`,
+          description: 'Your ' + models.find(m => m._id === formData.modelId)?.name + ' model is now training!',
           status: 'success',
           duration: 5000,
           isClosable: true,
