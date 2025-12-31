@@ -6,6 +6,7 @@ import tensorflow as tf
 import numpy as np
 from pymongo import MongoClient
 from bson import ObjectId
+from datetime import datetime
 
 # Suppress TensorFlow noise
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -41,7 +42,7 @@ def update_session(session_id, status, progress=None, accuracy=None, loss=None, 
         update_data['totalEpochs'] = total_epochs
     
     if status == 'completed':
-        update_data['endTime'] = tf.timestamp().numpy() # Just a placeholder for date
+        update_data['endTime'] = datetime.utcnow()
     
     db.trainingsessions.update_one({'_id': ObjectId(session_id)}, {'$set': update_data})
     
@@ -186,6 +187,13 @@ def train(session_id, dataset_id, params_json):
                 # Calculate loss percent (improvement compared to start)
                 loss_pct = (current_loss / initial_loss[0] * 100) if initial_loss[0] != 0 else 0
                 
+                
+                # Ensure metrics are native Python floats and not None or NaN
+                acc = float(acc) if acc is not None and np.isfinite(acc) else 0.0
+                current_loss = float(current_loss) if current_loss is not None and np.isfinite(current_loss) else 0.0
+                acc_pct = float(acc_pct) if acc_pct is not None and np.isfinite(acc_pct) else 0.0
+                loss_pct = float(loss_pct) if loss_pct is not None and np.isfinite(loss_pct) else 0.0
+
                 print(f"Epoch {epoch+1}/{epochs} ended. {metric_name}: {acc} ({acc_pct:.2f}%), Loss: {current_loss} ({loss_pct:.2f}%)")
                 update_session(session_id, 'running', 
                                progress=(epoch + 1) / epochs * 100, 

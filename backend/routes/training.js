@@ -202,14 +202,16 @@ router.get('/', async (req, res) => {
         startTime: session.startTime,
         cost: session.cost,
         targetColumn: session.targetColumn,
-        parameters: session.parameters,
-        accuracy: session.accuracy,
-        accuracyPercent: session.accuracyPercent,
-        metricName: session.metricName,
-        loss: session.loss,
-        lossPercent: session.lossPercent,
-        currentEpoch: session.currentEpoch,
-        totalEpochs: session.totalEpochs
+        params: session.parameters,
+        metrics: {
+          accuracy: session.accuracy,
+          accuracyPercent: session.accuracyPercent,
+          metricName: session.metricName,
+          loss: session.loss,
+          lossPercent: session.lossPercent,
+          epochsCompleted: session.currentEpoch,
+          totalEpochs: session.totalEpochs
+        }
       };
     }));
 
