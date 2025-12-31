@@ -134,7 +134,7 @@ LEARNING_RATE = ${parameters.learningRate || 0.001}
 # X_train, y_train = load_your_data()
 
 # Train the model
-# model.fit(X_train, y_train, epochs=EPOCHS, batch_size=BATCH_SIZE)\`;
+# model.fit(X_train, y_train, epochs=EPOCHS, batch_size=BATCH_SIZE})
   };
 
   useEffect(() => {
