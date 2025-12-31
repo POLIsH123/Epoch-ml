@@ -55,6 +55,12 @@ def train(session_id, dataset_id, params_json):
     db = client.get_default_database()
     
     print(f"Starting training for session {session_id} on dataset {dataset_id}")
+    
+    data_source_type = "Dummy" # Default to dummy
+    if dataset_id in ['dataset-1', 'dataset-2', 'dataset-3', 'dataset-9', 'dataset-13']:
+        data_source_type = "Real"
+    print(f"Data source type: {data_source_type}")
+
     update_session(session_id, 'running', db=db)
     
     try:
@@ -141,16 +147,9 @@ def train(session_id, dataset_id, params_json):
                 tf.keras.layers.Dense(16, activation='relu'),  # Reduced units
                 tf.keras.layers.Dense(1)
             ])
-        else: # Default dummy
-            print("Loading fallback dummy data...")
-            x_train = np.random.random((50, 10))  # Reduced training data
-            y_train = np.random.random((50, 1))
-            x_test = np.random.random((10, 10))  # Reduced test data
-            y_test = np.random.random((10, 1))
-            model = tf.keras.models.Sequential([
-                tf.keras.layers.Dense(16, activation='relu', input_shape=(10,)),  # Reduced units
-                tf.keras.layers.Dense(1)
-            ])
+        else:
+            print(f"Invalid dataset_id: {dataset_id}")
+            sys.exit(1)
 
         model.compile(optimizer='adam',
                       loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True) if dataset_id in ['dataset-1', 'dataset-2', 'dataset-3'] else 'mse',

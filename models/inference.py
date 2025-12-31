@@ -1,10 +1,11 @@
 import os
 import json
 import sys
+import contextlib
 
 # Suppress TensorFlow logging
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+# os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+# os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
 import tensorflow as tf
 import numpy as np
@@ -39,7 +40,8 @@ def predict(model_id, input_data_json, dataset_id):
         if len(test_input.shape) == len(model.input_shape) - 1:
             test_input = np.expand_dims(test_input, axis=0)
 
-        predictions = model.predict(test_input)
+        with open(os.devnull, 'w') as f, contextlib.redirect_stderr(f):
+            predictions = model.predict(test_input, verbose=0)
         
         results = {
             "predictions": [],
