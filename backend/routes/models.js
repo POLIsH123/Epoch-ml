@@ -275,6 +275,7 @@ router.post('/:id/test', async (req, res) => {
         }
         res.json(results);
       } catch (e) {
+        console.error('Failed to parse inference results:', output);
         if (code !== 0) {
           return res.status(500).json({ error: `Inference failed with code ${code}. ${output}` });
         }
