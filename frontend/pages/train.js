@@ -489,7 +489,7 @@ LEARNING_RATE = ${parameters.learningRate || 0.001}
                     <FormControl id="trainingCost">
                       <FormLabel fontWeight="bold" color="teal.400">Resource Estimation</FormLabel>
                       <Input
-                        value={`${trainingCost} Credits Required`}
+                        value={trainingCost + ' Credits Required'}
                         isDisabled
                         bg="rgba(0,0,0,0.1)"
                         color="teal.200"
