@@ -147,16 +147,16 @@ LEARNING_RATE = ${parameters.learningRate || 0.001}
     // Fetch user profile, models, datasets, and training sessions
     Promise.all([
       fetch('http://localhost:5001/api/auth/profile', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': 'Bearer ' + token }
       }),
       fetch('http://localhost:5001/api/models', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': 'Bearer ' + token }
       }),
       fetch('http://localhost:5001/api/resources/datasets', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': 'Bearer ' + token }
       }),
       fetch('http://localhost:5001/api/training', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': 'Bearer ' + token }
       }),
     ])
       .then(async ([profileRes, modelsRes, datasetsRes, trainingRes]) => {
