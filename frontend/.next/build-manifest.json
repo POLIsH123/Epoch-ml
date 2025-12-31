@@ -22,25 +22,30 @@
       "static/chunks/main.js",
       "static/chunks/pages/_error.js"
     ],
-    "/data": [
+    "/dashboard": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/data.js"
+      "static/chunks/pages/dashboard.js"
     ],
-    "/models": [
+    "/login": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/models.js"
+      "static/chunks/pages/login.js"
     ],
-    "/train": [
+    "/model-builder": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/train.js"
+      "static/chunks/pages/model-builder.js"
     ],
     "/training-history": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
       "static/chunks/pages/training-history.js"
+    ],
+    "/training-history/[id]": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/training-history/[id].js"
     ]
   },
   "ampFirstPages": []

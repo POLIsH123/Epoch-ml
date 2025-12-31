@@ -60,63 +60,75 @@ def train(session_id, dataset_id, params_json):
         if dataset_id == 'dataset-1': # MNIST
             print("Loading MNIST dataset...")
             (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
+            # Use only a subset of the data for faster training
+            x_train, y_train = x_train[:5000], y_train[:5000]  # Reduced training data
+            x_test, y_test = x_test[:1000], y_test[:1000]  # Reduced test data
             x_train, x_test = x_train / 255.0, x_test / 255.0
             model = tf.keras.models.Sequential([
                 tf.keras.layers.Flatten(input_shape=(28, 28)),
-                tf.keras.layers.Dense(128, activation='relu'),
+                tf.keras.layers.Dense(64, activation='relu'),  # Reduced units
                 tf.keras.layers.Dropout(0.2),
                 tf.keras.layers.Dense(10, activation='softmax')
             ])
         elif dataset_id == 'dataset-2': # CIFAR-10
             print("Loading CIFAR-10 dataset...")
             (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
+            # Use only a subset of the data for faster training
+            x_train, y_train = x_train[:3000], y_train[:3000]  # Reduced training data
+            x_test, y_test = x_test[:500], y_test[:500]  # Reduced test data
             x_train, x_test = x_train / 255.0, x_test / 255.0
             model = tf.keras.models.Sequential([
-                tf.keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(32, 32, 3)),
+                tf.keras.layers.Conv2D(16, (3, 3), activation='relu', input_shape=(32, 32, 3)),  # Reduced filters
                 tf.keras.layers.MaxPooling2D((2, 2)),
                 tf.keras.layers.Flatten(),
-                tf.keras.layers.Dense(64, activation='relu'),
+                tf.keras.layers.Dense(32, activation='relu'),  # Reduced units
                 tf.keras.layers.Dense(10)
             ])
         elif dataset_id == 'dataset-3': # CIFAR-100
             print("Loading CIFAR-100 dataset...")
             (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar100.load_data()
+            # Use only a subset of the data for faster training
+            x_train, y_train = x_train[:2000], y_train[:2000]  # Reduced training data
+            x_test, y_test = x_test[:300], y_test[:300]  # Reduced test data
             x_train, x_test = x_train / 255.0, x_test / 255.0
             model = tf.keras.models.Sequential([
-                tf.keras.layers.Conv2D(64, (3, 3), activation='relu', input_shape=(32, 32, 3)),
+                tf.keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(32, 32, 3)),  # Reduced filters
                 tf.keras.layers.MaxPooling2D((2, 2)),
-                tf.keras.layers.Conv2D(128, (3, 3), activation='relu'),
+                tf.keras.layers.Conv2D(64, (3, 3), activation='relu'),  # Reduced filters
                 tf.keras.layers.MaxPooling2D((2, 2)),
                 tf.keras.layers.Flatten(),
-                tf.keras.layers.Dense(256, activation='relu'),
+                tf.keras.layers.Dense(128, activation='relu'),  # Reduced units
                 tf.keras.layers.Dense(100)
             ])
         elif dataset_id == 'dataset-13': # Stock Prices (Real Financial Data)
             import yfinance as yf
             print("Loading Stock Prices (AAPL) via yfinance...")
-            data = yf.download('AAPL', period='5y', interval='1d')
+            data = yf.download('AAPL', period='6mo', interval='1d')  # Reduced to 6 months
             # Use 'Close' prices
             prices = data['Close'].values.reshape(-1, 1)
             # Create sequences for LSTM/RNN
-            seq_length = 60
+            seq_length = 30  # Reduced sequence length
             X, y = [], []
-            for i in range(len(prices) - seq_length):
+            for i in range(0, min(len(prices) - seq_length, 300), 5):  # Sample every 5th point, max 300 samples
                 X.append(prices[i:i+seq_length])
                 y.append(prices[i+seq_length])
             X, y = np.array(X), np.array(y)
-            train_size = int(len(X) * 0.8)
+            train_size = int(len(X) * 0.7)  # Reduced train size
             x_train, y_train = X[:train_size], y[:train_size]
             x_test, y_test = X[train_size:], y[train_size:]
             
             model = tf.keras.models.Sequential([
-                tf.keras.layers.LSTM(50, return_sequences=True, input_shape=(seq_length, 1)),
-                tf.keras.layers.LSTM(50, return_sequences=False),
-                tf.keras.layers.Dense(25),
+                tf.keras.layers.LSTM(25, return_sequences=True, input_shape=(seq_length, 1)),  # Reduced units
+                tf.keras.layers.LSTM(25, return_sequences=False),  # Reduced units
+                tf.keras.layers.Dense(10),  # Reduced units
                 tf.keras.layers.Dense(1)
             ])
         elif dataset_id == 'dataset-9': # Boston Housing (Real Tabular Data)
             print("Loading Boston Housing dataset...")
             (x_train, y_train), (x_test, y_test) = tf.keras.datasets.boston_housing.load_data()
+            # Use only a subset of the data for faster training
+            x_train, y_train = x_train[:400], y_train[:400]  # Reduced training data
+            x_test, y_test = x_test[:100], y_test[:100]  # Reduced test data
             # Normalize
             mean = x_train.mean(axis=0)
             std = x_train.std(axis=0)
@@ -124,18 +136,18 @@ def train(session_id, dataset_id, params_json):
             x_test = (x_test - mean) / std
             
             model = tf.keras.models.Sequential([
-                tf.keras.layers.Dense(64, activation='relu', input_shape=(x_train.shape[1],)),
-                tf.keras.layers.Dense(64, activation='relu'),
+                tf.keras.layers.Dense(32, activation='relu', input_shape=(x_train.shape[1],)),  # Reduced units
+                tf.keras.layers.Dense(16, activation='relu'),  # Reduced units
                 tf.keras.layers.Dense(1)
             ])
         else: # Default dummy
             print("Loading fallback dummy data...")
-            x_train = np.random.random((100, 10))
-            y_train = np.random.random((100, 1))
-            x_test = np.random.random((20, 10))
-            y_test = np.random.random((20, 1))
+            x_train = np.random.random((50, 10))  # Reduced training data
+            y_train = np.random.random((50, 1))
+            x_test = np.random.random((10, 10))  # Reduced test data
+            y_test = np.random.random((10, 1))
             model = tf.keras.models.Sequential([
-                tf.keras.layers.Dense(32, activation='relu', input_shape=(10,)),
+                tf.keras.layers.Dense(16, activation='relu', input_shape=(10,)),  # Reduced units
                 tf.keras.layers.Dense(1)
             ])
 
@@ -182,7 +194,28 @@ def train(session_id, dataset_id, params_json):
                                db=db)
 
         model.fit(x_train, y_train, epochs=epochs, callbacks=[ProgressCallback()], verbose=0)
-
+        
+        # Evaluate the model to get final metrics after training
+        final_metrics = model.evaluate(x_test, y_test, verbose=0)
+        if isinstance(final_metrics, (list, tuple)):
+            final_loss = final_metrics[0]
+            # For classification (dataset-1,2,3), second value is accuracy
+            # For regression (dataset-9,13), second value is mae
+            if len(final_metrics) > 1:
+                if dataset_id in ['dataset-1', 'dataset-2', 'dataset-3']:
+                    final_accuracy = final_metrics[1]
+                    final_mae = None
+                else:
+                    final_accuracy = None
+                    final_mae = final_metrics[1]
+            else:
+                final_accuracy = None
+                final_mae = None
+        else:
+            final_loss = final_metrics
+            final_accuracy = None
+            final_mae = None
+        
         # Save model
         if not os.path.exists(SAVED_MODELS_DIR):
             os.makedirs(SAVED_MODELS_DIR)
@@ -194,7 +227,12 @@ def train(session_id, dataset_id, params_json):
         model.save(save_path)
         print(f"Model saved to {save_path}")
 
-        update_session(session_id, 'completed', progress=100, total_epochs=epochs, current_epoch=epochs, db=db)
+        # Update session with final metrics
+        # Determine metric name for final update
+        final_metric_name = 'Accuracy' if dataset_id in ['dataset-1', 'dataset-2', 'dataset-3'] else 'MAE'
+        # Use appropriate metric value based on dataset type
+        metric_value = final_accuracy if final_accuracy is not None else final_mae
+        update_session(session_id, 'completed', progress=100, total_epochs=epochs, current_epoch=epochs, accuracy=metric_value, loss=final_loss, metric_name=final_metric_name, db=db)
 
     except Exception as e:
         print(f"Training failed: {e}")
