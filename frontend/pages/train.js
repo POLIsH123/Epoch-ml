@@ -322,7 +322,7 @@ LEARNING_RATE = ${parameters.learningRate || 0.001}
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': 'Bearer ' + localStorage.getItem('token')
         },
         body: JSON.stringify({
           modelId: formData.modelId,
