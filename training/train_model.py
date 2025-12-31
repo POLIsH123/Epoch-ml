@@ -195,6 +195,7 @@ def train(session_id, dataset_id, params_json):
                 loss_pct = float(loss_pct) if loss_pct is not None and np.isfinite(loss_pct) else 0.0
 
                 print(f"Epoch {epoch+1}/{epochs} ended. {metric_name}: {acc} ({acc_pct:.2f}%), Loss: {current_loss} ({loss_pct:.2f}%)")
+                print(f"Debug: acc={acc}, current_loss={current_loss}, acc_pct={acc_pct}, loss_pct={loss_pct}, initial_loss[0]={initial_loss[0]}, y_mean={y_mean}")
                 update_session(session_id, 'running', 
                                progress=(epoch + 1) / epochs * 100, 
                                accuracy=acc, 
@@ -245,7 +246,17 @@ def train(session_id, dataset_id, params_json):
         final_metric_name = 'Accuracy' if dataset_id in ['dataset-1', 'dataset-2', 'dataset-3'] else 'MAE'
         # Use appropriate metric value based on dataset type
         metric_value = final_accuracy if final_accuracy is not None else final_mae
-        update_session(session_id, 'completed', progress=100, total_epochs=epochs, current_epoch=epochs, accuracy=metric_value, loss=final_loss, metric_name=final_metric_name, db=db)
+        
+        # Calculate final accuracy and loss percentages
+        final_acc_pct = metric_value * 100 if metric_value is not None else 0
+        if initial_loss[0] is not None and initial_loss[0] != 0 and final_loss is not None:
+            final_loss_pct = (final_loss / initial_loss[0] * 100)
+        else:
+            final_loss_pct = 0
+
+        print(f"Final metrics: accuracy={metric_value}, loss={final_loss}, accuracy_percent={final_acc_pct}, loss_percent={final_loss_pct}")
+        
+        update_session(session_id, 'completed', progress=100, total_epochs=epochs, current_epoch=epochs, accuracy=metric_value, loss=final_loss, metric_name=final_metric_name, accuracy_percent=final_acc_pct, loss_percent=final_loss_pct, db=db)
 
     except Exception as e:
         print(f"Training failed: {e}")

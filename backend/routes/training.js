@@ -188,6 +188,7 @@ router.get('/', async (req, res) => {
 
     // Get training sessions for this user from DB
     const userSessions = await TrainingSession.find({ userId: user._id.toString() });
+    console.log('User sessions from DB:', userSessions);
 
     const sessionsWithDetails = await Promise.all(userSessions.map(async (session) => {
       const model = await Model.findById(session.modelId);
