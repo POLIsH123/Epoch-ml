@@ -164,19 +164,24 @@ def train(session_id, dataset_id, params_json):
         # Create a custom callback to update progress
         class ProgressCallback(tf.keras.callbacks.Callback):
             def on_epoch_end(self, epoch, logs=None):
-                # Use dataset appropriate metric
-                acc = logs.get('accuracy') or logs.get('val_accuracy') or logs.get('mae') or logs.get('val_mae')
                 current_loss = logs.get('loss')
                 
                 if initial_loss[0] is None:
                     initial_loss[0] = current_loss
                 
-                # Calculate accuracy percent
-                if dataset_id in ['dataset-1', 'dataset-2']:
-                    acc_pct = acc * 100
-                else:
-                    # For regression, accuracy is 100 - (MAE / Mean * 100)
-                    acc_pct = max(0, 100 * (1 - acc / y_mean)) if y_mean != 0 else 0
+                # Extract appropriate metric based on dataset type
+                if dataset_id in ['dataset-1', 'dataset-2', 'dataset-3']:  # Classification
+                    # Look for accuracy metrics in the logs
+                    acc = logs.get('accuracy') or logs.get('acc') or logs.get('val_accuracy') or logs.get('val_acc')
+                    
+                    # Calculate accuracy percent
+                    acc_pct = acc * 100 if acc is not None else 0
+                else:  # Regression
+                    # Look for MAE metrics in the logs
+                    acc = logs.get('mae') or logs.get('val_mae')
+                    
+                    # For regression, calculate accuracy as 100 - (MAE / Mean * 100)
+                    acc_pct = max(0, 100 * (1 - acc / y_mean)) if acc is not None and y_mean != 0 else 0
                 
                 # Calculate loss percent (improvement compared to start)
                 loss_pct = (current_loss / initial_loss[0] * 100) if initial_loss[0] != 0 else 0
