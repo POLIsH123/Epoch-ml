@@ -308,7 +308,7 @@ LEARNING_RATE = ${parameters.learningRate || 0.001}
     if (user.credits < trainingCost) {
       toast({
         title: 'Insufficient credits',
-        description: `You need ${trainingCost} credits to train this model, but you only have ${user.credits}.`,
+        description: 'You need ' + trainingCost + ' credits to train this model, but you only have ' + user.credits + '.',
         status: 'error',
         duration: 3000,
         isClosable: true,
