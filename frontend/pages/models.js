@@ -120,14 +120,6 @@ export default function Models() {
       return;
     }
 
-    // Determine architecture based on model type
-    const getArchitecture = (type) => {
-      if (['LSTM', 'GRU', 'RNN'].includes(type)) return 'RNN';
-      if (['CNN', 'ResNet', 'VGG', 'Inception'].includes(type)) return 'CNN';
-      if (['Random Forest', 'Gradient Boosting', 'XGBoost', 'LightGBM'].includes(type)) return 'Ensemble';
-      return type;
-    };
-
     setCreating(true);
 
     try {
@@ -140,7 +132,6 @@ export default function Models() {
         body: JSON.stringify({
           name: formData.name,
           type: formData.type,
-          architecture: getArchitecture(formData.type),
           description: formData.description
         })
       });
@@ -443,7 +434,7 @@ export default function Models() {
                     <Flex justify="space-between" align="start" mb={4}>
                       <VStack align="start" spacing={0}>
                         <Heading size="md" color="teal.300" noOfLines={1}>{model.name}</Heading>
-                        <Text fontSize="xs" color="gray.500" textTransform="uppercase">{model.type}</Text>
+                        <Text fontSize="xs" color="gray.500" textTransform="uppercase">{model.architecture}</Text>
                       </VStack>
                       <Icon as={FiLayers} w={6} h={6} color="blue.400" />
                     </Flex>

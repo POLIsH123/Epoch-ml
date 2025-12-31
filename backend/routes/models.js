@@ -52,46 +52,33 @@ router.post('/', async (req, res) => {
       return res.status(401).json({ error: 'Invalid token' });
     }
 
-    const { name, type, description, architecture, layers } = req.body;
+    const { name, type, description, layers } = req.body;
 
     if (!name || !type) {
       return res.status(400).json({ error: 'Model name and type are required' });
     }
 
-    // Determine architecture based on model type
-    let modelArchitecture = type; // Default to the type itself
-    if (type === 'LSTM' || type === 'GRU' || type === 'RNN') {
-      modelArchitecture = 'RNN';
-    } else if (type === 'ResNet' || type === 'Inception' || type === 'VGG' || type === 'CNN') {
-      modelArchitecture = 'CNN';
-    } else if (type === 'GPT-2' || type === 'GPT-3' || type === 'GPT-3.5' || type === 'GPT-4' || type === 'BERT' || type === 'T5') {
-      modelArchitecture = 'Transformer';
-    } else if (type === 'DQN' || type === 'A2C' || type === 'PPO' || type === 'SAC' || type === 'DDPG' || type === 'TD3') {
-      modelArchitecture = 'Reinforcement Learning';
-    } else if (type === 'Random Forest' || type === 'Gradient Boosting' || type === 'XGBoost' || type === 'LightGBM') {
-      modelArchitecture = 'Ensemble';
-    } else if (type === 'Custom' || type === 'Multi-Layer') {
-      modelArchitecture = architecture || 'Multi-Layer';
-    }
-
-    // Determine the enum type for the database
-    let modelType = type;
-    if (['RNN', 'CNN', 'GPT', 'RL', 'Transformer'].includes(modelArchitecture)) {
-      modelType = modelArchitecture;
-    } else if (modelArchitecture === 'Reinforcement Learning') {
-      modelType = 'RL';
-    } else if (['Ensemble', 'Multi-Layer'].includes(modelArchitecture)) {
-      modelType = 'OTHER';
+    let db_type;
+    if (['LSTM', 'GRU', 'RNN'].includes(type)) {
+      db_type = 'RNN';
+    } else if (['CNN', 'ResNet', 'VGG', 'Inception'].includes(type)) {
+      db_type = 'CNN';
+    } else if (['GPT-2', 'GPT-3', 'GPT-3.5', 'GPT-4', 'BERT', 'T5', 'Transformer'].includes(type)) {
+        db_type = 'Transformer';
+    } else if (['DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(type)) {
+        db_type = 'RL';
+    } else {
+        db_type = 'OTHER';
     }
 
     // Create a new model and add to DB
     const newModel = new Model({
       name,
-      type: modelType,
-      architecture: modelArchitecture,
+      type: db_type,
+      architecture: type, // Store the specific type here
       description: description || `A ${type} model for ${name}`,
       createdBy: user._id,
-      layers: layers || [] // Store the layers configuration
+      layers: layers || []
     });
 
     await newModel.save();

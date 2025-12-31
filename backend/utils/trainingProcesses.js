@@ -1,4 +1,7 @@
-// Shared map for active training processes
+// backend/utils/trainingProcesses.js
+
 const activeTrainingProcesses = new Map();
 
-module.exports = { activeTrainingProcesses };
+module.exports = {
+  activeTrainingProcesses,
+};
