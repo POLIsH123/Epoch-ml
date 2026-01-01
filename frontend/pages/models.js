@@ -67,13 +67,7 @@ export default function Models() {
       .then(([modelsRes, sessionsRes]) => Promise.all([modelsRes.json(), sessionsRes.json()]))
       .then(([modelsData, sessionsData]) => {
         // Filter out GPT/BERT models, Transformer models and RL models, and ensure no undefined/null models
-        const filteredModels = Array.isArray(modelsData) ?
-          modelsData.filter(model =>
-            model &&
-            model.name &&
-            !['GPT-2', 'GPT-3', 'GPT-3.5', 'GPT-4', 'BERT', 'T5', 'Transformer', 'DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(model.type)
-          ) : [];
-        setModels(filteredModels);
+        setModels(Array.isArray(modelsData) ? modelsData : []);
         
         // Store training sessions
         setTrainingSessions(Array.isArray(sessionsData) ? sessionsData : []);
@@ -305,6 +299,16 @@ export default function Models() {
     { value: 'Gradient Boosting', label: 'Gradient Boosting', category: 'Ensemble' },
     { value: 'XGBoost', label: 'XGBoost', category: 'Ensemble' },
     { value: 'LightGBM', label: 'LightGBM', category: 'Ensemble' },
+    { value: 'GPT-2', label: 'GPT-2 (Generative Pre-trained Transformer 2)', category: 'Transformer' },
+    { value: 'BERT', label: 'BERT (Bidirectional Encoder Representations from Transformers)', category: 'Transformer' },
+    { value: 'T5', label: 'T5 (Text-to-Text Transfer Transformer)', category: 'Transformer' },
+    { value: 'Transformer', label: 'Transformer (General)', category: 'Transformer' },
+    { value: 'DQN', label: 'DQN (Deep Q-Network)', category: 'Reinforcement Learning' },
+    { value: 'A2C', label: 'A2C (Advantage Actor-Critic)', category: 'Reinforcement Learning' },
+    { value: 'PPO', label: 'PPO (Proximal Policy Optimization)', category: 'Reinforcement Learning' },
+    { value: 'SAC', label: 'SAC (Soft Actor-Critic)', category: 'Reinforcement Learning' },
+    { value: 'DDPG', label: 'DDPG (Deep Deterministic Policy Gradient)', category: 'Reinforcement Learning' },
+    { value: 'TD3', label: 'TD3 (Twin Delayed DDPG)', category: 'Reinforcement Learning' },
   ];
 
   if (loading) {
@@ -378,10 +382,11 @@ export default function Models() {
                         border="none"
                       >
                         <option value="">Select Architecture...</option>
-                        <option value="LSTM">Long Short-Term Memory (LSTM)</option>
-                        <option value="GRU">Gated Recurrent Unit (GRU)</option>
-                        <option value="CNN">Convolutional Neural Network (CNN)</option>
-                        <option value="RNN">Recurrent Neural Network (RNN)</option>
+                        {modelTypes.map(modelType => (
+                          <option key={modelType.value} value={modelType.value}>
+                            {modelType.label}
+                          </option>
+                        ))}
                       </Select>
                     </FormControl>
                   </Grid>
