@@ -217,11 +217,26 @@ LEARNING_RATE = ${parameters.learningRate || 0.001}
       const selectedDataset = datasets.find(d => d.id === formData.datasetId);
       if (selectedDataset && selectedDataset.columns) {
         setColumns(selectedDataset.columns);
+        
+        // Auto-select default target column if not already selected or if dataset changed
+        if (selectedDataset.targetColumn && (!formData.targetColumn || formData.targetColumn !== selectedDataset.targetColumn)) {
+          setFormData(prev => ({
+            ...prev,
+            targetColumn: selectedDataset.targetColumn
+          }));
+        }
       } else {
         setColumns([]);
       }
     } else {
       setColumns([]);
+      // Clear target column if no dataset selected
+      if (formData.targetColumn) {
+        setFormData(prev => ({
+          ...prev,
+          targetColumn: ''
+        }));
+      }
     }
 
     if (formData.modelId && formData.datasetId) {
@@ -250,7 +265,7 @@ LEARNING_RATE = ${parameters.learningRate || 0.001}
     } else {
       setModelCompatibilityStatus(null);
     }
-  }, [formData.datasetId, formData.modelId, datasets, models, toast]);
+  }, [formData.datasetId, formData.modelId, datasets, models, toast, formData.targetColumn]);
 
   // Update training cost when model type, epochs, batch size, or learning rate changes
   useEffect(() => {
@@ -536,15 +551,20 @@ LEARNING_RATE = ${parameters.learningRate || 0.001}
                       <Select
                         value={formData.targetColumn}
                         onChange={(e) => handleInputChange('targetColumn', e.target.value)}
-                        placeholder="Select target..."
+                        placeholder="Auto-selected based on dataset"
                         bg="rgba(0,0,0,0.1)"
                       >
                         {columns.map(column => (
                           <option key={column} value={column}>
-                            {column}
+                            {column} {column === datasets.find(d => d.id === formData.datasetId)?.targetColumn ? '(Default)' : ''}
                           </option>
                         ))}
                       </Select>
+                      {formData.datasetId && datasets.find(d => d.id === formData.datasetId)?.targetColumn && (
+                        <Text fontSize="xs" color="gray.400" mt={1}>
+                          Default: {datasets.find(d => d.id === formData.datasetId).targetColumn}
+                        </Text>
+                      )}
                     </FormControl>
 
                     <FormControl id="trainingCost">

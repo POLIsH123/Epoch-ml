@@ -26,7 +26,8 @@ router.get('/datasets', async (req, res) => {
         size: '70,000 images',
         description: 'Handwritten digit images (28x28 pixels)',
         modelCompatibility: ['CNN', 'ResNet', 'Inception', 'VGG'],
-        columns: ['image', 'label']
+        columns: ['image', 'label'],
+        targetColumn: 'label'
       },
       {
         id: 'dataset-2',
@@ -35,7 +36,8 @@ router.get('/datasets', async (req, res) => {
         size: '60,000 images',
         description: 'Color images in 10 classes (32x32 pixels)',
         modelCompatibility: ['CNN', 'ResNet', 'Inception', 'VGG'],
-        columns: ['image', 'label']
+        columns: ['image', 'label'],
+        targetColumn: 'label'
       },
       {
         id: 'dataset-3',
@@ -44,7 +46,8 @@ router.get('/datasets', async (req, res) => {
         size: '252 trading days',
         description: 'Historical stock prices',
         modelCompatibility: ['RNN', 'LSTM', 'GRU'],
-        columns: ['date', 'open', 'high', 'low', 'close', 'volume']
+        columns: ['date', 'open', 'high', 'low', 'close', 'volume'],
+        targetColumn: 'close'
       },
       {
         id: 'dataset-4',
@@ -52,8 +55,9 @@ router.get('/datasets', async (req, res) => {
         type: 'text',
         size: '100,000 headlines',
         description: 'News headlines with emotional labels (e.g., joy, anger, sadness)',
-        modelCompatibility: ['RNN', 'LSTM', 'GRU', 'BERT'],
-        columns: ['headline', 'emotion_label']
+        modelCompatibility: ['RNN', 'LSTM', 'GRU'], // BERT coming soon
+        columns: ['headline', 'emotion_label'],
+        targetColumn: 'emotion_label'
       },
       {
         id: 'dataset-9',
@@ -62,7 +66,8 @@ router.get('/datasets', async (req, res) => {
         size: '506 samples',
         description: 'Real estate prices in Boston (regression task)',
         modelCompatibility: ['Random Forest', 'Gradient Boosting', 'XGBoost', 'LightGBM'],
-        columns: ['CRIM', 'ZN', 'INDUS', 'CHAS', 'NOX', 'RM', 'AGE', 'DIS', 'RAD', 'TAX', 'PTRATIO', 'B', 'LSTAT', 'MEDV']
+        columns: ['CRIM', 'ZN', 'INDUS', 'CHAS', 'NOX', 'RM', 'AGE', 'DIS', 'RAD', 'TAX', 'PTRATIO', 'B', 'LSTAT', 'MEDV'],
+        targetColumn: 'MEDV'
       },
       {
         id: 'dataset-13',
@@ -71,7 +76,8 @@ router.get('/datasets', async (req, res) => {
         size: '150 samples',
         description: 'Iris flower species classification (3 classes)',
         modelCompatibility: ['Random Forest', 'Gradient Boosting', 'XGBoost', 'LightGBM'],
-        columns: ['sepal_length', 'sepal_width', 'petal_length', 'petal_width', 'species']
+        columns: ['sepal_length', 'sepal_width', 'petal_length', 'petal_width', 'species'],
+        targetColumn: 'species'
       }
     ];
 
