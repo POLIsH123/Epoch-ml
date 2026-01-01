@@ -26,6 +26,7 @@ export default function TrainModel() {
   const [columns, setColumns] = useState([]);
   const [trainingCost, setTrainingCost] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [modelCompatibilityStatus, setModelCompatibilityStatus] = useState(null);
   const router = useRouter();
   const toast = useToast();
 
@@ -210,7 +211,7 @@ LEARNING_RATE = ${parameters.learningRate || 0.001}
       });
   }, [router]);
 
-  // Update columns when dataset changes
+  // Update columns and check model-dataset compatibility
   useEffect(() => {
     if (formData.datasetId) {
       const selectedDataset = datasets.find(d => d.id === formData.datasetId);
@@ -222,7 +223,32 @@ LEARNING_RATE = ${parameters.learningRate || 0.001}
     } else {
       setColumns([]);
     }
-  }, [formData.datasetId, datasets]);
+
+    if (formData.modelId && formData.datasetId) {
+      const selectedModel = models.find(m => m._id === formData.modelId);
+      const selectedDataset = datasets.find(d => d.id === formData.datasetId);
+
+      if (selectedModel && selectedDataset) {
+        if (selectedDataset.modelCompatibility.includes(selectedModel.type)) {
+          setModelCompatibilityStatus('compatible');
+        } else {
+          const compatibleModels = selectedDataset.modelCompatibility.join(', ');
+          setModelCompatibilityStatus('incompatible');
+          toast({
+            title: 'Incompatible Selection',
+            description: 'The selected model (' + selectedModel.type + ') is not compatible with the chosen dataset (' + selectedDataset.name + '). Compatible models for this dataset are: ' + compatibleModels + '.',
+            status: 'warning',
+            duration: 7000,
+            isClosable: true,
+          });
+        }
+      } else {
+        setModelCompatibilityStatus(null);
+      }
+    } else {
+      setModelCompatibilityStatus(null);
+    }
+  }, [formData.datasetId, formData.modelId, datasets, models, toast]);
 
   // Update training cost when model type changes
   useEffect(() => {
@@ -551,7 +577,7 @@ LEARNING_RATE = ${parameters.learningRate || 0.001}
                       bgGradient="linear(to-r, teal.400, blue.500)"
                       _hover={{ bgGradient: 'linear(to-r, teal.500, blue.600)', transform: 'translateY(-2px)' }}
                       boxShadow="0 4px 15px rgba(45, 212, 191, 0.3)"
-                      isDisabled={hasActiveTraining}
+                      isDisabled={hasActiveTraining || modelCompatibilityStatus === 'incompatible'}
                     >
                       {hasActiveTraining ? 'Queue Full - Wait for Active Training' : 'Commence Training'}
                     </Button>

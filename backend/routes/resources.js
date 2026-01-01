@@ -48,12 +48,12 @@ router.get('/datasets', async (req, res) => {
       },
       {
         id: 'dataset-4',
-        name: 'IMDB Reviews',
+        name: 'News Headlines Sentiment',
         type: 'text',
-        size: '50,000 reviews',
-        description: 'Movie reviews with sentiment labels',
-        modelCompatibility: ['GPT-2', 'BERT', 'RNN', 'LSTM'],
-        columns: ['review', 'sentiment']
+        size: '100,000 headlines',
+        description: 'News headlines with emotional labels (e.g., joy, anger, sadness)',
+        modelCompatibility: ['RNN', 'LSTM', 'GRU', 'BERT'],
+        columns: ['headline', 'emotion_label']
       }
     ];
 

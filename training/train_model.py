@@ -91,44 +91,45 @@ def train(session_id, dataset_id, params_json):
                 tf.keras.layers.Dense(32, activation='relu'),  # Reduced units
                 tf.keras.layers.Dense(10)
             ])
-        elif dataset_id == 'dataset-3': # CIFAR-100
-            print("Loading CIFAR-100 dataset...")
-            (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar100.load_data()
-            # Use only a subset of the data for faster training
-            x_train, y_train = x_train[:2000], y_train[:2000]  # Reduced training data
-            x_test, y_test = x_test[:300], y_test[:300]  # Reduced test data
-            x_train, x_test = x_train / 255.0, x_test / 255.0
-            model = tf.keras.models.Sequential([
-                tf.keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(32, 32, 3)),  # Reduced filters
-                tf.keras.layers.MaxPooling2D((2, 2)),
-                tf.keras.layers.Conv2D(64, (3, 3), activation='relu'),  # Reduced filters
-                tf.keras.layers.MaxPooling2D((2, 2)),
-                tf.keras.layers.Flatten(),
-                tf.keras.layers.Dense(128, activation='relu'),  # Reduced units
-                tf.keras.layers.Dense(100)
-            ])
-        elif dataset_id == 'dataset-13': # Stock Prices (Real Financial Data)
+        elif dataset_id == 'dataset-3': # Stock Prices
             import yfinance as yf
             print("Loading Stock Prices (AAPL) via yfinance...")
-            data = yf.download('AAPL', period='6mo', interval='1d')  # Reduced to 6 months
-            # Use 'Close' prices
+            data = yf.download('AAPL', period='6mo', interval='1d')
             prices = data['Close'].values.reshape(-1, 1)
-            # Create sequences for LSTM/RNN
-            seq_length = 30  # Reduced sequence length
+            seq_length = 30
             X, y = [], []
-            for i in range(0, min(len(prices) - seq_length, 300), 5):  # Sample every 5th point, max 300 samples
+            for i in range(0, min(len(prices) - seq_length, 300), 5):
                 X.append(prices[i:i+seq_length])
                 y.append(prices[i+seq_length])
             X, y = np.array(X), np.array(y)
-            train_size = int(len(X) * 0.7)  # Reduced train size
+            train_size = int(len(X) * 0.7)
             x_train, y_train = X[:train_size], y[:train_size]
             x_test, y_test = X[train_size:], y[train_size:]
             
             model = tf.keras.models.Sequential([
-                tf.keras.layers.LSTM(25, return_sequences=True, input_shape=(seq_length, 1)),  # Reduced units
-                tf.keras.layers.LSTM(25, return_sequences=False),  # Reduced units
-                tf.keras.layers.Dense(10),  # Reduced units
+                tf.keras.layers.LSTM(25, return_sequences=True, input_shape=(seq_length, 1)),
+                tf.keras.layers.LSTM(25, return_sequences=False),
+                tf.keras.layers.Dense(10),
                 tf.keras.layers.Dense(1)
+            ])
+
+        elif dataset_id == 'dataset-4': # News Headlines Sentiment
+            print("Loading News Headlines Sentiment (dummy data)...")
+            # Generate dummy data for text classification (e.g., GRU/LSTM input)
+            vocab_size = 1000
+            max_sequence_length = 50
+            num_classes = 3 # e.g., positive, negative, neutral
+            num_samples = 1000 # Reduced samples for faster training
+
+            x_train = np.random.randint(0, vocab_size, size=(num_samples, max_sequence_length))
+            y_train = np.random.randint(0, num_classes, size=(num_samples, 1))
+            x_test = np.random.randint(0, vocab_size, size=(num_samples // 5, max_sequence_length))
+            y_test = np.random.randint(0, num_classes, size=(num_samples // 5, 1))
+
+            model = tf.keras.models.Sequential([
+                tf.keras.layers.Embedding(vocab_size, 64, input_length=max_sequence_length),
+                tf.keras.layers.GRU(32), # Reduced units
+                tf.keras.layers.Dense(num_classes, activation='softmax')
             ])
         elif dataset_id == 'dataset-9': # Boston Housing (Real Tabular Data)
             print("Loading Boston Housing dataset...")
@@ -152,11 +153,11 @@ def train(session_id, dataset_id, params_json):
             sys.exit(1)
 
         model.compile(optimizer='adam',
-                      loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True) if dataset_id in ['dataset-1', 'dataset-2', 'dataset-3'] else 'mse',
-                      metrics=['accuracy'] if dataset_id in ['dataset-1', 'dataset-2', 'dataset-3'] else ['mae'])
+                      loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True) if dataset_id in ['dataset-1', 'dataset-2', 'dataset-4'] else 'mse',
+                      metrics=['accuracy'] if dataset_id in ['dataset-1', 'dataset-2', 'dataset-4'] else ['mae'])
 
-        metric_name = 'Accuracy' if dataset_id in ['dataset-1', 'dataset-2', 'dataset-3'] else 'MAE'
-        y_mean = np.mean(y_train) if dataset_id not in ['dataset-1', 'dataset-2', 'dataset-3'] else 1.0
+        metric_name = 'Accuracy' if dataset_id in ['dataset-1', 'dataset-2', 'dataset-4'] else 'MAE'
+        y_mean = np.mean(y_train) if dataset_id not in ['dataset-1', 'dataset-2', 'dataset-4'] else 1.0
         initial_loss = [None] # Use list to make it mutable in callback
 
         epochs = params.get('epochs', 5)
