@@ -65,6 +65,8 @@ router.post('/', async (req, res) => {
       db_type = 'CNN';
     } else if (['DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(type)) {
       db_type = 'RL';
+    } else if (['RANDOM_FOREST', 'GRADIENT_BOOSTING', 'XGBOOST', 'LIGHTGBM', 'Random Forest', 'Gradient Boosting', 'XGBoost', 'LightGBM'].includes(type)) {
+      db_type = 'ENSEMBLE';
     } else {
       db_type = 'OTHER';
     }

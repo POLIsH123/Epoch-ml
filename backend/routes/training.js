@@ -221,6 +221,10 @@ router.post('/start', async (req, res) => {
       case 'GRU':
       case 'CNN':
       case 'RNN':
+      case 'RANDOM_FOREST':
+      case 'GRADIENT_BOOSTING':
+      case 'XGBOOST':
+      case 'LIGHTGBM':
         modelTrainingCost = 10;
         break;
       default:
@@ -247,6 +251,7 @@ router.post('/start', async (req, res) => {
           case 'Gradient Boosting':
           case 'XGBoost':
           case 'LightGBM':
+          case 'ENSEMBLE':
             modelTrainingCost = 10;
             break;
         }

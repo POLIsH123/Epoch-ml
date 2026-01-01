@@ -78,6 +78,46 @@ router.get('/datasets', async (req, res) => {
         modelCompatibility: ['Random Forest', 'Gradient Boosting', 'XGBoost', 'LightGBM'],
         columns: ['sepal_length', 'sepal_width', 'petal_length', 'petal_width', 'species'],
         targetColumn: 'species'
+      },
+      {
+        id: 'iris',
+        name: 'Iris Dataset (sklearn)',
+        type: 'tabular',
+        size: '150 samples',
+        description: 'Iris flower species classification - 4 features, 3 classes',
+        modelCompatibility: ['Random Forest', 'Gradient Boosting', 'XGBoost', 'LightGBM', 'RANDOM_FOREST', 'GRADIENT_BOOSTING', 'XGBOOST'],
+        columns: ['sepal_length', 'sepal_width', 'petal_length', 'petal_width', 'species'],
+        targetColumn: 'species'
+      },
+      {
+        id: 'wine',
+        name: 'Wine Dataset (sklearn)',
+        type: 'tabular',
+        size: '178 samples',
+        description: 'Wine cultivar classification - 13 features, 3 classes',
+        modelCompatibility: ['Random Forest', 'Gradient Boosting', 'XGBoost', 'LightGBM', 'RANDOM_FOREST', 'GRADIENT_BOOSTING', 'XGBOOST'],
+        columns: ['alcohol', 'malic_acid', 'ash', 'alcalinity', 'magnesium', 'phenols', 'flavanoids', 'nonflavanoid_phenols', 'proanthocyanins', 'color_intensity', 'hue', 'od280_od315', 'proline', 'class'],
+        targetColumn: 'class'
+      },
+      {
+        id: 'breast_cancer',
+        name: 'Breast Cancer Dataset (sklearn)',
+        type: 'tabular',
+        size: '569 samples',
+        description: 'Breast cancer diagnosis - 30 features, binary classification',
+        modelCompatibility: ['Random Forest', 'Gradient Boosting', 'XGBoost', 'LightGBM', 'RANDOM_FOREST', 'GRADIENT_BOOSTING', 'XGBOOST'],
+        columns: ['mean_radius', 'mean_texture', 'mean_perimeter', 'mean_area', 'mean_smoothness', '...', 'diagnosis'],
+        targetColumn: 'diagnosis'
+      },
+      {
+        id: 'digits',
+        name: 'Digits Dataset (sklearn)',
+        type: 'tabular',
+        size: '1,797 samples',
+        description: 'Handwritten digit classification - 64 features (8x8 images), 10 classes',
+        modelCompatibility: ['Random Forest', 'Gradient Boosting', 'XGBoost', 'LightGBM', 'RANDOM_FOREST', 'GRADIENT_BOOSTING', 'XGBOOST'],
+        columns: ['pixel_0_0', 'pixel_0_1', '...', 'pixel_7_7', 'digit'],
+        targetColumn: 'digit'
       }
     ];
 
