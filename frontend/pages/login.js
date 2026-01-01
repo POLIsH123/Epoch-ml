@@ -152,12 +152,17 @@ export default function Login() {
               </VStack>
             </form>
 
-            <HStack spacing={1}>
-              <Text color="gray.500">New Architect?</Text>
-              <Link color="teal.300" fontWeight="bold" onClick={() => router.push('/register')}>
-                Initialize Account
+            <VStack spacing={2}>
+              <HStack spacing={1}>
+                <Text color="gray.500">New Architect?</Text>
+                <Link color="teal.300" fontWeight="bold" onClick={() => router.push('/register')}>
+                  Initialize Account
+                </Link>
+              </HStack>
+              <Link color="teal.300" fontSize="sm" onClick={() => router.push('/forgot-password')}>
+                Neural Key Lost?
               </Link>
-            </HStack>
+            </VStack>
           </VStack>
         </Box>
       </motion.div>

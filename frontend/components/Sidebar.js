@@ -60,6 +60,7 @@ export default function Sidebar({ user }) {
               'Train Model': 'train-link',
               'RL Train': 'rl-train-link',
               'Test Model': 'test-model-link',
+              'Training History': 'training-history-link',
               'Model Builder': 'model-builder-link',
               'Model Comparison': 'model-comparison-link',
               'Training History': 'training-history-link',

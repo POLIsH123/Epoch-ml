@@ -98,6 +98,36 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Get current user info (/me endpoint for frontend compatibility)
+router.get('/me', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key');
+
+    // Find user by ID
+    const user = await User.findById(decoded.userId).select('-password -token');
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    res.json({
+      id: user._id,
+      username: user.username,
+      email: user.email,
+      credits: user.credits,
+      role: user.role || 'user'
+    });
+  } catch (error) {
+    console.error('Auth check error:', error);
+    res.status(401).json({ error: 'Invalid token' });
+  }
+});
+
 // Get user profile
 router.get('/profile', async (req, res) => {
   try {
@@ -192,6 +222,93 @@ router.post('/profile/topup', async (req, res) => {
     res.json({ message: 'Credits added', credits: user.credits });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Forgot password - send reset link
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    // Find user by email
+    const user = await User.findOne({ email });
+    if (!user) {
+      // Don't reveal if email exists or not for security
+      return res.json({ message: 'If an account with this email exists, a password reset link has been sent.' });
+    }
+
+    // Create a reset token (simple version - in production, use crypto.randomBytes)
+    const resetToken = jwt.sign(
+      { userId: user._id, type: 'password_reset' },
+      process.env.JWT_SECRET || 'fallback_secret_key',
+      { expiresIn: '1h' }
+    );
+
+    // In a real implementation, you would send an email with this token
+    // For now, we'll return the reset URL in the response (for testing)
+    const resetUrl = `http://localhost:3000/reset-password?token=${resetToken}`;
+
+    console.log(`Password reset URL for ${email}: ${resetUrl}`);
+
+    res.json({
+      message: 'If an account with this email exists, a password reset link has been sent.',
+      // Remove this in production - only for testing
+      resetUrl: resetUrl
+    });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Reset password with token
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { token, password } = req.body;
+
+    if (!token || !password) {
+      return res.status(400).json({ error: 'Token and password are required' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+    }
+
+    // Verify token
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key');
+    } catch (error) {
+      return res.status(400).json({ error: 'Invalid or expired reset token' });
+    }
+
+    if (decoded.type !== 'password_reset') {
+      return res.status(400).json({ error: 'Invalid reset token' });
+    }
+
+    // Find user
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return res.status(400).json({ error: 'User not found' });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(password, 12);
+    user.password = hashedPassword;
+
+    // Clear any existing token
+    user.token = undefined;
+
+    await user.save();
+
+    res.json({ message: 'Password reset successfully' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
