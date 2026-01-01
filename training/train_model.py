@@ -63,6 +63,18 @@ def train(session_id, dataset_id, params_json):
 
     update_session(session_id, 'running', db=db)
     
+    # Get model architecture from session
+    session = db.trainingsessions.find_one({'_id': ObjectId(session_id)})
+    model_architecture = None
+    if session and 'modelId' in session:
+        model_doc = db.models.find_one({'_id': ObjectId(session['modelId'])})
+        if model_doc:
+            model_architecture = model_doc.get('architecture', None)
+    print(f"Model architecture: {model_architecture}")
+    
+    # Check if using ensemble model
+    use_ensemble = model_architecture in ['Random Forest', 'Gradient Boosting', 'XGBoost', 'LightGBM']
+    
     try:
         if dataset_id == 'dataset-1': # MNIST
             print("Loading MNIST dataset...")
@@ -143,18 +155,36 @@ def train(session_id, dataset_id, params_json):
             x_train = (x_train - mean) / std
             x_test = (x_test - mean) / std
             
-            model = tf.keras.models.Sequential([
-                tf.keras.layers.Dense(32, activation='relu', input_shape=(x_train.shape[1],)),  # Reduced units
-                tf.keras.layers.Dense(16, activation='relu'),  # Reduced units
-                tf.keras.layers.Dense(1)
-            ])
+            # Use TensorFlow for neural networks (if not ensemble)
+            if not use_ensemble:
+                model = tf.keras.models.Sequential([
+                    tf.keras.layers.Dense(32, activation='relu', input_shape=(x_train.shape[1],)),  # Reduced units
+                    tf.keras.layers.Dense(16, activation='relu'),  # Reduced units
+                    tf.keras.layers.Dense(1)
+                ])
+        elif dataset_id == 'dataset-13': # Iris Classification (Real Tabular Data)
+            from sklearn.datasets import load_iris
+            from sklearn.model_selection import train_test_split
+            print("Loading Iris dataset...")
+            iris = load_iris()
+            x_train, x_test, y_train, y_test = train_test_split(iris.data, iris.target, test_size=0.2, random_state=42)
+            
+            # Use TensorFlow for neural networks (if not ensemble)
+            if not use_ensemble:
+                model = tf.keras.models.Sequential([
+                    tf.keras.layers.Dense(32, activation='relu', input_shape=(x_train.shape[1],)),
+                    tf.keras.layers.Dense(16, activation='relu'),
+                    tf.keras.layers.Dense(3, activation='softmax')
+                ])
         else:
             print(f"Invalid dataset_id: {dataset_id}")
             sys.exit(1)
 
-        model.compile(optimizer='adam',
-                      loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True) if dataset_id in ['dataset-1', 'dataset-2', 'dataset-4'] else 'mse',
-                      metrics=['accuracy'] if dataset_id in ['dataset-1', 'dataset-2', 'dataset-4'] else ['mae'])
+        # Only compile if not using ensemble models
+        if not use_ensemble:
+            model.compile(optimizer='adam',
+                          loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True) if dataset_id in ['dataset-1', 'dataset-2', 'dataset-4', 'dataset-13'] else 'mse',
+                          metrics=['accuracy'] if dataset_id in ['dataset-1', 'dataset-2', 'dataset-4', 'dataset-13'] else ['mae'])
 
         metric_name = 'Accuracy' if dataset_id in ['dataset-1', 'dataset-2', 'dataset-4'] else 'MAE'
         y_mean = np.mean(y_train) if dataset_id not in ['dataset-1', 'dataset-2', 'dataset-4'] else 1.0

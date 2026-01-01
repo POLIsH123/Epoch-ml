@@ -55,7 +55,7 @@ export default function RLTrain() {
           return;
         }
 
-        const response = await fetch('/api/auth/me', {
+        const response = await fetch('http://localhost:5001/api/auth/me', {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -76,7 +76,7 @@ export default function RLTrain() {
     const fetchModels = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('/api/models', {
+        const response = await fetch('http://localhost:5001/api/models', {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -94,7 +94,7 @@ export default function RLTrain() {
     const checkActiveTraining = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('/api/training', {
+        const response = await fetch('http://localhost:5001/api/training', {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -113,6 +113,40 @@ export default function RLTrain() {
     });
   }, [router]);
 
+  // Calculate training cost based on algorithm, timesteps, and learning rate
+  useEffect(() => {
+    // Base cost based on algorithm
+    let baseCost = 20; // Default base cost for RL training
+    
+    switch (formData.parameters.architecture) {
+      case 'PPO':
+      case 'SAC':
+        baseCost = 30;
+        break;
+      case 'DQN':
+      case 'A2C':
+      case 'TD3':
+        baseCost = 20;
+        break;
+      default:
+        baseCost = 20;
+    }
+
+    // Multipliers for different parameters
+    const timesteps = formData.parameters.timesteps || 10000;
+    const learningRate = formData.parameters.learningRate || 0.001;
+    
+    // Timesteps multiplier: more timesteps = more cost (equivalent to epochs for RL)
+    const timestepMultiplier = Math.max(1, timesteps / 10000);
+    
+    // Learning rate multiplier: lower learning rate = more training needed = more cost
+    const lrMultiplier = Math.max(0.9, 0.001 / learningRate);
+    
+    // Calculate total cost
+    const totalCost = Math.round(baseCost * timestepMultiplier * lrMultiplier);
+    setTrainingCost(totalCost);
+  }, [formData.parameters.timesteps, formData.parameters.architecture, formData.parameters.learningRate]);
+
   const handleInputChange = (field, value) => {
     if (field.startsWith('parameters.')) {
       const paramField = field.split('.')[1];
@@ -129,37 +163,7 @@ export default function RLTrain() {
         [field]: value
       }));
     }
-
-    // Calculate training cost
-    calculateCost(value, field);
   };
-
-  const calculateCost = (value, field) => {
-    let baseCost = 20; // Base cost for RL training
-
-    if (field === 'parameters.architecture') {
-      switch (value) {
-        case 'PPO':
-        case 'SAC':
-          baseCost = 30;
-          break;
-        case 'DQN':
-        case 'A2C':
-        case 'TD3':
-          baseCost = 20;
-          break;
-      }
-    }
-
-    const timesteps = formData.parameters.timesteps || 10000;
-    const timestepMultiplier = Math.max(1, timesteps / 10000);
-    const cost = Math.round(baseCost * timestepMultiplier);
-    setTrainingCost(cost);
-  };
-
-  useEffect(() => {
-    calculateCost();
-  }, [formData.parameters.timesteps, formData.parameters.architecture]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -179,7 +183,7 @@ export default function RLTrain() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/training/rl-train', {
+      const response = await fetch('http://localhost:5001/api/training/rl-train', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

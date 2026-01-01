@@ -56,8 +56,8 @@ router.post('/rl-train', async (req, res) => {
       });
     }
 
-    // Calculate cost based on RL model type
-    let modelTrainingCost = 20; // Base cost for RL
+    // Calculate cost based on RL model algorithm
+    let modelTrainingCost = 20; // Default base cost for RL
     switch (model.architecture) {
       case 'PPO':
       case 'SAC':
@@ -70,10 +70,18 @@ router.post('/rl-train', async (req, res) => {
         break;
     }
 
-    // Dynamic cost based on timesteps
+    // Multipliers for different parameters
     const timesteps = parameters?.timesteps || 10000;
+    const learningRate = parameters?.learningRate || 0.001;
+    
+    // Timesteps multiplier: more timesteps = more cost (equivalent to epochs for RL)
     const timestepMultiplier = Math.max(1, timesteps / 10000);
-    modelTrainingCost = Math.round(modelTrainingCost * timestepMultiplier);
+    
+    // Learning rate multiplier: lower learning rate = more training needed = more cost
+    const lrMultiplier = Math.max(0.9, 0.001 / learningRate);
+    
+    // Calculate total cost
+    modelTrainingCost = Math.round(modelTrainingCost * timestepMultiplier * lrMultiplier);
 
     if (user.credits < modelTrainingCost) {
       return res.status(400).json({ error: `Insufficient credits. Requires ${modelTrainingCost}, have ${user.credits}.` });
@@ -194,38 +202,72 @@ router.post('/start', async (req, res) => {
       });
     }
     
-    // Calculate cost based on model type
-    let modelTrainingCost = 10; // Base cost
-    switch (model.type) {
-      case 'ResNet':
-      case 'Inception':
-      case 'PPO':
-      case 'SAC':
+    // Calculate cost based on model architecture (preferred) or type
+    const modelArch = model.architecture || model.type;
+    let modelTrainingCost = 10; // Default base cost
+    
+    // Check architecture first, then type
+    switch (modelArch.toUpperCase()) {
+      case 'RESNET':
+      case 'INCEPTION':
         modelTrainingCost = 30;
         break;
       case 'VGG':
-      case 'DQN':
-      case 'A2C':
-      case 'DDPG':
-      case 'TD3':
+      case 'BERT':
+      case 'TRANSFORMER':
         modelTrainingCost = 20;
         break;
       case 'LSTM':
       case 'GRU':
       case 'CNN':
       case 'RNN':
-      case 'Random Forest':
-      case 'Gradient Boosting':
-      case 'XGBoost':
-      case 'LightGBM':
         modelTrainingCost = 10;
         break;
+      default:
+        // Fallback to type if architecture doesn't match
+        switch (model.type) {
+          case 'ResNet':
+          case 'Inception':
+          case 'PPO':
+          case 'SAC':
+            modelTrainingCost = 30;
+            break;
+          case 'VGG':
+          case 'DQN':
+          case 'A2C':
+          case 'DDPG':
+          case 'TD3':
+            modelTrainingCost = 20;
+            break;
+          case 'LSTM':
+          case 'GRU':
+          case 'CNN':
+          case 'RNN':
+          case 'Random Forest':
+          case 'Gradient Boosting':
+          case 'XGBoost':
+          case 'LightGBM':
+            modelTrainingCost = 10;
+            break;
+        }
     }
 
-    // Dynamic cost based on epochs
+    // Multipliers for different parameters
     const epochs = parameters?.epochs || 5;
+    const batchSize = parameters?.batchSize || 32;
+    const learningRate = parameters?.learningRate || 0.001;
+    
+    // Epoch multiplier: more epochs = more cost
     const epochMultiplier = Math.max(1, epochs / 5);
-    modelTrainingCost = Math.round(modelTrainingCost * epochMultiplier);
+    
+    // Batch size multiplier: smaller batches = more iterations = more cost
+    const batchMultiplier = Math.max(0.8, 64 / batchSize);
+    
+    // Learning rate multiplier: lower learning rate = more epochs needed = more cost
+    const lrMultiplier = Math.max(0.9, 0.001 / learningRate);
+    
+    // Calculate total cost
+    modelTrainingCost = Math.round(modelTrainingCost * epochMultiplier * batchMultiplier * lrMultiplier);
 
     if (user.credits < modelTrainingCost) {
       return res.status(400).json({ error: `Insufficient credits. Requires ${modelTrainingCost}, have ${user.credits}.` });

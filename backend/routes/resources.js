@@ -54,6 +54,24 @@ router.get('/datasets', async (req, res) => {
         description: 'News headlines with emotional labels (e.g., joy, anger, sadness)',
         modelCompatibility: ['RNN', 'LSTM', 'GRU', 'BERT'],
         columns: ['headline', 'emotion_label']
+      },
+      {
+        id: 'dataset-9',
+        name: 'Boston Housing',
+        type: 'tabular',
+        size: '506 samples',
+        description: 'Real estate prices in Boston (regression task)',
+        modelCompatibility: ['Random Forest', 'Gradient Boosting', 'XGBoost', 'LightGBM'],
+        columns: ['CRIM', 'ZN', 'INDUS', 'CHAS', 'NOX', 'RM', 'AGE', 'DIS', 'RAD', 'TAX', 'PTRATIO', 'B', 'LSTAT', 'MEDV']
+      },
+      {
+        id: 'dataset-13',
+        name: 'Iris Classification',
+        type: 'tabular',
+        size: '150 samples',
+        description: 'Iris flower species classification (3 classes)',
+        modelCompatibility: ['Random Forest', 'Gradient Boosting', 'XGBoost', 'LightGBM'],
+        columns: ['sepal_length', 'sepal_width', 'petal_length', 'petal_width', 'species']
       }
     ];
 

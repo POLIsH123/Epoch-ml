@@ -229,14 +229,16 @@ LEARNING_RATE = ${parameters.learningRate || 0.001}
       const selectedDataset = datasets.find(d => d.id === formData.datasetId);
 
       if (selectedModel && selectedDataset) {
-        if (selectedDataset.modelCompatibility.includes(selectedModel.type)) {
+        // Check compatibility using architecture field (or type as fallback)
+        const modelTypeToCheck = selectedModel.architecture || selectedModel.type;
+        if (selectedDataset.modelCompatibility.includes(modelTypeToCheck) || selectedDataset.modelCompatibility.includes(selectedModel.type)) {
           setModelCompatibilityStatus('compatible');
         } else {
           const compatibleModels = selectedDataset.modelCompatibility.join(', ');
           setModelCompatibilityStatus('incompatible');
           toast({
             title: 'Incompatible Selection',
-            description: 'The selected model (' + selectedModel.type + ') is not compatible with the chosen dataset (' + selectedDataset.name + '). Compatible models for this dataset are: ' + compatibleModels + '.',
+            description: 'The selected model (' + modelTypeToCheck + ') is not compatible with the chosen dataset (' + selectedDataset.name + '). Compatible models for this dataset are: ' + compatibleModels + '.',
             status: 'warning',
             duration: 7000,
             isClosable: true,
@@ -250,43 +252,76 @@ LEARNING_RATE = ${parameters.learningRate || 0.001}
     }
   }, [formData.datasetId, formData.modelId, datasets, models, toast]);
 
-  // Update training cost when model type changes
+  // Update training cost when model type, epochs, batch size, or learning rate changes
   useEffect(() => {
     if (formData.modelId) {
       const selectedModel = models.find(m => m._id === formData.modelId);
       if (selectedModel) {
-        let cost = 10; // Base cost
-        switch (selectedModel.type) {
-          case 'ResNet':
-          case 'Inception':
-            cost = 30;
+        // Base cost based on architecture (preferred) or type
+        const modelArch = selectedModel.architecture || selectedModel.type;
+        let baseCost = 10; // Default base cost
+        
+        // Check architecture first, then type
+        switch (modelArch.toUpperCase()) {
+          case 'RESNET':
+          case 'INCEPTION':
+            baseCost = 30;
             break;
           case 'VGG':
-            cost = 20;
+          case 'BERT':
+          case 'TRANSFORMER':
+            baseCost = 20;
             break;
           case 'LSTM':
           case 'GRU':
           case 'CNN':
           case 'RNN':
-          case 'Random Forest':
-          case 'Gradient Boosting':
-          case 'XGBoost':
-          case 'LightGBM':
-            cost = 10;
+            baseCost = 10;
             break;
           default:
-            cost = 10;
+            // Fallback to type if architecture doesn't match
+            switch (selectedModel.type) {
+              case 'ResNet':
+              case 'Inception':
+                baseCost = 30;
+                break;
+              case 'VGG':
+                baseCost = 20;
+                break;
+              case 'LSTM':
+              case 'GRU':
+              case 'CNN':
+              case 'RNN':
+                baseCost = 10;
+                break;
+              default:
+                baseCost = 10;
+            }
         }
 
-        // Dynamic cost based on epochs
+        // Multipliers for different parameters
         const epochs = formData.parameters.epochs || 5;
+        const batchSize = formData.parameters.batchSize || 32;
+        const learningRate = formData.parameters.learningRate || 0.001;
+        
+        // Epoch multiplier: more epochs = more cost
         const epochMultiplier = Math.max(1, epochs / 5);
-        const dynamicCost = Math.round(cost * epochMultiplier);
+        
+        // Batch size multiplier: smaller batches = more iterations = more cost
+        // Smaller batch sizes take more iterations to process the same data
+        const batchMultiplier = Math.max(0.8, 64 / batchSize); // Smaller batch = higher multiplier
+        
+        // Learning rate multiplier: lower learning rate = more epochs needed = more cost
+        // Lower learning rates typically require more training iterations
+        const lrMultiplier = Math.max(0.9, 0.001 / learningRate); // Lower LR = higher multiplier
+        
+        // Calculate total cost
+        const totalCost = Math.round(baseCost * epochMultiplier * batchMultiplier * lrMultiplier);
 
-        setTrainingCost(dynamicCost);
+        setTrainingCost(totalCost);
       }
     }
-  }, [formData.modelId, formData.parameters.epochs, models]);
+  }, [formData.modelId, formData.parameters.epochs, formData.parameters.batchSize, formData.parameters.learningRate, models]);
 
   const handleInputChange = (field, value) => {
     if (field.includes('.')) {

@@ -63,11 +63,10 @@ router.post('/', async (req, res) => {
       db_type = 'RNN';
     } else if (['CNN', 'ResNet', 'VGG', 'Inception'].includes(type)) {
       db_type = 'CNN';
-        db_type = 'Transformer';
     } else if (['DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(type)) {
-        db_type = 'RL';
+      db_type = 'RL';
     } else {
-        db_type = 'OTHER';
+      db_type = 'OTHER';
     }
 
     // Create a new model and add to DB
