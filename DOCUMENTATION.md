@@ -49,7 +49,6 @@ frontend/
 models/
 ├── rnn/          # RNN implementations
 ├── cnn/          # CNN implementations
-├── gpt/          # GPT implementations
 └── base_model.py # Base model interface
 ```
 
@@ -119,9 +118,6 @@ Located in `models/rnn/`, RNN models are ideal for sequence prediction tasks. Th
 
 Located in `models/cnn/`, CNN models are designed for image processing tasks. The implementation includes configurable filters, kernel sizes, and dense layers.
 
-### GPT (Generative Pre-trained Transformers)
-
-Located in `models/gpt/`, GPT models implement transformer architecture for text generation tasks. The implementation includes multi-head attention and feed-forward networks.
 
 ### Base Model Interface
 

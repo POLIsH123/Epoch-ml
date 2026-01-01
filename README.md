@@ -9,7 +9,6 @@ Epoch-ml is an interactive machine learning platform that enables users to train
 - **Model Selection**: Choose from multiple model architectures including:
   - RNNs (Recurrent Neural Networks)
   - CNNs (Convolutional Neural Networks)
-  - Open-source GPT variants
   - Potential RL (Reinforcement Learning) models
   
 - **Customization Options**:

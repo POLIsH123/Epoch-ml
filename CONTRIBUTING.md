@@ -99,7 +99,6 @@ epoch-ml/
 ├── models/            # Machine learning models
 │   ├── rnn/          # RNN implementations
 │   ├── cnn/          # CNN implementations
-│   └── gpt/          # GPT implementations
 └── README.md
 ```
 
