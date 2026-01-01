@@ -99,7 +99,7 @@ model = keras.Sequential([
         modelArchitecture = `
 # Model Architecture
 model = keras.Sequential([${layers}
-])`;
+])`
         break;
       default:
         modelArchitecture = `
@@ -108,7 +108,7 @@ model = keras.Sequential([
     keras.layers.Dense(64, activation='relu', input_shape=(input_dim,)),
     keras.layers.Dense(32, activation='relu'),
     keras.layers.Dense(1, activation='sigmoid')  # Adjust based on your task
-])`;
+])`
     }
 
     return `# ${model.name} - ${model.type} Model
@@ -135,7 +135,7 @@ LEARNING_RATE = ${parameters.learningRate || 0.001}
 # X_train, y_train = load_your_data()
 
 # Train the model
-# model.fit(X_train, y_train, epochs=EPOCHS, batch_size=BATCH_SIZE})
+# model.fit(X_train, y_train, epochs=EPOCHS, batch_size=BATCH_SIZE))\n\`;
   };
 
   useEffect(() => {
