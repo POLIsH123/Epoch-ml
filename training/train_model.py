@@ -414,10 +414,10 @@ def train(session_id, dataset_id, params_json):
             final_metrics = model.evaluate(x_test, y_test, verbose=0)
             if isinstance(final_metrics, (list, tuple)):
                 final_loss = final_metrics[0]
-                # For classification (dataset-1,2,4,13), second value is accuracy
+                # For classification (dataset-1,2,4,13,iris,wine,breast_cancer,digits), second value is accuracy
                 # For regression (dataset-9), second value is mae
                 if len(final_metrics) > 1:
-                    if dataset_id in ['dataset-1', 'dataset-2', 'dataset-4', 'dataset-13']:
+                    if dataset_id in ['dataset-1', 'dataset-2', 'dataset-4', 'dataset-13', 'iris', 'wine', 'breast_cancer', 'digits']:
                         final_accuracy = final_metrics[1]
                         final_mae = None
                     else:
