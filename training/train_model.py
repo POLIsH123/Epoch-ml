@@ -177,6 +177,74 @@ def train(session_id, dataset_id, params_json):
                     tf.keras.layers.Dense(16, activation='relu'),
                     tf.keras.layers.Dense(3, activation='softmax')
                 ])
+        elif dataset_id == 'iris':
+            from sklearn.datasets import load_iris
+            from sklearn.model_selection import train_test_split
+            from sklearn.preprocessing import StandardScaler
+            print("Loading Iris dataset...")
+            iris = load_iris()
+            x_train, x_test, y_train, y_test = train_test_split(iris.data, iris.target, test_size=0.2, random_state=42)
+            scaler = StandardScaler()
+            x_train = scaler.fit_transform(x_train)
+            x_test = scaler.transform(x_test)
+            
+            if not use_ensemble:
+                model = tf.keras.models.Sequential([
+                    tf.keras.layers.Dense(32, activation='relu', input_shape=(x_train.shape[1],)),
+                    tf.keras.layers.Dense(16, activation='relu'),
+                    tf.keras.layers.Dense(3, activation='softmax')
+                ])
+        elif dataset_id == 'wine':
+            from sklearn.datasets import load_wine
+            from sklearn.model_selection import train_test_split
+            from sklearn.preprocessing import StandardScaler
+            print("Loading Wine dataset...")
+            wine = load_wine()
+            x_train, x_test, y_train, y_test = train_test_split(wine.data, wine.target, test_size=0.2, random_state=42)
+            scaler = StandardScaler()
+            x_train = scaler.fit_transform(x_train)
+            x_test = scaler.transform(x_test)
+            
+            if not use_ensemble:
+                model = tf.keras.models.Sequential([
+                    tf.keras.layers.Dense(32, activation='relu', input_shape=(x_train.shape[1],)),
+                    tf.keras.layers.Dense(16, activation='relu'),
+                    tf.keras.layers.Dense(3, activation='softmax')
+                ])
+        elif dataset_id == 'breast_cancer':
+            from sklearn.datasets import load_breast_cancer
+            from sklearn.model_selection import train_test_split
+            from sklearn.preprocessing import StandardScaler
+            print("Loading Breast Cancer dataset...")
+            bc = load_breast_cancer()
+            x_train, x_test, y_train, y_test = train_test_split(bc.data, bc.target, test_size=0.2, random_state=42)
+            scaler = StandardScaler()
+            x_train = scaler.fit_transform(x_train)
+            x_test = scaler.transform(x_test)
+            
+            if not use_ensemble:
+                model = tf.keras.models.Sequential([
+                    tf.keras.layers.Dense(64, activation='relu', input_shape=(x_train.shape[1],)),
+                    tf.keras.layers.Dense(32, activation='relu'),
+                    tf.keras.layers.Dense(1, activation='sigmoid')
+                ])
+        elif dataset_id == 'digits':
+            from sklearn.datasets import load_digits
+            from sklearn.model_selection import train_test_split
+            from sklearn.preprocessing import StandardScaler
+            print("Loading Digits dataset...")
+            digits = load_digits()
+            x_train, x_test, y_train, y_test = train_test_split(digits.data, digits.target, test_size=0.2, random_state=42)
+            scaler = StandardScaler()
+            x_train = scaler.fit_transform(x_train)
+            x_test = scaler.transform(x_test)
+            
+            if not use_ensemble:
+                model = tf.keras.models.Sequential([
+                    tf.keras.layers.Dense(64, activation='relu', input_shape=(x_train.shape[1],)),
+                    tf.keras.layers.Dense(32, activation='relu'),
+                    tf.keras.layers.Dense(10, activation='softmax')
+                ])
         else:
             print(f"Invalid dataset_id: {dataset_id}")
             sys.exit(1)
@@ -184,14 +252,14 @@ def train(session_id, dataset_id, params_json):
         # Only compile if not using ensemble models
         if not use_ensemble:
             model.compile(optimizer='adam',
-                          loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True) if dataset_id in ['dataset-1', 'dataset-2', 'dataset-4', 'dataset-13'] else 'mse',
-                          metrics=['accuracy'] if dataset_id in ['dataset-1', 'dataset-2', 'dataset-4', 'dataset-13'] else ['mae'])
+                          loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True) if dataset_id in ['dataset-1', 'dataset-2', 'dataset-4', 'dataset-13', 'iris', 'wine', 'breast_cancer', 'digits'] else 'mse',
+                          metrics=['accuracy'] if dataset_id in ['dataset-1', 'dataset-2', 'dataset-4', 'dataset-13', 'iris', 'wine', 'breast_cancer', 'digits'] else ['mae'])
 
         # Handle ensemble models differently
         if use_ensemble:
             # Ensure we're using a compatible dataset
-            if dataset_id not in ['dataset-9', 'dataset-13']:
-                raise ValueError(f"Ensemble models can only be used with tabular datasets (dataset-9 or dataset-13), not {dataset_id}")
+            if dataset_id not in ['dataset-9', 'dataset-13', 'iris', 'wine', 'breast_cancer', 'digits']:
+                raise ValueError(f"Ensemble models can only be used with tabular datasets, not {dataset_id}")
             
             import pickle
             from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier, GradientBoostingRegressor, GradientBoostingClassifier
@@ -206,7 +274,7 @@ def train(session_id, dataset_id, params_json):
                 y_test = y_test.ravel()
             
             # Determine if classification or regression
-            is_classification = dataset_id == 'dataset-13'
+            is_classification = dataset_id in ['dataset-13', 'iris', 'wine', 'breast_cancer', 'digits']
             
             # Create ensemble model (case-insensitive matching)
             arch_lower = model_architecture.lower() if model_architecture else ''
@@ -291,8 +359,8 @@ def train(session_id, dataset_id, params_json):
         
         else:
             # Neural network training (existing code)
-            metric_name = 'Accuracy' if dataset_id in ['dataset-1', 'dataset-2', 'dataset-4', 'dataset-13'] else 'MAE'
-            y_mean = np.mean(y_train) if dataset_id not in ['dataset-1', 'dataset-2', 'dataset-4', 'dataset-13'] else 1.0
+            metric_name = 'Accuracy' if dataset_id in ['dataset-1', 'dataset-2', 'dataset-4', 'dataset-13', 'iris', 'wine', 'breast_cancer', 'digits'] else 'MAE'
+            y_mean = np.mean(y_train) if dataset_id not in ['dataset-1', 'dataset-2', 'dataset-4', 'dataset-13', 'iris', 'wine', 'breast_cancer', 'digits'] else 1.0
             initial_loss = [None] # Use list to make it mutable in callback
 
             epochs = params.get('epochs', 5)
@@ -306,7 +374,7 @@ def train(session_id, dataset_id, params_json):
                         initial_loss[0] = current_loss
                     
                     # Extract appropriate metric based on dataset type
-                    if dataset_id in ['dataset-1', 'dataset-2', 'dataset-4', 'dataset-13']:  # Classification
+                    if dataset_id in ['dataset-1', 'dataset-2', 'dataset-4', 'dataset-13', 'iris', 'wine', 'breast_cancer', 'digits']:  # Classification
                         # Look for accuracy metrics in the logs
                         acc = logs.get('accuracy') or logs.get('acc') or logs.get('val_accuracy') or logs.get('val_acc')
                         
@@ -371,7 +439,7 @@ def train(session_id, dataset_id, params_json):
             print(f"Model saved to {save_path}")
             
             # Calculate percentages for neural networks
-            if dataset_id in ['dataset-1', 'dataset-2', 'dataset-4', 'dataset-13']:
+            if dataset_id in ['dataset-1', 'dataset-2', 'dataset-4', 'dataset-13', 'iris', 'wine', 'breast_cancer', 'digits']:
                 final_acc_pct = final_accuracy * 100 if final_accuracy else 0
                 final_loss_pct = (final_loss / initial_loss[0] * 100) if initial_loss[0] and initial_loss[0] != 0 else 0
             else:
@@ -387,7 +455,7 @@ def train(session_id, dataset_id, params_json):
         if use_ensemble:
             final_metric_name = metric_name
         else:
-            final_metric_name = 'Accuracy' if dataset_id in ['dataset-1', 'dataset-2', 'dataset-4', 'dataset-13'] else 'MAE'
+            final_metric_name = 'Accuracy' if dataset_id in ['dataset-1', 'dataset-2', 'dataset-4', 'dataset-13', 'iris', 'wine', 'breast_cancer', 'digits'] else 'MAE'
         
         # Use appropriate metric value based on dataset type
         metric_value = final_accuracy if final_accuracy is not None else final_mae
