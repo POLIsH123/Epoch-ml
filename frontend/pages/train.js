@@ -173,9 +173,9 @@ LEARNING_RATE = ${parameters.learningRate || 0.001}
         const trainingData = await trainingRes.json();
 
         setUser(userData);
-        // Filter out GPT/BERT models, Transformer models and RL models
+        // Filter out RL models
         const filteredModels = modelData.filter(model =>
-          !['GPT-2', 'GPT-3', 'GPT-3.5', 'GPT-4', 'BERT', 'T5', 'Transformer', 'DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(model.type)
+          !['DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(model.type)
         );
         setModels(filteredModels);
         setDatasets(datasetData);

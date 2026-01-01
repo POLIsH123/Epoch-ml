@@ -10,6 +10,144 @@ const { activeTrainingProcesses } = require('../utils/trainingProcesses');
 
 const router = express.Router();
 
+// Start a new RL training session
+router.post('/rl-train', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key');
+
+    // Find user by ID
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    const { modelId, environmentName, parameters } = req.body;
+
+    if (!modelId || !environmentName) {
+      return res.status(400).json({ error: 'Model ID and Environment Name are required' });
+    }
+
+    // Find the model in DB
+    const model = await Model.findById(modelId);
+
+    if (!model) {
+      return res.status(400).json({ error: `Model with ID ${modelId} not found` });
+    }
+
+    if (model.createdBy.toString() !== user._id.toString()) {
+      return res.status(403).json({ error: 'Model does not belong to user' });
+    }
+
+    // Check if user already has an active training session
+    const activeSession = await TrainingSession.findOne({
+      userId: user._id.toString(),
+      status: { $in: ['queued', 'running'] }
+    });
+
+    if (activeSession) {
+      return res.status(400).json({
+        error: 'You already have an active training session. Please wait for it to complete before starting another.'
+      });
+    }
+
+    // Calculate cost based on RL model type
+    let modelTrainingCost = 20; // Base cost for RL
+    switch (model.architecture) {
+      case 'PPO':
+      case 'SAC':
+        modelTrainingCost = 30;
+        break;
+      case 'DQN':
+      case 'A2C':
+      case 'TD3':
+        modelTrainingCost = 20;
+        break;
+    }
+
+    // Dynamic cost based on timesteps
+    const timesteps = parameters?.timesteps || 10000;
+    const timestepMultiplier = Math.max(1, timesteps / 10000);
+    modelTrainingCost = Math.round(modelTrainingCost * timestepMultiplier);
+
+    if (user.credits < modelTrainingCost) {
+      return res.status(400).json({ error: `Insufficient credits. Requires ${modelTrainingCost}, have ${user.credits}.` });
+    }
+
+    // Create a new training session in DB
+    const trainingSession = new TrainingSession({
+      userId: user._id.toString(),
+      modelId,
+      datasetId: environmentName, // Store environment name in datasetId field for RL
+      targetColumn: 'RL', // Indicate this is RL training
+      parameters,
+      status: 'queued',
+      cost: modelTrainingCost
+    });
+
+    await trainingSession.save();
+
+    // Deduct credits
+    user.credits -= modelTrainingCost;
+    await user.save();
+
+    // Spawn Python RL Training Process using VENV
+    const pythonPath = path.join(process.cwd(), 'venv', 'Scripts', 'python');
+    const pythonProcess = spawn(pythonPath, [
+      'training/train_rl_model.py',
+      trainingSession._id.toString(),
+      environmentName,
+      JSON.stringify(parameters)
+    ]);
+
+    activeTrainingProcesses.set(trainingSession._id.toString(), pythonProcess);
+
+    // DRAIN THE PIPES!
+    pythonProcess.stdout.on('data', (data) => {
+      // Optional: console.log(`[Python RL Training]: ${data}`);
+    });
+
+    pythonProcess.stderr.on('data', (data) => {
+      console.error(`[Python RL Error]: ${data}`);
+    });
+    pythonProcess.on('close', (code) => {
+      activeTrainingProcesses.delete(trainingSession._id.toString());
+      console.log(`RL Training process for ${trainingSession._id} finished with code ${code}`);
+
+      const io = req.app.get('io');
+      if (code === 0) {
+        io.to(user._id.toString()).emit('rl_training_finished', {
+          sessionId: trainingSession._id,
+          modelName: model.name,
+          environment: environmentName
+        });
+      } else {
+        io.to(user._id.toString()).emit('rl_training_failed', {
+          sessionId: trainingSession._id,
+          modelName: model.name,
+          environment: environmentName
+        });
+      }
+    });
+
+    res.status(201).json({
+      message: 'RL Training started successfully',
+      sessionId: trainingSession._id,
+      creditsRemaining: user.credits,
+      cost: modelTrainingCost,
+      environment: environmentName
+    });
+  } catch (error) {
+    console.error('Error starting RL training:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Start a new training session
 router.post('/start', async (req, res) => {
   try {
@@ -59,22 +197,12 @@ router.post('/start', async (req, res) => {
     // Calculate cost based on model type
     let modelTrainingCost = 10; // Base cost
     switch (model.type) {
-      case 'GPT-4':
-        modelTrainingCost = 100;
-        break;
-      case 'GPT-3.5':
-      case 'BERT':
-      case 'T5':
-        modelTrainingCost = 50;
-        break;
-      case 'GPT-3':
       case 'ResNet':
       case 'Inception':
       case 'PPO':
       case 'SAC':
         modelTrainingCost = 30;
         break;
-      case 'GPT-2':
       case 'VGG':
       case 'DQN':
       case 'A2C':

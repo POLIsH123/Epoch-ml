@@ -61,7 +61,7 @@ export default function Home() {
                     Build, Train, and Deploy Machine Learning Models
                   </Heading>
                   <Text fontSize="xl" color="gray.500">
-                    The most advanced platform for machine learning development with support for RNNs, CNNs, GPT models, and Reinforcement Learning
+                    The most advanced platform for machine learning development with support for RNNs, CNNs, and Reinforcement Learning
                   </Text>
                   <Flex gap={4} mt={6}>
                     <Button 
@@ -123,7 +123,7 @@ export default function Home() {
                     >
                       <Icon as={FiActivity} w={10} h={10} color="teal.500" />
                       <Heading as="h3" size="md">Transformer Models</Heading>
-                      <Text textAlign="center">GPT, BERT, T5 and other transformer architectures</Text>
+                      <Text textAlign="center">BERT, T5 and other transformer architectures</Text>
                     </VStack>
                     
                     <VStack 

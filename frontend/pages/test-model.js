@@ -46,9 +46,9 @@ export default function TestModel() {
     ])
       .then(([userData, modelData, datasetData]) => {
         setUser(userData);
-        // Filter out GPT/BERT models and RL models for regular testing
+        // Filter out RL models for regular testing
         const filteredModels = modelData.filter(model =>
-          !['GPT-2', 'GPT-3', 'GPT-3.5', 'GPT-4', 'BERT', 'T5', 'DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(model.type)
+          !['DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(model.type)
         );
         setModels(filteredModels);
         setDatasets(datasetData);

@@ -53,11 +53,11 @@ export default function ModelComparison() {
       })
       .then(res => res.json())
       .then(data => {
-        // Filter out GPT/BERT models and RL models
+        // Filter out RL models
         const filteredModels = Array.isArray(data) ?
           data.filter(model =>
             model &&
-            !['GPT-2', 'GPT-3', 'GPT-3.5', 'GPT-4', 'BERT', 'T5', 'DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(model.type)
+            !['DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(model.type)
           ) : [];
         setModels(filteredModels);
         

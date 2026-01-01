@@ -63,7 +63,6 @@ router.post('/', async (req, res) => {
       db_type = 'RNN';
     } else if (['CNN', 'ResNet', 'VGG', 'Inception'].includes(type)) {
       db_type = 'CNN';
-    } else if (['GPT-2', 'GPT-3', 'GPT-3.5', 'GPT-4', 'BERT', 'T5', 'Transformer'].includes(type)) {
         db_type = 'Transformer';
     } else if (['DQN', 'A2C', 'PPO', 'SAC', 'DDPG', 'TD3'].includes(type)) {
         db_type = 'RL';

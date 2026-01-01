@@ -66,7 +66,7 @@ export default function Models() {
       })
       .then(([modelsRes, sessionsRes]) => Promise.all([modelsRes.json(), sessionsRes.json()]))
       .then(([modelsData, sessionsData]) => {
-        // Filter out GPT/BERT models, Transformer models and RL models, and ensure no undefined/null models
+        // Filter out RL models and ensure no undefined/null models
         setModels(Array.isArray(modelsData) ? modelsData : []);
         
         // Store training sessions
@@ -286,7 +286,7 @@ export default function Models() {
     router.push(`/training-history/${modelId}`);
   };
 
-  // Define model types excluding GPT/BERT and RL models
+  // Define model types excluding RL models
   const modelTypes = [
     { value: 'LSTM', label: 'LSTM (Long Short-Term Memory)', category: 'RNN' },
     { value: 'GRU', label: 'GRU (Gated Recurrent Unit)', category: 'RNN' },
@@ -299,7 +299,6 @@ export default function Models() {
     { value: 'Gradient Boosting', label: 'Gradient Boosting', category: 'Ensemble' },
     { value: 'XGBoost', label: 'XGBoost', category: 'Ensemble' },
     { value: 'LightGBM', label: 'LightGBM', category: 'Ensemble' },
-    { value: 'GPT-2', label: 'GPT-2 (Generative Pre-trained Transformer 2)', category: 'Transformer' },
     { value: 'BERT', label: 'BERT (Bidirectional Encoder Representations from Transformers)', category: 'Transformer' },
     { value: 'T5', label: 'T5 (Text-to-Text Transfer Transformer)', category: 'Transformer' },
     { value: 'Transformer', label: 'Transformer (General)', category: 'Transformer' },

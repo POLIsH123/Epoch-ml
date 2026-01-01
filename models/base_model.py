@@ -102,7 +102,7 @@ class ModelFactory:
         Create a model instance based on the model type.
         
         Args:
-            model_type (str): Type of model to create ('RNN', 'CNN', 'GPT', 'RL')
+            model_type (str): Type of model to create ('RNN', 'CNN', 'RL')
             config (dict): Configuration parameters for the model
         
         Returns:
@@ -114,9 +114,6 @@ class ModelFactory:
         elif model_type.upper() == 'CNN':
             from .cnn.cnn_model import CNNModel
             return CNNModel(config)
-        elif model_type.upper() == 'GPT':
-            from .gpt.gpt_model import GPTModel
-            return GPTModel(config)
         elif model_type.upper() == 'RL':
             # Placeholder for RL model
             raise NotImplementedError("Reinforcement Learning model not yet implemented")

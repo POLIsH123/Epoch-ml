@@ -10,7 +10,7 @@ const modelSchema = new mongoose.Schema({
   type: {
     type: String,
     required: true,
-    enum: ['RNN', 'CNN', 'GPT', 'RL', 'OTHER', 'Transformer']
+    enum: ['RNN', 'CNN', 'RL', 'OTHER']
   },
   description: {
     type: String,

@@ -24,11 +24,6 @@ const SEED_MODELS = [
     { name: 'LightGBM', type: 'OTHER', architecture: 'Ensemble', description: 'Fast gradient boosting with histogram-based learning' },
     { name: 'CatBoost', type: 'OTHER', architecture: 'Ensemble', description: 'Gradient boosting with categorical feature support' },
 
-    // Transformer Models (GPT-style)
-    { name: 'GPT-2 Small', type: 'GPT', architecture: 'Transformer', description: 'Small GPT-2 variant (117M parameters) for text generation' },
-    { name: 'GPT-2 Medium', type: 'GPT', architecture: 'Transformer', description: 'Medium GPT-2 variant (345M parameters)' },
-    { name: 'DistilBERT', type: 'GPT', architecture: 'Transformer', description: 'Distilled BERT model - faster and lighter' },
-    { name: 'BERT-base', type: 'GPT', architecture: 'Transformer', description: 'Bidirectional encoder for language understanding' },
 
     // RL Agents
     { name: 'DQN', type: 'RL', architecture: 'Reinforcement Learning', description: 'Deep Q-Network for discrete action spaces' },

@@ -381,7 +381,6 @@ export default function Data() {
               {[
                 { label: 'RNN Models', tip: 'Sequential structure required.' },
                 { label: 'CNN Models', tip: 'Normalized visual tensors.' },
-                { label: 'GPT Models', tip: 'Tokenized linguistic streams.' },
                 { label: 'RL Models', tip: 'Formatted state trajectories.' }
               ].map((item, idx) => (
                 <VStack key={idx} align="start" p={4} bg="rgba(0,0,0,0.2)" borderRadius="xl">

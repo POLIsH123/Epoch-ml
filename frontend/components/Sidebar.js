@@ -1,5 +1,5 @@
 import { Box, Flex, Text, VStack, Icon, useColorModeValue } from '@chakra-ui/react';
-import { FiHome, FiBarChart2, FiCpu, FiDatabase, FiActivity, FiGrid, FiLayers, FiClock, FiDollarSign, FiSettings, FiUser, FiUpload, FiMessageSquare, FiPlay } from 'react-icons/fi';
+import { FiHome, FiBarChart2, FiCpu, FiDatabase, FiActivity, FiGrid, FiLayers, FiClock, FiDollarSign, FiSettings, FiUser, FiUpload, FiMessageSquare, FiPlay, FiTarget } from 'react-icons/fi';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 
@@ -14,6 +14,7 @@ export default function Sidebar({ user }) {
     { name: 'AI Playground', icon: FiMessageSquare, path: '/ai-playground' },
     { name: 'Model Builder', icon: FiLayers, path: '/model-builder' },
     { name: 'Train Model', icon: FiCpu, path: '/train' },
+    { name: 'RL Train', icon: FiTarget, path: '/rl-train' },
     { name: 'Test Model', icon: FiPlay, path: '/test-model' },
     { name: 'Models', icon: FiDatabase, path: '/models' },
     { name: 'Model Comparison', icon: FiGrid, path: '/model-comparison' },
@@ -57,6 +58,7 @@ export default function Sidebar({ user }) {
               'Data': 'data-link',
               'Models': 'models-link',
               'Train Model': 'train-link',
+              'RL Train': 'rl-train-link',
               'Test Model': 'test-model-link',
               'Model Builder': 'model-builder-link',
               'Model Comparison': 'model-comparison-link',

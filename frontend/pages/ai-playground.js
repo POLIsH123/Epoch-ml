@@ -24,9 +24,7 @@ const AiPlayground = () => {
   const [selectedModel, setSelectedModel] = useState('gpt2');
   const [apiKey, setApiKey] = useState('');
   const [models, setModels] = useState([
-    { id: 'gpt2', name: 'GPT-2 (Text Generation)' },
     { id: 'bert-base-uncased', name: 'BERT (Text Understanding)' },
-    { id: 'distilgpt2', name: 'DistilGPT-2 (Fast Text Generation)' },
     { id: 't5-small', name: 'T5 (Text-to-Text Transfer)' },
     { id: 'facebook/bart-large-cnn', name: 'BART (Text Summarization)' },
   ]);
