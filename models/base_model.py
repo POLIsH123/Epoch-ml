@@ -94,6 +94,7 @@ class BaseModel(ABC):
 class ModelFactory:
     """
     Factory class to create different types of models based on the model type.
+    Supports neural networks (RNN, CNN, RL) and ensemble models (Random Forest, Gradient Boosting, XGBoost).
     """
     
     @staticmethod
@@ -102,20 +103,36 @@ class ModelFactory:
         Create a model instance based on the model type.
         
         Args:
-            model_type (str): Type of model to create ('RNN', 'CNN', 'RL')
+            model_type (str): Type of model to create 
+                - Neural Networks: 'RNN', 'CNN', 'RL'
+                - Ensemble: 'RANDOM_FOREST', 'GRADIENT_BOOSTING', 'XGBOOST'
             config (dict): Configuration parameters for the model
         
         Returns:
             Model instance
         """
-        if model_type.upper() == 'RNN':
+        model_type_upper = model_type.upper()
+        
+        # Neural Network Models
+        if model_type_upper == 'RNN':
             from .rnn.rnn_model import RNNModel
             return RNNModel(config)
-        elif model_type.upper() == 'CNN':
+        elif model_type_upper == 'CNN':
             from .cnn.cnn_model import CNNModel
             return CNNModel(config)
-        elif model_type.upper() == 'RL':
-            # Placeholder for RL model
+        elif model_type_upper == 'RL':
             raise NotImplementedError("Reinforcement Learning model not yet implemented")
+        
+        # Ensemble Models
+        elif model_type_upper == 'RANDOM_FOREST' or model_type_upper == 'RANDOM':
+            from .ensemble.random_forest import RandomForestModel
+            return RandomForestModel(config)
+        elif model_type_upper == 'GRADIENT_BOOSTING' or model_type_upper == 'GB':
+            from .ensemble.gradient_boosting import GradientBoostingModel
+            return GradientBoostingModel(config)
+        elif model_type_upper == 'XGBOOST' or model_type_upper == 'XGB':
+            from .ensemble.xgboost_model import XGBoostModel
+            return XGBoostModel(config)
+        
         else:
-            raise ValueError(f"Unsupported model type: {model_type}")
+            raise ValueError(f"Unsupported model type: {model_type}. Supported types: RNN, CNN, RL, RANDOM_FOREST, GRADIENT_BOOSTING, XGBOOST")
