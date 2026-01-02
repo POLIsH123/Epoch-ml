@@ -88,7 +88,7 @@ const AiPlayground = () => {
     setResponse('');
 
     try {
-      const response = await fetch('/api/playground/generate', {
+      const response = await fetch('http://localhost:5001/api/playground/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
