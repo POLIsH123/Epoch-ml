@@ -133,6 +133,9 @@ class ModelFactory:
         elif model_type_upper == 'XGBOOST' or model_type_upper == 'XGB':
             from models.ensemble.xgboost_model import XGBoostModel
             return XGBoostModel(config)
+        elif model_type_upper == 'LIGHTGBM' or model_type_upper == 'LGBM':
+            from models.ensemble.lightgbm_model import LightGBMModel
+            return LightGBMModel(config)
         
         else:
             raise ValueError(f"Unsupported model type: {model_type}. Supported types: RNN, CNN, RL, RANDOM_FOREST, GRADIENT_BOOSTING, XGBOOST")
