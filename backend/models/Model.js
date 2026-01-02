@@ -10,7 +10,7 @@ const modelSchema = new mongoose.Schema({
   type: {
     type: String,
     required: true,
-    enum: ['RNN', 'CNN', 'RL', 'OTHER']
+    enum: ['RNN', 'CNN', 'RL', 'ENSEMBLE', 'OTHER']
   },
   description: {
     type: String,
@@ -31,11 +31,10 @@ const modelSchema = new mongoose.Schema({
     // Additional parameters specific to each model type
     additionalParams: mongoose.Schema.Types.Mixed
   },
-  layers: [{
-    id: Number,
-    type: String,
-    config: mongoose.Schema.Types.Mixed
-  }],
+  layers: {
+    type: mongoose.Schema.Types.Mixed,
+    default: []
+  },
   isActive: {
     type: Boolean,
     default: true

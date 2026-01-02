@@ -1,7 +1,7 @@
-import { Box, Heading, Text, Button, VStack, HStack, Container, Card, CardHeader, CardBody, Flex, Icon, useColorModeValue, useToast, Grid, SimpleGrid, Stat, StatLabel, StatNumber, StatHelpText, StatGroup, FormControl, FormLabel, Input, Select, Textarea, Badge } from '@chakra-ui/react';
+import { Box, Heading, Text, Button, VStack, HStack, Container, Card, CardHeader, CardBody, Flex, Icon, useColorModeValue, useToast, Grid, SimpleGrid, Stat, StatLabel, StatNumber, StatHelpText, StatGroup, FormControl, FormLabel, Input, Select, Textarea, Badge, NumberInput, NumberInputField, NumberInputStepper, NumberIncrementStepper, NumberDecrementStepper, Checkbox, Stack } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { FiDatabase, FiUpload, FiFile, FiBarChart2, FiCpu, FiZap, FiDollarSign, FiCheckCircle, FiXCircle, FiInfo } from 'react-icons/fi';
+import { FiDatabase, FiUpload, FiFile, FiBarChart2, FiCpu, FiZap, FiDollarSign, FiCheckCircle, FiXCircle, FiInfo, FiImage, FiFileText, FiGrid } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import Sidebar from '../components/Sidebar';
 
@@ -13,7 +13,19 @@ export default function Data() {
     name: '',
     description: '',
     type: 'csv',
-    size: 0
+    size: 0,
+    columns: '',
+    targetColumn: '',
+    imageWidth: 28,
+    imageHeight: 28,
+    channels: 1,
+    normalize: true,
+    flattenToNumbers: true,
+    maxSequenceLength: 100,
+    vocabSize: 10000,
+    numClasses: 10,
+    taskType: 'classification',
+    modelCompatibility: []
   });
   const router = useRouter();
   const toast = useToast();
@@ -22,21 +34,41 @@ export default function Data() {
   const cardBg = useColorModeValue('white', 'gray.800');
 
   useEffect(() => {
+    let compatibility = [];
+    switch (newDataset.type) {
+      case 'image':
+        if (newDataset.flattenToNumbers) {
+          compatibility = ['CNN', 'ResNet', 'VGG', 'Inception', 'Random Forest', 'Gradient Boosting', 'XGBoost', 'Custom', 'Multi-Layer'];
+        } else {
+          compatibility = ['CNN', 'ResNet', 'VGG', 'Inception', 'Custom', 'Multi-Layer'];
+        }
+        break;
+      case 'csv':
+        compatibility = ['Random Forest', 'Gradient Boosting', 'XGBoost', 'LightGBM', 'Custom', 'Multi-Layer'];
+        break;
+      case 'text':
+        compatibility = ['RNN', 'LSTM', 'GRU', 'Custom', 'Multi-Layer'];
+        break;
+      case 'json':
+        compatibility = ['RNN', 'LSTM', 'GRU', 'Custom', 'Multi-Layer'];
+        break;
+      default:
+        compatibility = ['Custom', 'Multi-Layer'];
+    }
+    setNewDataset(prev => ({ ...prev, modelCompatibility: compatibility }));
+  }, [newDataset.type, newDataset.flattenToNumbers]);
+
+  useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
       router.push('/login');
       return;
     }
-
-    // Verify token is valid by making a simple API call
     fetch('http://localhost:5001/api/auth/profile', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+      headers: { 'Authorization': `Bearer ${token}` }
     })
       .then(res => {
         if (res.status === 401) {
-          // Token is invalid, redirect to login
           localStorage.removeItem('token');
           router.push('/login');
           return;
@@ -46,124 +78,160 @@ export default function Data() {
       .then(data => {
         if (data) {
           setUser(data);
-          // Load user datasets
           loadDatasets();
           setLoading(false);
         }
       })
       .catch(err => {
-        console.error('Error fetching user data:', err);
         localStorage.removeItem('token');
         router.push('/login');
       });
   }, [router]);
 
   const loadDatasets = () => {
-    // Load datasets from the backend
     const token = localStorage.getItem('token');
     fetch('http://localhost:5001/api/resources/datasets', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+      headers: { 'Authorization': `Bearer ${token}` }
     })
       .then(res => res.json())
-      .then(data => {
-        setDatasets(Array.isArray(data) ? data : []);
-      })
-      .catch(err => {
-        console.error('Error loading datasets:', err);
-        setDatasets([]); // Ensure it's always an array
-        toast({
-          title: 'Error loading datasets',
-          description: 'Could not load your datasets. Please try again.',
-          status: 'error',
-          duration: 3000,
-          isClosable: true,
-        });
-      });
+      .then(data => setDatasets(Array.isArray(data) ? data : []))
+      .catch(err => setDatasets([]));
   };
 
   const handleCreateDataset = async (e) => {
     e.preventDefault();
-
     if (!newDataset.name) {
-      toast({
-        title: 'Dataset name required',
-        description: 'Please enter a name for your dataset',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
-      });
+      toast({ title: 'Dataset name required', status: 'error', duration: 3000 });
+      return;
+    }
+    if (!newDataset.targetColumn && newDataset.type === 'csv') {
+      toast({ title: 'Target column required', status: 'warning', duration: 3000 });
       return;
     }
 
-    const token = localStorage.getItem('token');
-    try {
-      const response = await fetch('http://localhost:5001/api/resources/datasets', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          name: newDataset.name,
-          description: newDataset.description,
-          type: newDataset.type
-        })
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        // Add the new dataset to the list
-        setDatasets(prev => Array.isArray(prev) ? [...prev, data] : [data]);
-        setNewDataset({ name: '', description: '', type: 'csv', size: 0 });
-
-        toast({
-          title: 'Dataset created',
-          description: `Dataset "${newDataset.name}" has been created successfully`,
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        });
-      } else {
-        toast({
-          title: 'Error creating dataset',
-          description: data.error || 'Could not create dataset',
-          status: 'error',
-          duration: 3000,
-          isClosable: true,
-        });
-      }
-    } catch (err) {
-      toast({
-        title: 'Network error',
-        description: 'Please check your connection and try again',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
-      });
+    let columns = [];
+    if (newDataset.type === 'csv' && newDataset.columns) {
+      columns = newDataset.columns.split(',').map(c => c.trim());
+    } else if (newDataset.type === 'image') {
+      const totalPixels = newDataset.imageWidth * newDataset.imageHeight * newDataset.channels;
+      columns = newDataset.flattenToNumbers 
+        ? [...Array(Math.min(totalPixels, 10)).keys()].map(i => `pixel_${i}`).concat(['...', 'label'])
+        : ['image', 'label'];
+    } else if (newDataset.type === 'text') {
+      columns = ['text', 'label'];
     }
+
+    const datasetPayload = {
+      name: newDataset.name,
+      description: newDataset.description,
+      type: newDataset.type,
+      size: typeof newDataset.size === 'number' ? `${newDataset.size} samples` : (newDataset.size || '0 samples'),
+      columns: columns,
+      targetColumn: newDataset.targetColumn || 'label',
+      modelCompatibility: newDataset.modelCompatibility,
+      config: {
+        taskType: newDataset.taskType,
+        numClasses: newDataset.numClasses,
+        ...(newDataset.type === 'image' && {
+          imageWidth: newDataset.imageWidth,
+          imageHeight: newDataset.imageHeight,
+          channels: newDataset.channels,
+          normalize: newDataset.normalize,
+          flattenToNumbers: newDataset.flattenToNumbers
+        }),
+        ...(newDataset.type === 'text' && {
+          maxSequenceLength: newDataset.maxSequenceLength,
+          vocabSize: newDataset.vocabSize
+        })
+      }
+    };
+
+    toast({
+      title: 'Dataset configured',
+      description: `"${newDataset.name}" is ready. Use built-in datasets for actual training.`,
+      status: 'success',
+      duration: 5000
+    });
+    
+    setNewDataset({ 
+      name: '', description: '', type: 'csv', size: 0,
+      columns: '', targetColumn: '',
+      imageWidth: 28, imageHeight: 28, channels: 1, normalize: true, flattenToNumbers: true,
+      maxSequenceLength: 100, vocabSize: 10000,
+      numClasses: 10, taskType: 'classification', modelCompatibility: []
+    });
   };
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
       const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
-      setNewDataset(prev => ({
-        ...prev,
-        name: file.name.split('.')[0],
-        size: parseFloat(sizeInMB)
-      }));
+      const fileName = file.name.split('.')[0];
+      const extension = file.name.split('.').pop().toLowerCase();
+      
+      let detectedType = 'csv';
+      if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(extension)) detectedType = 'image';
+      else if (['txt', 'text'].includes(extension)) detectedType = 'text';
+      else if (extension === 'json') detectedType = 'json';
+      
+      // For CSV files, count the rows
+      if (extension === 'csv') {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const text = event.target.result;
+          const lines = text.split('\n').filter(line => line.trim() !== '');
+          const numSamples = Math.max(0, lines.length - 1); // Subtract header row
+          
+          // Try to detect columns from header
+          const headerLine = lines[0];
+          const detectedColumns = headerLine ? headerLine.split(',').map(c => c.trim().replace(/"/g, '')) : [];
+          
+          setNewDataset(prev => ({ 
+            ...prev, 
+            name: fileName, 
+            size: numSamples,
+            type: detectedType,
+            columns: detectedColumns.join(', '),
+            targetColumn: detectedColumns.length > 0 ? detectedColumns[detectedColumns.length - 1] : ''
+          }));
+          
+          toast({
+            title: 'File analyzed',
+            description: `Found ${numSamples} samples and ${detectedColumns.length} columns`,
+            status: 'success',
+            duration: 3000
+          });
+        };
+        reader.readAsText(file);
+      } else if (extension === 'json') {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const json = JSON.parse(event.target.result);
+            const numSamples = Array.isArray(json) ? json.length : (json.data ? json.data.length : 1);
+            setNewDataset(prev => ({ ...prev, name: fileName, size: numSamples, type: detectedType }));
+          } catch {
+            setNewDataset(prev => ({ ...prev, name: fileName, size: sizeInMB + ' MB', type: detectedType }));
+          }
+        };
+        reader.readAsText(file);
+      } else {
+        // For images and other files, just show file size
+        setNewDataset(prev => ({ ...prev, name: fileName, size: sizeInMB + ' MB', type: detectedType }));
+      }
+    }
+  };
+
+  const getTypeIcon = (type) => {
+    switch (type) {
+      case 'image': return FiImage;
+      case 'text': return FiFileText;
+      default: return FiGrid;
     }
   };
 
   if (loading) {
-    return (
-      <Flex minH="100vh" align="center" justify="center" bg={bg}>
-        <Text>Loading...</Text>
-      </Flex>
-    );
+    return (<Flex minH="100vh" align="center" justify="center" bg={bg}><Text>Loading...</Text></Flex>);
   }
 
   return (
@@ -171,137 +239,142 @@ export default function Data() {
       <Sidebar user={user} />
       <Box ml="250px" p={8}>
         <VStack spacing={10} align="stretch">
-          {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             <Flex justify="space-between" align="center">
               <VStack align="start" spacing={1}>
                 <Heading as="h1" size="xl" bgGradient="linear(to-r, teal.300, blue.400)" bgClip="text">
-                  Neural Data Repository
+                  Data Configuration
                 </Heading>
-                <Text color="gray.500" fontSize="lg">Management terminal for training payloads and data schemas.</Text>
+                <Text color="gray.500" fontSize="lg">Configure datasets with smart preprocessing options.</Text>
               </VStack>
-              <Box className="glass" px={6} py={3}>
-                <HStack spacing={3}>
-                  <Icon as={FiDatabase} color="blue.400" />
-                  <Text fontWeight="bold" color="blue.300">{datasets.length} PAYLOADS ONLINE</Text>
-                </HStack>
-              </Box>
             </Flex>
           </motion.div>
 
-          {/* Stats Section */}
-          <SimpleGrid columns={{ base: 1, md: 3 }} spacing={8}>
-            <Box className="glass" p={6}>
-              <VStack align="start" spacing={1}>
-                <Text fontSize="xs" color="gray.500" textTransform="uppercase">Total Payloads</Text>
-                <Heading size="lg" color="white">{datasets.length}</Heading>
-                <Text fontSize="xs" color="gray.600">Registered neural sources</Text>
-              </VStack>
-            </Box>
-
-            <Box className="glass" p={6}>
-              <VStack align="start" spacing={1}>
-                <Text fontSize="xs" color="gray.500" textTransform="uppercase">Telemetry Volume</Text>
-                <Heading size="lg" color="teal.300">
-                  {Array.isArray(datasets) ? datasets.reduce((total, d) => total + parseFloat(d.size || 0), 0).toFixed(2) : 0} MB
-                </Heading>
-                <Text fontSize="xs" color="gray.600">Of 10 GB limit</Text>
-              </VStack>
-            </Box>
-
-            <Box className="glass" p={6}>
-              <VStack align="start" spacing={1}>
-                <Text fontSize="xs" color="gray.500" textTransform="uppercase">Integrity Status</Text>
-                <Heading size="lg" color="green.300">
-                  {Array.isArray(datasets) ? datasets.filter(d => d.status === 'ready').length : 0} VALID
-                </Heading>
-                <Text fontSize="xs" color="gray.600">Datasets verified for training</Text>
-              </VStack>
-            </Box>
-          </SimpleGrid>
-
-          <Grid templateColumns={{ base: '1fr', lg: '1fr 1.5fr' }} gap={8}>
-            {/* Upload Panel */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
+          <Grid templateColumns={{ base: '1fr', lg: '1fr 1fr' }} gap={8}>
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.2 }}>
               <Box className="glass" p={8}>
                 <VStack spacing={6} align="stretch">
                   <Flex align="center" gap={3}>
                     <Icon as={FiUpload} color="teal.400" />
-                    <Heading size="md" color="teal.300">Provision Payload</Heading>
+                    <Heading size="md" color="teal.300">Configure Dataset</Heading>
                   </Flex>
 
                   <form onSubmit={handleCreateDataset}>
                     <VStack spacing={5} align="stretch">
-                      <FormControl id="name" isRequired>
-                        <FormLabel fontSize="sm">Payload Identifier</FormLabel>
-                        <Input
-                          value={newDataset.name}
-                          onChange={(e) => setNewDataset(prev => ({ ...prev, name: e.target.value }))}
-                          bg="rgba(0,0,0,0.2)"
-                          border="none"
-                          _focus={{ ring: '1px solid', ringColor: 'teal.400' }}
-                          placeholder="e.g., Sentiment-Dataset-Alpha"
-                        />
+                      <FormControl isRequired>
+                        <FormLabel fontSize="sm">Dataset Name</FormLabel>
+                        <Input value={newDataset.name} onChange={(e) => setNewDataset(prev => ({ ...prev, name: e.target.value }))} bg="rgba(0,0,0,0.2)" border="none" placeholder="My Dataset" />
                       </FormControl>
 
-                      <FormControl id="description">
-                        <FormLabel fontSize="sm">Schema Context</FormLabel>
-                        <Textarea
-                          value={newDataset.description}
-                          onChange={(e) => setNewDataset(prev => ({ ...prev, description: e.target.value }))}
-                          bg="rgba(0,0,0,0.1)"
-                          border="none"
-                          placeholder="Describe the data landscape..."
-                          rows={3}
-                        />
-                      </FormControl>
-
-                      <FormControl id="type" isRequired>
-                        <FormLabel fontSize="sm">Payload Topology</FormLabel>
-                        <Select
-                          value={newDataset.type}
-                          onChange={(e) => setNewDataset(prev => ({ ...prev, type: e.target.value }))}
-                          bg="rgba(0,0,0,0.2)"
-                          border="none"
-                        >
-                          <option value="csv">Tabular Core (CSV)</option>
-                          <option value="json">Neural JSON</option>
-                          <option value="image">Visual Tensor (Images)</option>
-                          <option value="text">Linguistic Stream (Text)</option>
+                      <FormControl isRequired>
+                        <FormLabel fontSize="sm">Data Type</FormLabel>
+                        <Select value={newDataset.type} onChange={(e) => setNewDataset(prev => ({ ...prev, type: e.target.value }))} bg="rgba(0,0,0,0.2)" border="none">
+                          <option value="csv">Tabular (CSV)</option>
+                          <option value="image">Image Data</option>
+                          <option value="text">Text/NLP Data</option>
+                          <option value="json">Time Series (JSON)</option>
                         </Select>
                       </FormControl>
 
-                      <FormControl id="file">
-                        <FormLabel fontSize="sm">Source File</FormLabel>
-                        <Input
-                          type="file"
-                          onChange={handleFileUpload}
-                          className="glass"
-                          pt={1}
-                          height="auto"
-                          pb={1}
-                          border="none"
-                        />
+                      {newDataset.type === 'csv' && (
+                        <>
+                          <FormControl>
+                            <FormLabel fontSize="sm">Column Names (comma-separated)</FormLabel>
+                            <Input value={newDataset.columns} onChange={(e) => setNewDataset(prev => ({ ...prev, columns: e.target.value }))} bg="rgba(0,0,0,0.2)" border="none" placeholder="feature1, feature2, label" />
+                          </FormControl>
+                          <FormControl isRequired>
+                            <FormLabel fontSize="sm">Target Column</FormLabel>
+                            <Input value={newDataset.targetColumn} onChange={(e) => setNewDataset(prev => ({ ...prev, targetColumn: e.target.value }))} bg="rgba(0,0,0,0.2)" border="none" placeholder="label" />
+                          </FormControl>
+                        </>
+                      )}
+
+                      {newDataset.type === 'image' && (
+                        <>
+                          <SimpleGrid columns={3} spacing={4}>
+                            <FormControl>
+                              <FormLabel fontSize="sm">Width</FormLabel>
+                              <NumberInput value={newDataset.imageWidth} onChange={(val) => setNewDataset(prev => ({ ...prev, imageWidth: parseInt(val) || 28 }))} min={1} max={512}>
+                                <NumberInputField bg="rgba(0,0,0,0.2)" border="none" />
+                              </NumberInput>
+                            </FormControl>
+                            <FormControl>
+                              <FormLabel fontSize="sm">Height</FormLabel>
+                              <NumberInput value={newDataset.imageHeight} onChange={(val) => setNewDataset(prev => ({ ...prev, imageHeight: parseInt(val) || 28 }))} min={1} max={512}>
+                                <NumberInputField bg="rgba(0,0,0,0.2)" border="none" />
+                              </NumberInput>
+                            </FormControl>
+                            <FormControl>
+                              <FormLabel fontSize="sm">Channels</FormLabel>
+                              <Select value={newDataset.channels} onChange={(e) => setNewDataset(prev => ({ ...prev, channels: parseInt(e.target.value) }))} bg="rgba(0,0,0,0.2)" border="none">
+                                <option value={1}>Grayscale</option>
+                                <option value={3}>RGB</option>
+                              </Select>
+                            </FormControl>
+                          </SimpleGrid>
+                          <Stack spacing={3}>
+                            <Checkbox isChecked={newDataset.normalize} onChange={(e) => setNewDataset(prev => ({ ...prev, normalize: e.target.checked }))} colorScheme="teal">
+                              <Text fontSize="sm">Normalize (0-1)</Text>
+                            </Checkbox>
+                            <Checkbox isChecked={newDataset.flattenToNumbers} onChange={(e) => setNewDataset(prev => ({ ...prev, flattenToNumbers: e.target.checked }))} colorScheme="teal">
+                              <Text fontSize="sm">Flatten to numbers (enables ensemble models)</Text>
+                            </Checkbox>
+                          </Stack>
+                          <Text fontSize="xs" color="gray.500">Features: {newDataset.imageWidth * newDataset.imageHeight * newDataset.channels} pixels</Text>
+                        </>
+                      )}
+
+                      {newDataset.type === 'text' && (
+                        <SimpleGrid columns={2} spacing={4}>
+                          <FormControl>
+                            <FormLabel fontSize="sm">Max Sequence Length</FormLabel>
+                            <NumberInput value={newDataset.maxSequenceLength} onChange={(val) => setNewDataset(prev => ({ ...prev, maxSequenceLength: parseInt(val) || 100 }))} min={10} max={1000}>
+                              <NumberInputField bg="rgba(0,0,0,0.2)" border="none" />
+                            </NumberInput>
+                          </FormControl>
+                          <FormControl>
+                            <FormLabel fontSize="sm">Vocabulary Size</FormLabel>
+                            <NumberInput value={newDataset.vocabSize} onChange={(val) => setNewDataset(prev => ({ ...prev, vocabSize: parseInt(val) || 10000 }))} min={100} max={100000}>
+                              <NumberInputField bg="rgba(0,0,0,0.2)" border="none" />
+                            </NumberInput>
+                          </FormControl>
+                        </SimpleGrid>
+                      )}
+
+                      <SimpleGrid columns={2} spacing={4}>
+                        <FormControl>
+                          <FormLabel fontSize="sm">Task Type</FormLabel>
+                          <Select value={newDataset.taskType} onChange={(e) => setNewDataset(prev => ({ ...prev, taskType: e.target.value }))} bg="rgba(0,0,0,0.2)" border="none">
+                            <option value="classification">Classification</option>
+                            <option value="regression">Regression</option>
+                          </Select>
+                        </FormControl>
+                        {newDataset.taskType === 'classification' && (
+                          <FormControl>
+                            <FormLabel fontSize="sm">Classes</FormLabel>
+                            <NumberInput value={newDataset.numClasses} onChange={(val) => setNewDataset(prev => ({ ...prev, numClasses: parseInt(val) || 2 }))} min={2} max={1000}>
+                              <NumberInputField bg="rgba(0,0,0,0.2)" border="none" />
+                            </NumberInput>
+                          </FormControl>
+                        )}
+                      </SimpleGrid>
+
+                      <FormControl>
+                        <FormLabel fontSize="sm">Upload File</FormLabel>
+                        <Input type="file" onChange={handleFileUpload} pt={1} pb={1} border="none" />
                       </FormControl>
 
-                      <Button
-                        type="submit"
-                        colorScheme="teal"
-                        size="lg"
-                        leftIcon={<FiZap />}
-                        borderRadius="full"
-                        bgGradient="linear(to-r, teal.400, blue.500)"
-                        _hover={{ bgGradient: 'linear(to-r, teal.500, blue.600)', transform: 'translateY(-2px)' }}
-                      >
-                        Ingest Dataset
+                      <Box p={4} bg="rgba(0,0,0,0.2)" borderRadius="xl">
+                        <Text fontSize="xs" color="gray.500" mb={2}>Compatible Models:</Text>
+                        <HStack wrap="wrap" spacing={2}>
+                          {newDataset.modelCompatibility.map((model, idx) => (
+                            <Badge key={idx} colorScheme="teal" variant="subtle" fontSize="2xs">{model}</Badge>
+                          ))}
+                        </HStack>
+                      </Box>
+
+                      <Button type="submit" colorScheme="teal" size="lg" leftIcon={<FiZap />} borderRadius="full" bgGradient="linear(to-r, teal.400, blue.500)">
+                        Configure Dataset
                       </Button>
                     </VStack>
                   </form>
@@ -309,61 +382,34 @@ export default function Data() {
               </Box>
             </motion.div>
 
-            {/* List Panel */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-            >
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.3 }}>
               <Box className="glass" p={8} h="full">
                 <Flex align="center" gap={3} mb={8}>
                   <Icon as={FiFile} color="blue.400" />
-                  <Heading size="md" color="blue.300">Active Payloads</Heading>
+                  <Heading size="md" color="blue.300">Available Datasets</Heading>
                 </Flex>
-
-                <VStack spacing={4} align="stretch" maxH="600px" overflowY="auto" pr={2}>
-                  {Array.isArray(datasets) && datasets.length > 0 ? (
-                    datasets.map((dataset, idx) => (
-                      <Box
-                        key={dataset.id || idx}
-                        p={6}
-                        bg="rgba(255,255,255,0.02)"
-                        borderRadius="2xl"
-                        border="1px solid"
-                        borderColor="whiteAlpha.100"
-                        transition="all 0.2s"
-                        _hover={{ bg: 'rgba(255,255,255,0.05)', borderColor: 'teal.500' }}
-                      >
-                        <Flex justify="space-between" align="center">
-                          <VStack align="start" spacing={1}>
-                            <HStack>
-                              <Heading size="sm" color="white">{dataset.name}</Heading>
-                              <Badge colorScheme={dataset.status === 'ready' ? 'green' : 'orange'} borderRadius="full" variant="subtle">
-                                {dataset.status || 'INGESTING'}
-                              </Badge>
-                            </HStack>
-                            <Text fontSize="xs" color="gray.500" noOfLines={1}>{dataset.description || 'No context provided'}</Text>
-                            <HStack spacing={2} pt={2}>
-                              <Badge colorScheme="blue" variant="outline" fontSize="2xs">{dataset.type.toUpperCase()}</Badge>
-                              <Badge colorScheme="gray" variant="outline" fontSize="2xs">{dataset.size}</Badge>
-                            </HStack>
-                          </VStack>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            colorScheme="teal"
-                            onClick={() => router.push(`/train?dataset=${dataset.id}`)}
-                            borderRadius="full"
-                          >
-                            Synchronize
-                          </Button>
-                        </Flex>
-                      </Box>
-                    ))
-                  ) : (
-                    <Flex direction="column" align="center" justify="center" py={20} color="gray.600">
+                <VStack spacing={4} align="stretch" maxH="600px" overflowY="auto">
+                  {datasets.length > 0 ? datasets.map((dataset, idx) => (
+                    <Box key={dataset.id || idx} p={5} bg="rgba(255,255,255,0.02)" borderRadius="xl" border="1px solid" borderColor="whiteAlpha.100" _hover={{ borderColor: 'teal.500' }}>
+                      <Flex justify="space-between" align="center">
+                        <VStack align="start" spacing={1}>
+                          <HStack>
+                            <Icon as={getTypeIcon(dataset.type)} color="teal.400" />
+                            <Text fontWeight="bold" color="white">{dataset.name}</Text>
+                          </HStack>
+                          <HStack spacing={2}>
+                            <Badge colorScheme="blue" variant="outline" fontSize="2xs">{dataset.type?.toUpperCase()}</Badge>
+                            <Badge colorScheme="gray" variant="outline" fontSize="2xs">{dataset.size}</Badge>
+                            {dataset.targetColumn && <Badge colorScheme="green" variant="outline" fontSize="2xs">Target: {dataset.targetColumn}</Badge>}
+                          </HStack>
+                        </VStack>
+                        <Button size="sm" variant="ghost" colorScheme="teal" onClick={() => router.push(`/train?dataset=${dataset.id}`)} borderRadius="full">Train</Button>
+                      </Flex>
+                    </Box>
+                  )) : (
+                    <Flex direction="column" align="center" py={20} color="gray.600">
                       <Icon as={FiDatabase} w={12} h={12} mb={4} opacity={0.5} />
-                      <Text>No payloads detected in mainframe.</Text>
+                      <Text>No custom datasets yet.</Text>
                     </Flex>
                   )}
                 </VStack>
@@ -371,19 +417,20 @@ export default function Data() {
             </motion.div>
           </Grid>
 
-          {/* Tips Section */}
           <Box className="glass" p={8}>
             <Flex align="center" gap={3} mb={6}>
               <Icon as={FiInfo} color="orange.300" />
-              <Heading size="md">Neural Integrity Protocol</Heading>
+              <Heading size="md">Data Tips</Heading>
             </Flex>
-            <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6}>
+            <SimpleGrid columns={{ base: 1, md: 4 }} spacing={6}>
               {[
-                { label: 'RNN Models', tip: 'Sequential structure required.' },
-                { label: 'CNN Models', tip: 'Normalized visual tensors.' },
-                { label: 'RL Models', tip: 'Formatted state trajectories.' }
+                { icon: FiGrid, label: 'Tabular', tip: 'Set columns & target column' },
+                { icon: FiImage, label: 'Images', tip: 'Enable flatten for ensemble models' },
+                { icon: FiFileText, label: 'Text', tip: 'Set sequence length for RNN/LSTM' },
+                { icon: FiDatabase, label: 'Target', tip: 'Always specify prediction target' }
               ].map((item, idx) => (
                 <VStack key={idx} align="start" p={4} bg="rgba(0,0,0,0.2)" borderRadius="xl">
+                  <Icon as={item.icon} color="teal.300" />
                   <Text fontWeight="bold" color="teal.300" fontSize="sm">{item.label}</Text>
                   <Text fontSize="xs" color="gray.500">{item.tip}</Text>
                 </VStack>

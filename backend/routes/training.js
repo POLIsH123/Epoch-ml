@@ -206,6 +206,11 @@ router.post('/start', async (req, res) => {
     const modelArch = model.architecture || model.type;
     let modelTrainingCost = 10; // Default base cost
     
+    // Check if it's an ensemble model
+    const isEnsemble = ['Random Forest', 'Gradient Boosting', 'XGBoost', 'LightGBM', 'RANDOM_FOREST', 'GRADIENT_BOOSTING', 'XGBOOST', 'LIGHTGBM'].some(
+      t => modelArch.toUpperCase().includes(t.toUpperCase().replace(' ', '_')) || modelArch.toUpperCase().includes(t.toUpperCase().replace(' ', ''))
+    );
+    
     // Check architecture first, then type
     switch (modelArch.toUpperCase()) {
       case 'RESNET':
@@ -257,22 +262,63 @@ router.post('/start', async (req, res) => {
         }
     }
 
-    // Multipliers for different parameters
-    const epochs = parameters?.epochs || 5;
-    const batchSize = parameters?.batchSize || 32;
-    const learningRate = parameters?.learningRate || 0.001;
-    
-    // Epoch multiplier: more epochs = more cost
-    const epochMultiplier = Math.max(1, epochs / 5);
-    
-    // Batch size multiplier: smaller batches = more iterations = more cost
-    const batchMultiplier = Math.max(0.8, 64 / batchSize);
-    
-    // Learning rate multiplier: lower learning rate = more epochs needed = more cost
-    const lrMultiplier = Math.max(0.9, 0.001 / learningRate);
-    
-    // Calculate total cost
-    modelTrainingCost = Math.round(modelTrainingCost * epochMultiplier * batchMultiplier * lrMultiplier);
+    if (isEnsemble) {
+      // Ensemble model cost calculation
+      const nEstimators = parameters?.n_estimators || 100;
+      const maxDepth = parameters?.max_depth || 0;
+      
+      // More trees = more cost
+      const treesMultiplier = Math.max(1, nEstimators / 100);
+      
+      // Deeper trees = more cost (if max_depth > 0)
+      const depthMultiplier = maxDepth > 0 ? Math.max(1, maxDepth / 10) : 1;
+      
+      // Lower learning rate = more iterations for boosting models
+      // Use 0.1 as default for boosting models
+      const isBoosting = modelArch.toLowerCase().includes('gradient') || modelArch.toLowerCase().includes('xgboost') || modelArch.toLowerCase().includes('light');
+      const learningRate = isBoosting ? (parameters?.learningRate || 0.1) : 0.1;
+      const lrMultiplier = isBoosting ? Math.max(0.9, 0.1 / learningRate) : 1;
+      
+      modelTrainingCost = Math.round(modelTrainingCost * treesMultiplier * depthMultiplier * lrMultiplier);
+    } else {
+      // Neural network cost calculation
+      const epochs = parameters?.epochs || 5;
+      const batchSize = parameters?.batchSize || 32;
+      const learningRate = parameters?.learningRate || 0.001;
+      
+      // Epoch multiplier: more epochs = more cost
+      const epochMultiplier = Math.max(1, epochs / 5);
+      
+      // Batch size multiplier: smaller batches = more iterations = more cost
+      const batchMultiplier = Math.max(0.8, 64 / batchSize);
+      
+      // Learning rate multiplier: lower learning rate = more epochs needed = more cost
+      const lrMultiplier = Math.max(0.9, 0.001 / learningRate);
+      
+      // Layer complexity multiplier for custom models
+      let layerMultiplier = 1;
+      const isCustom = modelArch === 'Custom' || modelArch === 'Multi-Layer';
+      if (isCustom && model.layers && Array.isArray(model.layers)) {
+        const numLayers = model.layers.length;
+        // More layers = more cost (each layer adds 20% to base cost)
+        layerMultiplier = 1 + (numLayers * 0.2);
+        
+        // Add extra cost for complex layer types
+        model.layers.forEach(layer => {
+          if (layer.type === 'LSTM' || layer.type === 'GRU') {
+            layerMultiplier += 0.3; // Recurrent layers are more expensive
+          } else if (layer.type === 'Conv2D') {
+            layerMultiplier += 0.2; // Conv layers are moderately expensive
+          }
+          // Add cost based on units/neurons
+          if (layer.config && layer.config.units) {
+            layerMultiplier += (layer.config.units / 500); // More neurons = more cost
+          }
+        });
+      }
+      
+      modelTrainingCost = Math.round(modelTrainingCost * epochMultiplier * batchMultiplier * lrMultiplier * layerMultiplier);
+    }
 
     if (user.credits < modelTrainingCost) {
       return res.status(400).json({ error: `Insufficient credits. Requires ${modelTrainingCost}, have ${user.credits}.` });

@@ -1,7 +1,7 @@
 import { Box, Heading, Text, Button, VStack, Container, Card, CardHeader, CardBody, Grid, FormControl, FormLabel, Select, Input, useColorModeValue, useToast, Flex, Icon, Spinner, Textarea } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { FiZap, FiDatabase, FiCpu, FiBarChart2, FiDollarSign, FiTarget } from 'react-icons/fi';
+import { FiZap, FiDatabase, FiCpu, FiBarChart2, FiDollarSign, FiTarget, FiCheckCircle, FiXCircle } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import Sidebar from '../components/Sidebar';
 
@@ -245,15 +245,42 @@ LEARNING_RATE = ${parameters.learningRate || 0.001}
 
       if (selectedModel && selectedDataset) {
         // Check compatibility using architecture field (or type as fallback)
-        const modelTypeToCheck = selectedModel.architecture || selectedModel.type;
-        if (selectedDataset.modelCompatibility.includes(modelTypeToCheck) || selectedDataset.modelCompatibility.includes(selectedModel.type)) {
+        const modelArch = selectedModel.architecture || selectedModel.type;
+        const modelType = selectedModel.type;
+        
+        // Normalize model name for comparison (handle spaces, underscores, case)
+        const normalizeModelName = (name) => {
+          if (!name) return '';
+          return name.toLowerCase().replace(/[_\s]/g, '');
+        };
+        
+        const normalizedArch = normalizeModelName(modelArch);
+        const normalizedType = normalizeModelName(modelType);
+        
+        // Check if any compatibility entry matches
+        const isCompatible = selectedDataset.modelCompatibility?.some(compat => {
+          const normalizedCompat = normalizeModelName(compat);
+          return normalizedCompat === normalizedArch || 
+                 normalizedCompat === normalizedType ||
+                 normalizedArch.includes(normalizedCompat) ||
+                 normalizedCompat.includes(normalizedArch) ||
+                 // Special cases
+                 (normalizedCompat === 'custom' && modelArch === 'Custom') ||
+                 (normalizedCompat === 'multilayer' && modelArch === 'Multi-Layer') ||
+                 (normalizedCompat === 'randomforest' && normalizedArch.includes('random')) ||
+                 (normalizedCompat === 'gradientboosting' && normalizedArch.includes('gradient')) ||
+                 (normalizedCompat === 'xgboost' && normalizedArch.includes('xgboost')) ||
+                 (normalizedCompat === 'lightgbm' && normalizedArch.includes('light'));
+        });
+        
+        if (isCompatible) {
           setModelCompatibilityStatus('compatible');
         } else {
-          const compatibleModels = selectedDataset.modelCompatibility.join(', ');
+          const compatibleModels = selectedDataset.modelCompatibility?.join(', ') || 'None specified';
           setModelCompatibilityStatus('incompatible');
           toast({
             title: 'Incompatible Selection',
-            description: 'The selected model (' + modelTypeToCheck + ') is not compatible with the chosen dataset (' + selectedDataset.name + '). Compatible models for this dataset are: ' + compatibleModels + '.',
+            description: `Model "${modelArch}" is not compatible with "${selectedDataset.name}". Compatible: ${compatibleModels}`,
             status: 'warning',
             duration: 7000,
             isClosable: true,
@@ -267,7 +294,7 @@ LEARNING_RATE = ${parameters.learningRate || 0.001}
     }
   }, [formData.datasetId, formData.modelId, datasets, models, toast, formData.targetColumn]);
 
-  // Update training cost when model type, epochs, batch size, or learning rate changes
+  // Update training cost when model type or parameters change
   useEffect(() => {
     if (formData.modelId) {
       const selectedModel = models.find(m => m._id === formData.modelId);
@@ -275,6 +302,14 @@ LEARNING_RATE = ${parameters.learningRate || 0.001}
         // Base cost based on architecture (preferred) or type
         const modelArch = selectedModel.architecture || selectedModel.type;
         let baseCost = 10; // Default base cost
+        
+        // Check if it's an ensemble model
+        const isEnsemble = ['Random Forest', 'Gradient Boosting', 'XGBoost', 'LightGBM', 'RANDOM_FOREST', 'GRADIENT_BOOSTING', 'XGBOOST', 'LIGHTGBM'].some(
+          t => modelArch.toUpperCase().includes(t.toUpperCase().replace(' ', '_')) || modelArch.toUpperCase().includes(t.toUpperCase().replace(' ', ''))
+        );
+        
+        // Check if it's a custom/multi-layer model
+        const isCustom = modelArch === 'Custom' || modelArch === 'Multi-Layer';
         
         // Check architecture first, then type
         switch (modelArch.toUpperCase()) {
@@ -291,6 +326,10 @@ LEARNING_RATE = ${parameters.learningRate || 0.001}
           case 'GRU':
           case 'CNN':
           case 'RNN':
+            baseCost = 10;
+            break;
+          case 'CUSTOM':
+          case 'MULTI-LAYER':
             baseCost = 10;
             break;
           default:
@@ -314,29 +353,69 @@ LEARNING_RATE = ${parameters.learningRate || 0.001}
             }
         }
 
-        // Multipliers for different parameters
-        const epochs = formData.parameters.epochs || 5;
-        const batchSize = formData.parameters.batchSize || 32;
-        const learningRate = formData.parameters.learningRate || 0.001;
+        let totalCost;
         
-        // Epoch multiplier: more epochs = more cost
-        const epochMultiplier = Math.max(1, epochs / 5);
-        
-        // Batch size multiplier: smaller batches = more iterations = more cost
-        // Smaller batch sizes take more iterations to process the same data
-        const batchMultiplier = Math.max(0.8, 64 / batchSize); // Smaller batch = higher multiplier
-        
-        // Learning rate multiplier: lower learning rate = more epochs needed = more cost
-        // Lower learning rates typically require more training iterations
-        const lrMultiplier = Math.max(0.9, 0.001 / learningRate); // Lower LR = higher multiplier
-        
-        // Calculate total cost
-        const totalCost = Math.round(baseCost * epochMultiplier * batchMultiplier * lrMultiplier);
+        if (isEnsemble) {
+          // Ensemble model cost calculation
+          const nEstimators = formData.parameters.n_estimators || 100;
+          const maxDepth = formData.parameters.max_depth || 0;
+          
+          // More trees = more cost
+          const treesMultiplier = Math.max(1, nEstimators / 100);
+          
+          // Deeper trees = more cost (if max_depth > 0)
+          const depthMultiplier = maxDepth > 0 ? Math.max(1, maxDepth / 10) : 1;
+          
+          // Lower learning rate = more iterations for boosting models
+          // Use 0.1 as default for boosting models, not 0.001
+          const isBoosting = modelArch.toLowerCase().includes('gradient') || modelArch.toLowerCase().includes('xgboost') || modelArch.toLowerCase().includes('light');
+          const learningRate = isBoosting ? (formData.parameters.learningRate || 0.1) : 0.1;
+          const lrMultiplier = isBoosting ? Math.max(0.9, 0.1 / learningRate) : 1;
+          
+          totalCost = Math.round(baseCost * treesMultiplier * depthMultiplier * lrMultiplier);
+        } else {
+          // Neural network cost calculation
+          const epochs = formData.parameters.epochs || 5;
+          const batchSize = formData.parameters.batchSize || 32;
+          const learningRate = formData.parameters.learningRate || 0.001;
+          
+          // Epoch multiplier: more epochs = more cost
+          const epochMultiplier = Math.max(1, epochs / 5);
+          
+          // Batch size multiplier: smaller batches = more iterations = more cost
+          const batchMultiplier = Math.max(0.8, 64 / batchSize);
+          
+          // Learning rate multiplier: lower learning rate = more epochs needed = more cost
+          const lrMultiplier = Math.max(0.9, 0.001 / learningRate);
+          
+          // Layer complexity multiplier for custom models
+          let layerMultiplier = 1;
+          if (isCustom && selectedModel.layers && Array.isArray(selectedModel.layers)) {
+            const numLayers = selectedModel.layers.length;
+            // More layers = more cost (each layer adds 20% to base cost)
+            layerMultiplier = 1 + (numLayers * 0.2);
+            
+            // Add extra cost for complex layer types
+            selectedModel.layers.forEach(layer => {
+              if (layer.type === 'LSTM' || layer.type === 'GRU') {
+                layerMultiplier += 0.3; // Recurrent layers are more expensive
+              } else if (layer.type === 'Conv2D') {
+                layerMultiplier += 0.2; // Conv layers are moderately expensive
+              }
+              // Add cost based on units/neurons
+              if (layer.config && layer.config.units) {
+                layerMultiplier += (layer.config.units / 500); // More neurons = more cost
+              }
+            });
+          }
+          
+          totalCost = Math.round(baseCost * epochMultiplier * batchMultiplier * lrMultiplier * layerMultiplier);
+        }
 
         setTrainingCost(totalCost);
       }
     }
-  }, [formData.modelId, formData.parameters.epochs, formData.parameters.batchSize, formData.parameters.learningRate, models]);
+  }, [formData.modelId, formData.parameters.epochs, formData.parameters.batchSize, formData.parameters.learningRate, formData.parameters.n_estimators, formData.parameters.max_depth, models]);
 
   const handleInputChange = (field, value) => {
     if (field.includes('.')) {
@@ -544,6 +623,22 @@ LEARNING_RATE = ${parameters.learningRate || 0.001}
                           </option>
                         ))}
                       </Select>
+                      {/* Compatibility Status Indicator */}
+                      {formData.modelId && formData.datasetId && (
+                        <Flex mt={2} align="center" gap={2}>
+                          {modelCompatibilityStatus === 'compatible' ? (
+                            <>
+                              <Icon as={FiCheckCircle} color="green.400" />
+                              <Text fontSize="xs" color="green.400">Model compatible with dataset</Text>
+                            </>
+                          ) : modelCompatibilityStatus === 'incompatible' ? (
+                            <>
+                              <Icon as={FiXCircle} color="red.400" />
+                              <Text fontSize="xs" color="red.400">Model not compatible - select different model or dataset</Text>
+                            </>
+                          ) : null}
+                        </Flex>
+                      )}
                     </FormControl>
 
                     <FormControl id="targetColumn">
@@ -620,7 +715,7 @@ LEARNING_RATE = ${parameters.learningRate || 0.001}
                               />
                             </FormControl>
 
-                            {modelArch.toLowerCase().includes('gradient') || modelArch.toLowerCase().includes('xgboost') ? (
+                            {modelArch.toLowerCase().includes('gradient') || modelArch.toLowerCase().includes('xgboost') || modelArch.toLowerCase().includes('light') ? (
                               <FormControl id="learningRate">
                                 <FormLabel>Learning Rate</FormLabel>
                                 <Input
