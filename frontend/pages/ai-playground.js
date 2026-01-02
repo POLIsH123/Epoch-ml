@@ -183,15 +183,15 @@ const AiPlayground = () => {
                 </CardHeader>
                 <CardBody>
                   <VStack spacing={4} align="stretch">
-                    <Text fontSize="sm" color="gray.500">
-                      Hugging Face API key is configured on the server. Contact your administrator to update it.
-                    </Text>
-                    <Alert status="info" borderRadius="md" variant="subtle">
+                    <Alert status="warning" borderRadius="md" variant="subtle">
                       <AlertIcon />
                       <AlertDescription>
-                        API key is managed server-side for security
+                        AI Playground feature is temporarily unavailable
                       </AlertDescription>
                     </Alert>
+                    <Text fontSize="sm" color="gray.500" textAlign="center">
+                      Feature coming soon
+                    </Text>
                   </VStack>
                 </CardBody>
               </Card>
@@ -213,6 +213,7 @@ const AiPlayground = () => {
                         onChange={(e) => setSelectedModel(e.target.value)}
                         bg={inputBg}
                         borderColor={borderColor}
+                        disabled={true}
                       >
                         {models.map((model) => (
                           <option key={model.id} value={model.id}>
@@ -222,22 +223,12 @@ const AiPlayground = () => {
                       </Select>
                     </FormControl>
 
-                    {currentModel && currentModelDetails && (
-                      <VStack spacing={2} align="stretch" mt={4}>
-                        <Text fontWeight="bold" fontSize="lg">
-                          {currentModel.name} Details
-                        </Text>
-                        <HStack spacing={4} wrap="wrap">
-                          <Badge colorScheme="green">Type: {currentModel.type}</Badge>
-                          <Badge colorScheme="blue">Max Tokens: {currentModelDetails.maxTokens}</Badge>
-                          <Badge colorScheme="yellow">Latency: {currentModelDetails.latency}</Badge>
-                          <Badge colorScheme="purple">Cost: {currentModelDetails.cost}</Badge>
-                        </HStack>
-                        <Text fontSize="sm" color="gray.500">
-                          {currentModel.description}
-                        </Text>
-                      </VStack>
-                    )}
+                    <Alert status="info" borderRadius="md" variant="subtle">
+                      <AlertIcon />
+                      <AlertDescription>
+                        Feature coming soon
+                      </AlertDescription>
+                    </Alert>
                   </VStack>
                 </CardBody>
               </Card>
@@ -256,6 +247,7 @@ const AiPlayground = () => {
                       leftIcon={<FiRefreshCw />}
                       variant="outline"
                       onClick={() => setPrompt('')}
+                      disabled={true}
                     >
                       Clear Prompt
                     </Button>
@@ -263,12 +255,12 @@ const AiPlayground = () => {
                       leftIcon={<FiZap />}
                       colorScheme="teal"
                       onClick={generateText}
-                      isLoading={loading}
+                      disabled={true}
                     >
-                      {loading ? 'Generating...' : 'Generate Text'}
+                      Generate Text
                     </Button>
                     <Text fontSize="sm" color="gray.500" textAlign="center">
-                      Press Ctrl+Enter to generate
+                      Feature coming soon
                     </Text>
                   </VStack>
                 </CardBody>
@@ -298,7 +290,7 @@ const AiPlayground = () => {
                         rows={8}
                         bg={inputBg}
                         borderColor={borderColor}
-                        disabled={loading}
+                        disabled={true}
                         fontSize="md"
                       />
                     </FormControl>
@@ -308,7 +300,7 @@ const AiPlayground = () => {
                         variant="outline"
                         colorScheme="red"
                         onClick={() => setPrompt('')}
-                        disabled={loading}
+                        disabled={true}
                       >
                         Clear
                       </Button>
@@ -316,8 +308,7 @@ const AiPlayground = () => {
                         leftIcon={<FiSend />}
                         colorScheme="teal"
                         onClick={generateText}
-                        isLoading={loading}
-                        rightIcon={loading ? <Spinner size="sm" /> : null}
+                        disabled={true}
                       >
                         Generate
                       </Button>
@@ -332,38 +323,29 @@ const AiPlayground = () => {
                   <HStack spacing={3}>
                     <Icon as={FiDatabase} w={6} h={6} color="red.500" />
                     <Heading size="md">Generated Output</Heading>
-                    {response && (
-                      <Badge colorScheme="green" ml="auto">
-                        <Icon as={FiCheck} mr={1} /> Generated
-                      </Badge>
-                    )}
                   </HStack>
                 </CardHeader>
                 <CardBody>
                   <Box
-                    ref={responseRef}
                     p={4}
                     bg={inputBg}
                     borderRadius="md"
                     minH="200px"
                     maxH="400px"
-                    overflowY="auto"
                     whiteSpace="pre-wrap"
                     border="1px solid"
                     borderColor={borderColor}
                   >
-                    {response ? (
-                      <Text lineHeight="tall">{response}</Text>
-                    ) : (
-                      <Center h="150px">
-                        <VStack spacing={3}>
-                          <Icon as={FiMessageSquare} w={12} h={12} color="gray.400" />
-                          <Text color="gray.500" fontStyle="italic">
-                            Your generated text will appear here...
-                          </Text>
-                        </VStack>
-                      </Center>
-                    )}
+                    <Center h="150px">
+                      <VStack spacing={3}>
+                        <Icon as={FiZap} w={12} h={12} color="gray.400" />
+                        <Text color="gray.500" fontStyle="italic" textAlign="center">
+                          AI Playground is coming soon!
+                          <br />
+                          Feature temporarily unavailable
+                        </Text>
+                      </VStack>
+                    </Center>
                   </Box>
                 </CardBody>
               </Card>
