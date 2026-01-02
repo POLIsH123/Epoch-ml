@@ -247,8 +247,11 @@ export default function TrainingHistory() {
                         {session.metrics && session.metrics.accuracyPercent ? session.metrics.accuracyPercent.toFixed(2) + '%' : 'N/A'}
                       </Text>
                       <Text fontSize="sm" color="gray.400">
-                        {session.metrics && session.metrics.epochsCompleted ? session.metrics.epochsCompleted : '0'} / 
-                        {session.metrics && session.metrics.totalEpochs ? session.metrics.totalEpochs : (session.params && session.params.epochs ? session.params.epochs : 'N/A')}
+                        {/* Ensemble models don't use epochs, show N/A for them */}
+                        {session.modelType === 'ENSEMBLE' || ['Random Forest', 'Gradient Boosting', 'XGBoost', 'LightGBM'].includes(session.modelType) 
+                          ? 'N/A' 
+                          : `${session.metrics && session.metrics.epochsCompleted ? session.metrics.epochsCompleted : '0'} / ${session.metrics && session.metrics.totalEpochs ? session.metrics.totalEpochs : (session.params && session.params.epochs ? session.params.epochs : 'N/A')}`
+                        }
                       </Text>
                       <VStack align="start" spacing={0}>
                         <Text fontSize="xs" color="gray.500">
