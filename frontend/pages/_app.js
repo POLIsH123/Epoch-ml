@@ -81,6 +81,28 @@ function MyApp({ Component, pageProps }) {
           position: 'top-right',
         });
       });
+      
+      socketRef.current.on('rl_training_finished', (data) => {
+        toast({
+          title: 'RL Training Complete!',
+          description: `Your RL model "${data.modelName}" has finished training in ${data.environment}.`,
+          status: 'success',
+          duration: 8000,
+          isClosable: true,
+          position: 'top-right',
+        });
+      });
+
+      socketRef.current.on('rl_training_failed', (data) => {
+        toast({
+          title: 'RL Training Failed',
+          description: `Something went wrong while training RL model "${data.modelName}" in ${data.environment}.`,
+          status: 'error',
+          duration: 8000,
+          isClosable: true,
+          position: 'top-right',
+        });
+      });
     }
 
     return () => {
