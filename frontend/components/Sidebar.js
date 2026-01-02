@@ -1,5 +1,5 @@
-import { Box, Flex, Text, VStack, Icon, useColorModeValue } from '@chakra-ui/react';
-import { FiHome, FiBarChart2, FiCpu, FiDatabase, FiActivity, FiGrid, FiLayers, FiClock, FiDollarSign, FiSettings, FiUser, FiUpload, FiMessageSquare, FiPlay, FiTarget } from 'react-icons/fi';
+import { Box, Flex, Text, VStack, Icon, useColorModeValue, Tooltip } from '@chakra-ui/react';
+import { FiHome, FiBarChart2, FiCpu, FiDatabase, FiActivity, FiGrid, FiLayers, FiClock, FiDollarSign, FiSettings, FiUser, FiUpload, FiMessageSquare, FiPlay, FiTarget, FiInfo } from 'react-icons/fi';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 
@@ -73,19 +73,30 @@ export default function Sidebar({ user }) {
             const tutorialId = tutorialIdMap[item.name];
             
             return (
-            <Link key={index} href={item.path}>
+            <Link key={index} href={item.comingSoon ? '#' : item.path} passHref>
               <Box
+                as="a"
                 id={tutorialId}
                 p={3}
                 borderRadius="md"
-                bg={router.pathname === item.path ? activeBg : 'transparent'}
-                color={router.pathname === item.path ? activeColor : 'inherit'}
-                _hover={{ bg: router.pathname !== item.path ? useColorModeValue('gray.200', 'gray.600') : activeBg }}
+                bg={item.comingSoon ? (useColorModeValue('gray.200', 'gray.700')) : (router.pathname === item.path ? activeBg : 'transparent')}
+                color={item.comingSoon ? (useColorModeValue('gray.400', 'gray.500')) : (router.pathname === item.path ? activeColor : 'inherit')}
+                _hover={{ bg: item.comingSoon ? (useColorModeValue('gray.200', 'gray.700')) : (router.pathname !== item.path ? useColorModeValue('gray.200', 'gray.600') : activeBg) }}
                 transition="all 0.2s"
+                opacity={item.comingSoon ? 0.6 : 1}
+                cursor={item.comingSoon ? 'not-allowed' : 'pointer'}
+                onClick={item.comingSoon ? (e) => { e.preventDefault(); } : undefined}
               >
                 <Flex align="center">
                   <Icon as={item.icon} w={5} h={5} mr={3} />
                   <Text fontWeight={router.pathname === item.path ? 'bold' : 'normal'}>{item.name}</Text>
+                  {item.comingSoon && (
+                    <Tooltip label="Will be available later" placement="right" fontSize="xs">
+                      <span>
+                        <Icon as={FiInfo} w={4} h={4} ml={2} color={useColorModeValue('gray.400', 'gray.500')} />
+                      </span>
+                    </Tooltip>
+                  )}
                 </Flex>
               </Box>
             </Link>
