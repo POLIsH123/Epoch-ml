@@ -111,27 +111,27 @@ class ModelFactory:
         Returns:
             Model instance
         """
-        model_type_upper = model_type.upper()
+        model_type_upper = model_type.upper().replace(' ', '_')
         
         # Neural Network Models
         if model_type_upper == 'RNN':
-            from .rnn.rnn_model import RNNModel
+            from models.rnn.rnn_model import RNNModel
             return RNNModel(config)
         elif model_type_upper == 'CNN':
-            from .cnn.cnn_model import CNNModel
+            from models.cnn.cnn_model import CNNModel
             return CNNModel(config)
         elif model_type_upper == 'RL':
             raise NotImplementedError("Reinforcement Learning model not yet implemented")
         
         # Ensemble Models
         elif model_type_upper == 'RANDOM_FOREST' or model_type_upper == 'RANDOM':
-            from .ensemble.random_forest import RandomForestModel
+            from models.ensemble.random_forest import RandomForestModel
             return RandomForestModel(config)
         elif model_type_upper == 'GRADIENT_BOOSTING' or model_type_upper == 'GB':
-            from .ensemble.gradient_boosting import GradientBoostingModel
+            from models.ensemble.gradient_boosting import GradientBoostingModel
             return GradientBoostingModel(config)
         elif model_type_upper == 'XGBOOST' or model_type_upper == 'XGB':
-            from .ensemble.xgboost_model import XGBoostModel
+            from models.ensemble.xgboost_model import XGBoostModel
             return XGBoostModel(config)
         
         else:

@@ -1,5 +1,5 @@
 from sklearn.ensemble import GradientBoostingClassifier, GradientBoostingRegressor
-from .ensemble_model import EnsembleModel
+from models.ensemble.ensemble_model import EnsembleModel
 
 
 class GradientBoostingModel(EnsembleModel):

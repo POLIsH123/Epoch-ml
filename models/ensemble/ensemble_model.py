@@ -2,7 +2,7 @@ from abc import abstractmethod
 import numpy as np
 import pickle
 from sklearn.metrics import accuracy_score, mean_squared_error, f1_score
-from ..base_model import BaseModel
+from models.base_model import BaseModel
 
 
 class EnsembleModel(BaseModel):

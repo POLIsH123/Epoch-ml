@@ -1,5 +1,5 @@
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-from .ensemble_model import EnsembleModel
+from models.ensemble.ensemble_model import EnsembleModel
 
 
 class RandomForestModel(EnsembleModel):

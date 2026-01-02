@@ -4,7 +4,7 @@ try:
 except ImportError:
     XGBOOST_AVAILABLE = False
 
-from .ensemble_model import EnsembleModel
+from models.ensemble.ensemble_model import EnsembleModel
 
 
 class XGBoostModel(EnsembleModel):

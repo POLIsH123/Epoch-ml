@@ -248,7 +248,7 @@ export default function TrainingHistory() {
                       </Text>
                       <Text fontSize="sm" color="gray.400">
                         {session.metrics && session.metrics.epochsCompleted ? session.metrics.epochsCompleted : '0'} / 
-                        {(session.params && session.params.epochs) || (session.metrics && session.metrics.totalEpochs) ? session.params.epochs || session.metrics.totalEpochs : 'N/A'}
+                        {session.metrics && session.metrics.totalEpochs ? session.metrics.totalEpochs : (session.params && session.params.epochs ? session.params.epochs : 'N/A')}
                       </Text>
                       <VStack align="start" spacing={0}>
                         <Text fontSize="xs" color="gray.500">
