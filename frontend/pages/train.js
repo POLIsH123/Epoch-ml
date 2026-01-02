@@ -580,45 +580,113 @@ LEARNING_RATE = ${parameters.learningRate || 0.001}
                   </Grid>
 
                   {/* Parameters based on model type */}
-                  {formData.modelId && (
-                    <Box mt={6}>
-                      <Heading as="h4" size="md" mb={6} color="teal.300">Hyperparameters</Heading>
-                      <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }} gap={6}>
-                        <FormControl id="epochs">
-                          <FormLabel>Optimization Epochs</FormLabel>
-                          <Input
-                            type="number"
-                            min="1"
-                            max="150"
-                            value={formData.parameters.epochs}
-                            onChange={(e) => handleInputChange('parameters.epochs', parseInt(e.target.value))}
-                            bg="rgba(0,0,0,0.1)"
-                          />
-                        </FormControl>
+                  {formData.modelId && (() => {
+                    const selectedModel = models.find(m => m._id === formData.modelId);
+                    const modelArch = selectedModel?.architecture || selectedModel?.type || '';
+                    const isEnsemble = ['Random Forest', 'Gradient Boosting', 'XGBoost', 'LightGBM', 'RANDOM_FOREST', 'GRADIENT_BOOSTING', 'XGBOOST', 'LIGHTGBM'].some(
+                      t => modelArch.toUpperCase().includes(t.toUpperCase().replace(' ', '_')) || modelArch.toUpperCase().includes(t.toUpperCase())
+                    );
+                    
+                    return (
+                      <Box mt={6}>
+                        <Heading as="h4" size="md" mb={6} color="teal.300">
+                          {isEnsemble ? 'Ensemble Parameters' : 'Hyperparameters'}
+                        </Heading>
+                        
+                        {isEnsemble ? (
+                          /* Ensemble model parameters */
+                          <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }} gap={6}>
+                            <FormControl id="n_estimators">
+                              <FormLabel>Number of Trees</FormLabel>
+                              <Input
+                                type="number"
+                                min="10"
+                                max="500"
+                                value={formData.parameters.n_estimators || 100}
+                                onChange={(e) => handleInputChange('parameters.n_estimators', parseInt(e.target.value))}
+                                bg="rgba(0,0,0,0.1)"
+                              />
+                            </FormControl>
 
-                        <FormControl id="batchSize">
-                          <FormLabel>Inference Batch Size</FormLabel>
-                          <Input
-                            type="number"
-                            value={formData.parameters.batchSize}
-                            onChange={(e) => handleInputChange('parameters.batchSize', parseInt(e.target.value))}
-                            bg="rgba(0,0,0,0.1)"
-                          />
-                        </FormControl>
+                            <FormControl id="max_depth">
+                              <FormLabel>Max Depth (0 = unlimited)</FormLabel>
+                              <Input
+                                type="number"
+                                min="0"
+                                max="50"
+                                value={formData.parameters.max_depth || 0}
+                                onChange={(e) => handleInputChange('parameters.max_depth', parseInt(e.target.value))}
+                                bg="rgba(0,0,0,0.1)"
+                              />
+                            </FormControl>
 
-                        <FormControl id="learningRate">
-                          <FormLabel>Learning Rate</FormLabel>
-                          <Input
-                            type="number"
-                            step="0.0001"
-                            value={formData.parameters.learningRate}
-                            onChange={(e) => handleInputChange('parameters.learningRate', parseFloat(e.target.value))}
-                            bg="rgba(0,0,0,0.1)"
-                          />
-                        </FormControl>
-                      </Grid>
-                    </Box>
-                  )}
+                            {modelArch.toLowerCase().includes('gradient') || modelArch.toLowerCase().includes('xgboost') ? (
+                              <FormControl id="learningRate">
+                                <FormLabel>Learning Rate</FormLabel>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min="0.01"
+                                  max="1"
+                                  value={formData.parameters.learningRate || 0.1}
+                                  onChange={(e) => handleInputChange('parameters.learningRate', parseFloat(e.target.value))}
+                                  bg="rgba(0,0,0,0.1)"
+                                />
+                              </FormControl>
+                            ) : (
+                              <FormControl id="min_samples_split">
+                                <FormLabel>Min Samples Split</FormLabel>
+                                <Input
+                                  type="number"
+                                  min="2"
+                                  max="20"
+                                  value={formData.parameters.min_samples_split || 2}
+                                  onChange={(e) => handleInputChange('parameters.min_samples_split', parseInt(e.target.value))}
+                                  bg="rgba(0,0,0,0.1)"
+                                />
+                              </FormControl>
+                            )}
+                          </Grid>
+                        ) : (
+                          /* Neural network parameters */
+                          <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }} gap={6}>
+                            <FormControl id="epochs">
+                              <FormLabel>Optimization Epochs</FormLabel>
+                              <Input
+                                type="number"
+                                min="1"
+                                max="150"
+                                value={formData.parameters.epochs}
+                                onChange={(e) => handleInputChange('parameters.epochs', parseInt(e.target.value))}
+                                bg="rgba(0,0,0,0.1)"
+                              />
+                            </FormControl>
+
+                            <FormControl id="batchSize">
+                              <FormLabel>Inference Batch Size</FormLabel>
+                              <Input
+                                type="number"
+                                value={formData.parameters.batchSize}
+                                onChange={(e) => handleInputChange('parameters.batchSize', parseInt(e.target.value))}
+                                bg="rgba(0,0,0,0.1)"
+                              />
+                            </FormControl>
+
+                            <FormControl id="learningRate">
+                              <FormLabel>Learning Rate</FormLabel>
+                              <Input
+                                type="number"
+                                step="0.0001"
+                                value={formData.parameters.learningRate}
+                                onChange={(e) => handleInputChange('parameters.learningRate', parseFloat(e.target.value))}
+                                bg="rgba(0,0,0,0.1)"
+                              />
+                            </FormControl>
+                          </Grid>
+                        )}
+                      </Box>
+                    );
+                  })()}
 
                   <Flex justify="flex-end" pt={4}>
                     <Button
