@@ -114,17 +114,38 @@ def train_rl_model(session_id, environment_name, params_json):
         # Run a few evaluation episodes
         episode_rewards = []
         for _ in range(10):
-            obs = eval_env.reset()
-            episode_reward = 0
-            done = False
-            while not done:
-                action, _ = model.predict(obs, deterministic=True)
-                obs, reward, done, info = eval_env.step(action)
-                episode_reward += reward
-            episode_rewards.append(episode_reward)
+            try:
+                obs = eval_env.reset()
+                episode_reward = 0
+                done = False
+                # Handle the new gym API where reset() returns (obs, info)
+                if isinstance(obs, tuple) and len(obs) == 2:
+                    obs, info = obs
+                
+                while not done:
+                    action, _ = model.predict(obs, deterministic=True)
+                    step_result = eval_env.step(action)
+                    
+                    # Handle the new gym API where step() returns (obs, reward, terminated, truncated, info)
+                    if len(step_result) == 5:  # New gym API
+                        obs, reward, terminated, truncated, info = step_result
+                        done = terminated or truncated
+                    else:  # Old gym API
+                        obs, reward, done, info = step_result
+                        
+                    episode_reward += reward
+                episode_rewards.append(episode_reward)
+            except Exception as e:
+                print(f"Evaluation episode failed: {e}")
+                # If evaluation fails, just continue with the next episode
+                continue
 
-        avg_reward = np.mean(episode_rewards)
-        print(f"Average reward over 10 episodes: {avg_reward}")
+        if episode_rewards:
+            avg_reward = np.mean(episode_rewards)
+            print(f"Average reward over {len(episode_rewards)} episodes: {avg_reward}")
+        else:
+            avg_reward = 0
+            print("No successful evaluation episodes")
 
         # Save model
         if not os.path.exists(SAVED_MODELS_DIR):
