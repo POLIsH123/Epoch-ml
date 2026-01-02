@@ -23,7 +23,7 @@ router.post('/generate', async (req, res) => {
       return res.status(400).json({ error: 'Model ID and prompt are required' });
     }
     
-    const response = await axios.post(`https://api-inference.huggingface.co/models/${modelId}`, {
+    const response = await axios.post(`https://router.huggingface.co/api/models/${modelId}`, {
       inputs: prompt,
       parameters: {
         max_new_tokens: maxTokens || 200,
