@@ -1,4 +1,5 @@
 const express = require('express');
+const axios = require('axios');
 const router = express.Router();
 
 // AI Playground routes
@@ -22,27 +23,25 @@ router.post('/generate', async (req, res) => {
       return res.status(400).json({ error: 'Model ID and prompt are required' });
     }
     
-    const response = await fetch(`https://api-inference.huggingface.co/models/${modelId}`, {
-      method: 'POST',
+    const response = await axios.post(`https://api-inference.huggingface.co/models/${modelId}`, {
+      inputs: prompt,
+      parameters: {
+        max_new_tokens: maxTokens || 200,
+        return_full_text: false,
+      }
+    }, {
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        inputs: prompt,
-        parameters: {
-          max_new_tokens: maxTokens || 200,
-          return_full_text: false,
-        }
-      }),
+      responseType: 'json'
     });
     
-    if (!response.ok) {
-      const errorData = await response.json();
-      return res.status(response.status).json({ error: errorData.error || 'Failed to generate text' });
+    if (response.status !== 200) {
+      return res.status(response.status).json({ error: response.data.error || 'Failed to generate text' });
     }
     
-    const data = await response.json();
+    const data = response.data;
     res.json({
       generated_text: data[0]?.generated_text || 'No response generated',
       model: modelId,
@@ -51,7 +50,26 @@ router.post('/generate', async (req, res) => {
     
   } catch (error) {
     console.error('Error in AI Playground:', error);
-    res.status(500).json({ error: error.message });
+    // Handle axios-specific errors
+    if (error.response) {
+      // Server responded with error status
+      res.status(error.response.status).json({ 
+        error: error.response.data.error || 'Hugging Face API error',
+        details: error.response.data
+      });
+    } else if (error.request) {
+      // Request was made but no response received
+      res.status(500).json({ 
+        error: 'Network error - unable to reach Hugging Face API',
+        details: error.message
+      });
+    } else {
+      // Something else happened
+      res.status(500).json({ 
+        error: error.message || 'Unknown error occurred',
+        details: error.message
+      });
+    }
   }
 });
 
