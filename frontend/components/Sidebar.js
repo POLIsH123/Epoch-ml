@@ -1,5 +1,5 @@
 import { Box, Flex, Text, VStack, Icon, useColorModeValue, Tooltip } from '@chakra-ui/react';
-import { FiHome, FiBarChart2, FiCpu, FiDatabase, FiActivity, FiGrid, FiLayers, FiClock, FiDollarSign, FiSettings, FiUser, FiUpload, FiMessageSquare, FiPlay, FiTarget, FiInfo } from 'react-icons/fi';
+import { FiHome, FiBarChart2, FiCpu, FiDatabase, FiActivity, FiGrid, FiLayers, FiClock, FiDollarSign, FiSettings, FiUser, FiUpload, FiMessageSquare, FiPlay, FiTarget, FiInfo, FiDownload } from 'react-icons/fi';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 
@@ -17,6 +17,7 @@ export default function Sidebar({ user }) {
     { name: 'RL Train', icon: FiTarget, path: '/rl-train' },
     { name: 'Test Model', icon: FiPlay, path: '/test-model' },
     { name: 'Models', icon: FiDatabase, path: '/models' },
+    { name: 'Model Download', icon: FiDownload, path: '/model-download' },
     { name: 'Model Comparison', icon: FiGrid, path: '/model-comparison' },
     { name: 'Data', icon: FiUpload, path: '/data' },
     { name: 'Resources', icon: FiDollarSign, path: '/resources' },
@@ -62,6 +63,7 @@ export default function Sidebar({ user }) {
               'Test Model': 'test-model-link',
               'Training History': 'training-history-link',
               'Model Builder': 'model-builder-link',
+              'Model Download': 'model-download-link',
               'Model Comparison': 'model-comparison-link',
               'Training History': 'training-history-link',
               'AI Playground': 'ai-playground-link',

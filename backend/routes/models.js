@@ -196,9 +196,21 @@ router.get('/:id/download', async (req, res) => {
       return res.status(404).json({ error: 'Model not found' });
     }
 
+    // Find the latest completed training session for this model to get the actual model file
+    const trainingSession = await TrainingSession.findOne({
+      modelId: req.params.id,
+      status: 'completed'
+    }).sort({ endTime: -1 }); // Get the most recent completed session
+
+    if (!trainingSession) {
+      return res.status(404).json({ error: 'No completed training session found for this model' });
+    }
+
     // Calculate cost based on model type for downloading
     let downloadCost = 5;
-    // ... logic remains same but using model.architecture or model.type
+    if (['RL', 'DQN', 'A2C', 'PPO', 'SAC', 'TD3'].includes(model.type) || ['DQN', 'A2C', 'PPO', 'SAC', 'TD3'].includes(model.architecture)) {
+      downloadCost = 10; // RL models cost more to download
+    }
 
     if (user.credits < downloadCost) {
       return res.status(400).json({ error: `Insufficient credits. Downloading this model requires ${downloadCost} credits, but you only have ${user.credits}.` });
@@ -208,17 +220,60 @@ router.get('/:id/download', async (req, res) => {
     user.credits -= downloadCost;
     await user.save();
 
-    // Create a mock model file to download (placeholder for actual .h5 file in future)
-    const modelData = {
-      modelId: model._id,
-      modelName: model.name,
-      architecture: model.architecture,
-      createdAt: model.createdAt
-    };
-
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Content-Disposition', `attachment; filename="${model.name.replace(/\s+/g, '_')}_model.json"`);
-    res.send(JSON.stringify(modelData, null, 2));
+    // Determine the model file path based on the model type
+    const fs = require('fs');
+    const path = require('path');
+    
+    let modelFilePath;
+    if (['RL', 'DQN', 'A2C', 'PPO', 'SAC', 'TD3'].includes(model.type) || ['DQN', 'A2C', 'PPO', 'SAC', 'TD3'].includes(model.architecture)) {
+      // RL models are saved as .zip files
+      modelFilePath = path.join(process.cwd(), 'models', 'saved', `${model._id}_rl.zip`);
+    } else if (['ENSEMBLE', 'RANDOM_FOREST', 'GRADIENT_BOOSTING', 'XGBOOST', 'LIGHTGBM', 'Random Forest', 'Gradient Boosting', 'XGBoost', 'LightGBM'].includes(model.type) || ['RANDOM_FOREST', 'GRADIENT_BOOSTING', 'XGBOOST', 'LIGHTGBM', 'Random Forest', 'Gradient Boosting', 'XGBoost', 'LightGBM'].includes(model.architecture)) {
+      // Ensemble models are saved as .pkl files
+      modelFilePath = path.join(process.cwd(), 'models', 'saved', `${model._id}.pkl`);
+    } else {
+      // Other models are saved as .h5 files
+      modelFilePath = path.join(process.cwd(), 'models', 'saved', `${model._id}.h5`);
+    }
+    
+    // Check if the model file exists
+    if (!fs.existsSync(modelFilePath)) {
+      // If the specific model file doesn't exist, return the metadata as fallback
+      const modelData = {
+        modelId: model._id,
+        modelName: model.name,
+        architecture: model.architecture,
+        createdAt: model.createdAt,
+        trainingSession: trainingSession
+      };
+      
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="${model.name.replace(/\s+/g, '_')}_model.json"`);
+      return res.send(JSON.stringify(modelData, null, 2));
+    }
+    
+    // Determine the appropriate file extension for the download
+    const fileExt = path.extname(modelFilePath);
+    const downloadFilename = `${model.name.replace(/\s+/g, '_')}_model${fileExt}`;
+    
+    // Send the actual model file
+    res.download(modelFilePath, downloadFilename, (err) => {
+      if (err) {
+        console.error('Error sending model file:', err);
+        // If there's an error sending the file, send the metadata as fallback
+        const modelData = {
+          modelId: model._id,
+          modelName: model.name,
+          architecture: model.architecture,
+          createdAt: model.createdAt,
+          trainingSession: trainingSession
+        };
+        
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', `attachment; filename="${model.name.replace(/\s+/g, '_')}_model.json"`);
+        res.send(JSON.stringify(modelData, null, 2));
+      }
+    });
   } catch (error) {
     console.error('Error downloading model:', error);
     res.status(500).json({ error: error.message });
