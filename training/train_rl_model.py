@@ -15,7 +15,7 @@ os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 MONGO_URI = os.getenv('MONGODB_URI', 'mongodb://localhost:27017/epoch-ml')
 SAVED_MODELS_DIR = 'models/saved'
 
-def update_session(session_id, status, progress=None, reward=None, episodes=None, db=None):
+def update_session(session_id, status, progress=None, reward=None, episodes=None, accuracy=None, loss=None, metric_name=None, accuracy_percent=None, loss_percent=None, current_epoch=None, total_epochs=None, db=None):
     close_at_end = False
     if db is None:
         client = MongoClient(MONGO_URI)
@@ -29,6 +29,20 @@ def update_session(session_id, status, progress=None, reward=None, episodes=None
         update_data['reward'] = reward
     if episodes is not None:
         update_data['episodes'] = episodes
+    if accuracy is not None:
+        update_data['accuracy'] = accuracy
+    if loss is not None:
+        update_data['loss'] = loss
+    if metric_name is not None:
+        update_data['metricName'] = metric_name
+    if accuracy_percent is not None:
+        update_data['accuracyPercent'] = accuracy_percent
+    if loss_percent is not None:
+        update_data['lossPercent'] = loss_percent
+    if current_epoch is not None:
+        update_data['currentEpoch'] = current_epoch
+    if total_epochs is not None:
+        update_data['totalEpochs'] = total_epochs
 
     if status == 'completed':
         update_data['endTime'] = datetime.utcnow()
@@ -97,6 +111,9 @@ def train_rl_model(session_id, environment_name, params_json):
             print(f"PROGRESS:{progress}")
             sys.stdout.flush()
 
+            # Update progress in database
+            update_session(session_id, 'running', progress=progress, db=db)
+
             # Train for the current chunk
             model.learn(total_timesteps=current_timesteps, reset_num_timesteps=False)
 
@@ -159,7 +176,7 @@ def train_rl_model(session_id, environment_name, params_json):
         print(f"RL Model saved to {save_path}")
 
         # Update session with final metrics
-        update_session(session_id, 'completed', progress=100, reward=avg_reward, episodes=10, db=db)
+        update_session(session_id, 'completed', progress=100, reward=avg_reward, episodes=10, accuracy=avg_reward, metricName='Reward', accuracyPercent=avg_reward*10, currentEpoch=10, totalEpochs=10, db=db)
 
     except Exception as e:
         print(f"RL Training failed: {e}")
